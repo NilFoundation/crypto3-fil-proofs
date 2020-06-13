@@ -19,7 +19,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
 include(CMConfig)
 include(CMSetupVersion)
 
-cm_workspace(crypto3)
+cm_workspace(nil)
 
 macro(cm_find_package NAME)
     if(NOT "${NAME}" MATCHES "^${CMAKE_WORKSPACE_NAME}_.*$" AND NOT "${NAME}" STREQUAL CM)
@@ -31,28 +31,11 @@ endmacro()
 
 cm_setup_version(VERSION 0.3.0 PREFIX ${CMAKE_WORKSPACE_NAME})
 
-cm_find_package(Git)
-if(GIT_FOUND)
-    execute_process(COMMAND "${GIT_EXECUTABLE}" log -1 --format=%at HEAD
-                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-                    ERROR_VARIABLE stderr
-                    RESULT_VARIABLE error_code
-                    OUTPUT_VARIABLE CRYPTO3_VERSION_DATESTAMP
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                    )
-
-else()
-    set(CRYPTO3_VERSION_DATESTAMP 1479333131)
-endif()
-
 option(BUILD_SHARED_LIBS "Build shared library" TRUE)
 option(BUILD_WITH_CCACHE "Build with ccache usage" TRUE)
 option(BUILD_TESTS "Build unit tests" TRUE)
-option(BUILD_FUZZING_TESTS "Build with fuzzing" FALSE)
-option(BUILD_DOXYGEN_DOCS "Build with configuring Doxygen documentation compiler" TRUE)
 
 set(BUILD_WITH_TARGET_ARCHITECTURE "" CACHE STRING "Target build architecture")
-set(DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_LIST_DIR}/docs" CACHE STRING "Specify doxygen output directory")
 
 include(TargetArchitecture)
 
@@ -74,14 +57,4 @@ if(BUILD_UNIT_TESTS)
     cm_find_package(Boost COMPONENTS REQUIRED unit_test_framework)
 endif()
 
-cm_find_package(Boost REQUIRED COMPONENTS container random system unit_test_framework)
-
-add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs"
-                   SUBMODULE_DEFINITION_HEADER "cm_project\\(")
-
-if(BUILD_FUZZING_TESTS)
-    add_subdirectory(fuzzer)
-endif()
-
-configure_file(${CMAKE_CURRENT_LIST_DIR}/docs/doxygen/crypto3.doxyfile.in
-               ${CMAKE_BINARY_DIR}/crypto3.doxyfile @ONLY)
+add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs/crypto")
