@@ -8,8 +8,9 @@
 
 cmake_minimum_required(VERSION 3.2)
 
-cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0028 NEW)
+cmake_policy(SET CMP0042 NEW)
+cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0057 NEW)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
@@ -19,7 +20,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
 include(CMConfig)
 include(CMSetupVersion)
 
-cm_workspace(nil)
+cm_workspace(filecoin)
 
 macro(cm_find_package NAME)
     if(NOT "${NAME}" MATCHES "^${CMAKE_WORKSPACE_NAME}_.*$" AND NOT "${NAME}" STREQUAL CM)
