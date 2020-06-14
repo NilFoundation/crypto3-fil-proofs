@@ -59,3 +59,4 @@ if(BUILD_UNIT_TESTS)
 endif()
 
 add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs/crypto")
+add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs")

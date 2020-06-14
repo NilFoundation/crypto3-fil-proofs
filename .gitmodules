@@ -13,3 +13,6 @@
 [submodule "libs/opencl"]
 	path = libs/opencl
 	url = git@github.com:nilfoundation/actor-opencl.git
+[submodule "libs/crypto/codec"]
+	path = libs/crypto/codec
+	url = git@github.com:nilfoundation/codec.git
