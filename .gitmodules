@@ -31,3 +31,6 @@
 [submodule "libs/crypto/zk"]
 	path = libs/crypto/zk
 	url = git@github.com:nilfoundation/zk.git
+[submodule "libs/crypto/fft"]
+	path = libs/crypto/fft
+	url = git@github.com:nilfoundation/fft.git
