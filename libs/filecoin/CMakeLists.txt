@@ -85,6 +85,3 @@ cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INCLUDE includ
 if(BUILD_TESTS)
     add_subdirectory(test)
 endif()
-
-configure_file(${CMAKE_CURRENT_LIST_DIR}/docs/doxygen/engine.doxyfile.in
-               ${CMAKE_BINARY_DIR}/engine.doxyfile @ONLY)
