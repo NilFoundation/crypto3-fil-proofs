@@ -1,0 +1,4 @@
+#ifndef FILECOIN_PARAM_HPP
+#define FILECOIN_PARAM_HPP
+
+#endif

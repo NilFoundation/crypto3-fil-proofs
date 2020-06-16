@@ -1,0 +1,4 @@
+#ifndef FILECOIN_FR32_READER_HPP
+#define FILECOIN_FR32_READER_HPP
+
+#endif

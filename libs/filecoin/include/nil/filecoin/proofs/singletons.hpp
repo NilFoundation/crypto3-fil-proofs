@@ -1,0 +1,4 @@
+#ifndef FILECOIN_SINGLETONS_HPP
+#define FILECOIN_SINGLETONS_HPP
+
+#endif

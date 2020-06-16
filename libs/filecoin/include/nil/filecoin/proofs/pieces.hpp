@@ -1,0 +1,4 @@
+#ifndef FILECOIN_PIECES_HPP
+#define FILECOIN_PIECES_HPP
+
+#endif
