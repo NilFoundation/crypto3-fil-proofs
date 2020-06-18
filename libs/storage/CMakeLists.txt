@@ -45,7 +45,11 @@ cm_find_package(CM)
 include(CMDeploy)
 include(CMSetupVersion)
 
-cm_project(module WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
+if(NOT Boost_FOUND)
+    cm_find_package(Boost REQUIRED COMPONENTS filesystem)
+endif()
+
+cm_project(storage WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 
 option(BUILD_DOXYGEN_DOCS "Build with configuring Doxygen documentation compiler" TRUE)
 

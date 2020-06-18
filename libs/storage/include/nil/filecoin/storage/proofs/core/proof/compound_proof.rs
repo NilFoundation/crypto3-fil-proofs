@@ -29,7 +29,7 @@ pub struct PublicParams<'a, S: ProofScheme<'a>> {
 /// CircuitComponent exists so parent components can pass private inputs to their subcomponents
 /// when calling CompoundProof::circuit directly. In general, there are no internal private inputs,
 /// and a default value will be passed. CompoundProof::circuit implementations should exhibit
-/// default behavior when passed a default ComponentPrivateinputs.
+/// default behavior when passed a default ComponentPrivateInputs.
 pub trait CircuitComponent {
     type ComponentPrivateInputs: Default + Clone;
 }

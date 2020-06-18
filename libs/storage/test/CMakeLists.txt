@@ -45,7 +45,10 @@ macro(define_storage_test test)
     endif()
 endmacro()
 
-set(TESTS_NAMES "core/module")
+set(TESTS_NAMES
+    "core/pieces"
+    "core/fr32"
+    )
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_storage_test(${TEST_NAME})
