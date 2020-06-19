@@ -1,7 +1,7 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_MOD_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_MOD_HPP
 
-#include <stdint>
+#include <cstdint>
 
 namespace filecoin {
     /// Arity for oct trees, used for comm_r_last.

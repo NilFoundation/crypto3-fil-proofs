@@ -1,4 +1,4 @@
-#include <stdint>
+#include <cstdint>
 
 namespace filecoin {
     typedef std::uint8_t porep_proof_partitions;

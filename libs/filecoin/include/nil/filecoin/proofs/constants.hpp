@@ -9,7 +9,7 @@
 #ifndef FILECOIN_CONSTANTS_HPP
 #define FILECOIN_CONSTANTS_HPP
 
-#include <stdint>
+#include <cstdint>
 
 namespace filecoin {
     constexpr static const std::uint64_t sector_size_2kb = 1 << 11;

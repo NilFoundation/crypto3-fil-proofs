@@ -12,6 +12,14 @@ namespace filecoin {
         multi_proof(const Groth16Proof<Bls12> &proof, const Groth16VerifyingKey<Bls12> &key) :
             circuit_proofs(proof), verifying_key(key) {
         }
+
+        std::size_t size() {
+            return circuit_proofs.size();
+        }
+
+        bool empty() {
+            return circuit_proofs.empty();
+        }
     };
 }    // namespace filecoin
 

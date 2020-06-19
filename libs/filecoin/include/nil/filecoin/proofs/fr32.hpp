@@ -1,7 +1,7 @@
 #ifndef FILECOIN_FR32_HPP
 #define FILECOIN_FR32_HPP
 
-#include <stdint>
+#include <cstdint>
 
 namespace filecoin {
     /*!

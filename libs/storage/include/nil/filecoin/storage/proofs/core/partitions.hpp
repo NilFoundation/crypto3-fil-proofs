@@ -1,9 +1,20 @@
-pub type Partitions = Option<usize>;
+#ifndef FILECOIN_STORAGE_PROOFS_CORE_PARTITIONS_HPP
+#define FILECOIN_STORAGE_PROOFS_CORE_PARTITIONS_HPP
 
-pub fn partition_count(partitions: Partitions) -> usize {
-    match partitions {
-        None => 1,
-        Some(0) => panic!("cannot specify zero partitions"),
-        Some(k) => k,
+#include <cstdint>
+
+namespace filecoin {
+    typedef std::int64_t partitions;
+
+    std::int64_t partition_count(partitions p) {
+        if (p == -1) {
+            return 1;
+        } else if (p == 0) {
+            return -1;
+        } else {
+            return p;
+        }
     }
-}
+}    // namespace filecoin
+
+#endif

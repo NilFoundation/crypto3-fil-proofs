@@ -3,15 +3,24 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <nil/crypto3/hash/algorithm/hash.hpp>
+
 namespace filecoin {
+    constexpr static const std::size_t VERSION = 27;
+    constexpr static const const char *PARAMETER_CACHE_ENV_VAR = "FIL_PROOFS_PARAMETER_CACHE";
+    constexpr static const const char *PARAMETER_CACHE_DIR = "/var/tmp/filecoin-proof-parameters/";
+    constexpr static const *GROTH_PARAMETER_EXT = "params";
+    constexpr static const *PARAMETER_METADATA_EXT = "meta";
+    constexpr static const *VERIFYING_KEY_EXT = "vk";
+
     namespace detail {
         std::string parameter_cache_dir_name() {
-            match env::var(PARAMETER_CACHE_ENV_VAR) {
-                Ok(dir) = > dir, Err(_) = > String::from(PARAMETER_CACHE_DIR),
-            }
+            return std::getenv(PARAMETER_CACHE_ENV_VAR);
         }
 
-        boost::filesystem::path parameter_cache_dir() {Path::new (&parameter_cache_dir_name()).to_path_buf()}
+        boost::filesystem::path parameter_cache_dir() {
+            return parameter_cache_dir_name();
+        }
 
         boost::filesystem::path parameter_cache_params_path(const std::string &parameter_set_identifier) {
             let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
@@ -50,13 +59,6 @@ namespace filecoin {
         }
     }    // namespace detail
 
-    constexpr static const std::size_t version = 27;
-    constexpr static const const char *PARAMETER_CACHE_ENV_VAR = "FIL_PROOFS_PARAMETER_CACHE";
-    constexpr static const const char *PARAMETER_CACHE_DIR = "/var/tmp/filecoin-proof-parameters/";
-    constexpr static const *GROTH_PARAMETER_EXT = "params";
-    constexpr static const *PARAMETER_METADATA_EXT = "meta";
-    constexpr static const *VERIFYING_KEY_EXT = "vk";
-
     struct parameter_set_metadata {
         virtual std::string identifier() const = 0;
         virtual std::size_t sector_size() const = 0;
@@ -74,7 +76,7 @@ namespace filecoin {
         std::string cache_prefix() {
         }
 
-        cache_entry_metadata cache_meta(const &P pub_params) {
+        cache_entry_metadata cache_meta(const P &pub_params) {
             return {pub_params.sector_size()};
         }
 

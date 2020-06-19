@@ -23,6 +23,9 @@ endif()
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
 
+                       crypto3::block
+                       crypto3::hash
+
                        ${Boost_LIBRARIES})
 
 macro(define_storage_test test)
@@ -47,6 +50,7 @@ endmacro()
 
 set(TESTS_NAMES
     "core/pieces"
+    "core/por"
     "core/fr32"
     )
 

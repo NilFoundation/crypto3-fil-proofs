@@ -1,6 +1,6 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_ERROR_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_ERROR_HPP
 
-#include <stdint>
+#include <cstdint>
 
 #endif

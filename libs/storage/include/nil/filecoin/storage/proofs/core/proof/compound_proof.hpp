@@ -1,7 +1,9 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_PROOF_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_PROOF_HPP
 
-#include <stdint>
+#include <cstdint>
+
+#include <nil/filecoin/storage/proofs/core/proof/proof.hpp>
 
 namespace filecoin {
     template<typename ProofScheme>

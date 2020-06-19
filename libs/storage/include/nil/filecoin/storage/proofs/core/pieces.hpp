@@ -1,7 +1,7 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_PIECES_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_PIECES_HPP
 
-#include <stdint>
+#include <cstdint>
 #include <cmath>
 
 #include <nil/filecoin/storage/proofs/core/fr32.hpp>
