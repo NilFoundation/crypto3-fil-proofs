@@ -30,29 +30,38 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
 
 macro(define_storage_test test)
     get_filename_component(name ${test} NAME)
-    cm_test(NAME storage_${name}_test SOURCES ${test}.cpp)
+    set(target_name storage_${name}_test)
 
-    target_include_directories(storage_${name}_test PRIVATE
+    while(TARGET ${target_name})
+        get_filename_component(TEST_DIRECTORY ${test} DIRECTORY)
+        get_filename_component(PARENT_DIR ${TEST_DIRECTORY} DIRECTORY)
+        set(target_name ${PARENT_DIR}_${target_name})
+    endwhile()
+
+    cm_test(NAME ${target_name} SOURCES ${test}.cpp)
+
+    target_include_directories(${target_name} PRIVATE
                                "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
                                "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(storage_${name}_test PROPERTIES CXX_STANDARD 14)
+    set_target_properties(${target_name} PROPERTIES CXX_STANDARD 14)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
     if(target_type STREQUAL "SHARED_LIB")
-        target_compile_definitions(storage_${name}_test PRIVATE BOOST_TEST_DYN_LINK)
+        target_compile_definitions(${target_name} PRIVATE BOOST_TEST_DYN_LINK)
     elseif(target_type STREQUAL "STATIC_LIB")
 
     endif()
 endmacro()
 
 set(TESTS_NAMES
+    "core/gadgets/por"
+
     "core/pieces"
     "core/por"
-    "core/fr32"
-    )
+    "core/fr32")
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_storage_test(${TEST_NAME})

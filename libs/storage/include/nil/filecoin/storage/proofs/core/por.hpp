@@ -90,16 +90,12 @@ namespace filecoin {
         virtual bool verify(const public_params_type &pub_params, const public_inputs_type &pub_inputs,
                             const proof_type &pr) override {
             // This was verify_proof_meta.
-            bool commitments_match = match pub_inputs.commitment {
-                Some(ref commitment) = > commitment == &proof.proof.root(),
-                None = > true,
-            };
+            bool commitments_match = pub_inputs.commitment ? pub_inputs.commitment == proof.proof.root() : true;
 
             std::size_t expected_path_length = pr.proof.expected_len(pub_params.leaves);
             bool path_length_match = expected_path_length == pr.proof.path().len();
 
             if (!commitments_match && path_length_match) {
-                dbg !(commitments_match, path_length_match, expected_path_length, proof.proof.path().len());
                 return false;
             }
             bool data_valid = pr.proof.validate_data(pr.data);

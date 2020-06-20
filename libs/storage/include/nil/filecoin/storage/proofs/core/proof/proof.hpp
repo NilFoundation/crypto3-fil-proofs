@@ -24,7 +24,8 @@ namespace filecoin {
         /// Note that verify does not have access to private inputs.
         /// Remember that proof is untrusted, and any data it provides MUST be validated as corresponding
         /// to the supplied public parameters and inputs.
-        virtual bool verify(const public_params_type &pub_params, const public_inputs_type &pub_inputs, const proof_type &pr) = 0;
+        virtual bool verify(const public_params_type &pub_params, const public_inputs_type &pub_inputs,
+                            const proof_type &pr) = 0;
     };
 
     struct no_requirements { };
