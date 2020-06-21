@@ -23,7 +23,7 @@
 
 #include <nil/filecoin/storage/proofs/porep/drg/vanilla.hpp>
 
-using namespace filecoin;
+using namespace nil::filecoin;
 
 BOOST_AUTO_TEST_SUITE(drg_vanilla_test_suite)
 

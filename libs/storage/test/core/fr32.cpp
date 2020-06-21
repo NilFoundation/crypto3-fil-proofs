@@ -23,7 +23,7 @@
 
 #include <nil/filecoin/storage/proofs/core/fr32.hpp>
 
-using namespace filecoin;
+using namespace nil::filecoin;
 
 void bytes_fr_test(const filecoin::fr32_array &bytes, bool expect_success) {
     let mut b = &bytes[..];
