@@ -1,3 +1,28 @@
+//---------------------------------------------------------------------------//
+//  MIT License
+//
+//  Copyright (c) 2020 Mikhail Komarov <nemo@nil.foundation>
+//
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
+//---------------------------------------------------------------------------//
+
 use blake2b_simd::blake2b;
 use std::mem;
 
@@ -148,76 +173,4 @@ fn feistel(right : Index, key : Index, right_mask : Index)->Index {
     };
 
     r& right_mask
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // Some sample n-values which are not powers of four and also don't coincidentally happen to
-    // encode/decode correctly.
-    const BAD_NS : &[Index] = &[ 5, 6, 8, 12, 17 ];    //
-                                                       //
-    fn encode_decode(n : Index, expect_success : bool) {
-        let mut failed = false;
-        let precomputed = precompute(n);
-        for
-            i in 0..n {
-                let p = encode(i, &[ 1, 2, 3, 4 ], precomputed);
-                let v = decode(p, &[ 1, 2, 3, 4 ], precomputed);
-                let equal = i == v;
-                let in_range = p <= n;
-                if expect_success {
-                    assert !(equal, "failed to permute (n = {})", n);
-                    assert !(in_range, "output number is too big (n = {})", n);
-                } else {
-                    if
-                        !equal || !in_range {
-                            failed = true;
-                        }
-                }
-            }
-        if
-            !expect_success {
-                assert !(failed, "expected failure (n = {})", n);
-            }
-    }
-
-#[test]
-    fn test_feistel_power_of_4() {
-        // Our implementation is guaranteed to produce a permutation when input size (number of elements)
-        // is a power of our.
-        let mut n = 1;
-
-        // Powers of 4 always succeed.
-        for
-            _ in 0..4 {
-                n *= 4;
-                encode_decode(n, true);
-            }
-
-        // Some non-power-of 4 also succeed, but here is a selection of examples values showing
-        // that this is not guaranteed.
-        for
-            i in BAD_NS.iter() {
-                encode_decode(*i, false);
-            }
-    }
-
-#[test]
-    fn test_feistel_on_arbitrary_set() {
-        for
-            n in BAD_NS.iter() {
-                let precomputed = precompute(*n as Index);
-            for
-                i in 0.. * n {
-                    let p = permute(*n, i, &[ 1, 2, 3, 4 ], precomputed);
-                    let v = invert_permute(*n, p, &[ 1, 2, 3, 4 ], precomputed);
-                    // Since every element in the set is reversibly mapped to another element also in the set,
-                    // this is indeed a permutation.
-                    assert_eq !(i, v, "failed to permute");
-                    assert !(p <= *n, "output number is too big");
-                }
-            }
-    }
 }

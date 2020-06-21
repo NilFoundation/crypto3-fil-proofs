@@ -23,7 +23,7 @@
 
 #include <nil/filecoin/storage/proofs/porep/stacked/circuit/create_label.hpp>
 
-using namespace filecoin;
+using namespace nil::filecoin;
 
 BOOST_AUTO_TEST_SUITE(drg_circuit_test_suite)
 
