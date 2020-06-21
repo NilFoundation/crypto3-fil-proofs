@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace filecoin {
+namespace nil { namespace filecoin {
     /*!
      * @brief PaddingMap represents a mapping between data and its padded equivalent.
      *
@@ -164,5 +164,5 @@ namespace filecoin {
     // Most of the code in this module is general-purpose and could move elsewhere.
     // The application-specific wrappers which implicitly use Fr32 embed the FR32_PADDING_MAP.
     const static padding_map FR32_PADDING_MAP = {254, 256};
-}    // namespace filecoin
+}}    // namespace filecoin
 #endif

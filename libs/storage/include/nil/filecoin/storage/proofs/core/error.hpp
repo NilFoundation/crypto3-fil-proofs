@@ -3,8 +3,8 @@
 
 #include <cstdint>
 
-namespace filecoin {
-
-}    // namespace filecoin
+namespace nil {
+    namespace filecoin { }
+}    // namespace nil
 
 #endif

@@ -1,21 +1,21 @@
-use std::path::PathBuf;
-
 use merkletree::store::StoreConfig;
+use std::path::PathBuf;
 use storage_proofs_core::{
+    Data,
     error::Result,
     hasher::Hasher,
     merkle::{BinaryMerkleTree, MerkleTreeTrait},
-    Data,
 };
+
+use crate::PoRep;
 
 use super::{
     params::{PersistentAux, PublicParams, Tau, TemporaryAux},
     proof::StackedDrg,
 };
-use crate::PoRep;
 
 impl<'a, 'c, Tree: 'static + MerkleTreeTrait, G: 'static + Hasher> PoRep<'a, Tree::Hasher, G>
-    for StackedDrg<'a, Tree, G>
+for StackedDrg<'a, Tree, G>
 {
     type Tau = Tau<<Tree::Hasher as Hasher>::Domain, <G as Hasher>::Domain>;
     type ProverAux = (

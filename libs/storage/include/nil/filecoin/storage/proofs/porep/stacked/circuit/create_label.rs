@@ -1,5 +1,5 @@
-use bellperson::gadgets::{boolean::Boolean, num, sha256::sha256 as sha256_circuit, uint32};
 use bellperson::{ConstraintSystem, SynthesisError};
+use bellperson::gadgets::{boolean::Boolean, num, sha256::sha256 as sha256_circuit, uint32};
 use ff::PrimeField;
 use fil_sapling_crypto::jubjub::JubjubEngine;
 use storage_proofs_core::{gadgets::multipack, gadgets::uint64, util::reverse_bit_numbering};
@@ -14,9 +14,9 @@ pub fn create_label_circuit<E, CS>(
     layer_index: uint32::UInt32,
     node: uint64::UInt64,
 ) -> Result<num::AllocatedNum<E>, SynthesisError>
-where
-    E: JubjubEngine,
-    CS: ConstraintSystem<E>,
+    where
+        E: JubjubEngine,
+        CS: ConstraintSystem<E>,
 {
     assert!(replica_id.len() <= 256, "replica id is too large");
     assert_eq!(parents.len(), TOTAL_PARENTS, "invalid sized parents");
@@ -65,26 +65,26 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use bellperson::gadgets::boolean::Boolean;
     use bellperson::ConstraintSystem;
+    use bellperson::gadgets::boolean::Boolean;
     use ff::Field;
     use paired::bls12_381::{Bls12, Fr};
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
     use storage_proofs_core::{
-        drgraph::{Graph, BASE_DEGREE},
+        drgraph::{BASE_DEGREE, Graph},
         fr32::{bytes_into_fr, fr_into_bytes},
         gadgets::TestConstraintSystem,
         hasher::Sha256Hasher,
-        util::bytes_into_boolean_vec_be,
         util::{data_at_node, NODE_SIZE},
+        util::bytes_into_boolean_vec_be,
     };
 
     use crate::stacked::vanilla::{
-        create_label_exp, StackedBucketGraph, EXP_DEGREE, TOTAL_PARENTS,
+        create_label_exp, EXP_DEGREE, StackedBucketGraph, TOTAL_PARENTS,
     };
+
+    use super::*;
 
     #[test]
     fn test_create_label() {
@@ -100,7 +100,7 @@ mod tests {
             EXP_DEGREE,
             porep_id,
         )
-        .unwrap();
+            .unwrap();
 
         let id_fr = Fr::random(rng);
         let id: Vec<u8> = fr_into_bytes(&id_fr);
@@ -161,7 +161,7 @@ mod tests {
             layer_alloc,
             node_alloc,
         )
-        .expect("key derivation function failed");
+            .expect("key derivation function failed");
 
         assert!(cs.is_satisfied(), "constraints not satisfied");
         assert_eq!(cs.num_constraints(), 532_025);

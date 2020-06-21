@@ -1,7 +1,6 @@
-use std::marker::PhantomData;
-
 use paired::bls12_381::Fr;
 use serde::{Deserialize, Serialize};
+use std::marker::PhantomData;
 use storage_proofs_core::{
     error::Result,
     hasher::Hasher,
@@ -58,7 +57,7 @@ impl<H: Hasher> Column<H> {
     }
 
     /// Create a column proof for this column.
-    pub fn into_proof<S: Store<H::Domain>, Tree: MerkleTreeTrait<Hasher = H, Store = S>>(
+    pub fn into_proof<S: Store<H::Domain>, Tree: MerkleTreeTrait<Hasher=H, Store=S>>(
         self,
         tree_c: &Tree,
     ) -> Result<ColumnProof<Tree::Proof>> {

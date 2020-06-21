@@ -5,11 +5,13 @@
 
 #include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
 
-namespace filecoin {
-    template<typename MerkleTreeType, typename Bls12>
-    struct por_circuit {
-        root<Bls12>
-    };
-}    // namespace filecoin
+namespace nil {
+    namespace filecoin {
+        template<typename MerkleTreeType, typename Bls12>
+        struct por_circuit {
+            root<Bls12>
+        };
+    }    // namespace filecoin
+}    // namespace nil
 
 #endif

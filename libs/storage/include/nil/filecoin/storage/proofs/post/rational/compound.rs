@@ -1,10 +1,8 @@
-use std::marker::PhantomData;
-
 use anyhow::ensure;
 use bellperson::{Circuit, ConstraintSystem, SynthesisError};
 use generic_array::typenum;
 use paired::bls12_381::{Bls12, Fr};
-
+use std::marker::PhantomData;
 use storage_proofs_core::{
     compound_proof::{CircuitComponent, CompoundProof},
     drgraph,
@@ -20,14 +18,14 @@ use storage_proofs_core::{
 use super::{RationalPoSt, RationalPoStCircuit};
 
 pub struct RationalPoStCompound<Tree>
-where
-    Tree: MerkleTreeTrait,
+    where
+        Tree: MerkleTreeTrait,
 {
     _t: PhantomData<Tree>,
 }
 
 impl<C: Circuit<Bls12>, P: ParameterSetMetadata, Tree: MerkleTreeTrait> CacheableParameters<C, P>
-    for RationalPoStCompound<Tree>
+for RationalPoStCompound<Tree>
 {
     fn cache_prefix() -> String {
         format!("proof-of-spacetime-rational-{}", Tree::display())
@@ -35,10 +33,10 @@ impl<C: Circuit<Bls12>, P: ParameterSetMetadata, Tree: MerkleTreeTrait> Cacheabl
 }
 
 impl<'a, Tree: 'static + MerkleTreeTrait>
-    CompoundProof<'a, RationalPoSt<'a, Tree>, RationalPoStCircuit<Tree>>
-    for RationalPoStCompound<Tree>
-where
-    Tree: 'static + MerkleTreeTrait,
+CompoundProof<'a, RationalPoSt<'a, Tree>, RationalPoStCircuit<Tree>>
+for RationalPoStCompound<Tree>
+    where
+        Tree: 'static + MerkleTreeTrait,
 {
     fn generate_public_inputs(
         pub_in: &<RationalPoSt<'a, Tree> as ProofScheme<'a>>::PublicInputs,
@@ -169,28 +167,27 @@ impl<'a, Tree: 'static + MerkleTreeTrait> RationalPoStCircuit<Tree> {
             paths,
             _t: PhantomData,
         }
-        .synthesize(cs)
+            .synthesize(cs)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use std::collections::BTreeMap;
-
     use rand::{Rng, SeedableRng};
     use rand_xorshift::XorShiftRng;
+    use std::collections::BTreeMap;
     use storage_proofs_core::{
         compound_proof,
         gadgets::TestConstraintSystem,
-        hasher::{Domain, HashFunction, Hasher, PedersenHasher, PoseidonHasher},
-        merkle::{generate_tree, get_base_tree_count, BinaryMerkleTree},
+        hasher::{Domain, Hasher, HashFunction, PedersenHasher, PoseidonHasher},
+        merkle::{BinaryMerkleTree, generate_tree, get_base_tree_count},
         proof::NoRequirements,
         sector::OrderedSectorSet,
     };
 
     use crate::rational::{self, derive_challenges};
+
+    use super::*;
 
     #[ignore] // Slow test – run only when compiled for release.
     #[test]

@@ -1,5 +1,5 @@
 #include <cstdint>
 
-namespace filecoin {
+namespace nil { namespace filecoin {
     typedef std::uint64_t sector_class;
 }

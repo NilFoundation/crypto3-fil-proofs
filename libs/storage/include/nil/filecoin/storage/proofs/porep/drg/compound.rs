@@ -1,10 +1,8 @@
-use std::marker::PhantomData;
-
-use anyhow::{ensure, Context};
+use anyhow::{Context, ensure};
 use bellperson::Circuit;
 use generic_array::typenum;
 use paired::bls12_381::{Bls12, Fr};
-
+use std::marker::PhantomData;
 use storage_proofs_core::{
     compound_proof::{CircuitComponent, CompoundProof},
     drgraph::Graph,
@@ -44,10 +42,10 @@ use super::DrgPoRep;
 ///
 
 pub struct DrgPoRepCompound<H, G>
-where
-    H: Hasher,
-    G::Key: AsRef<H::Domain>,
-    G: Graph<H>,
+    where
+        H: Hasher,
+        G::Key: AsRef<H::Domain>,
+        G: Graph<H>,
 {
     // Sad phantom is sad
     _h: PhantomData<H>,
@@ -55,9 +53,9 @@ where
 }
 
 impl<C: Circuit<Bls12>, H: Hasher, G: Graph<H>, P: ParameterSetMetadata> CacheableParameters<C, P>
-    for DrgPoRepCompound<H, G>
-where
-    G::Key: AsRef<H::Domain>,
+for DrgPoRepCompound<H, G>
+    where
+        G::Key: AsRef<H::Domain>,
 {
     fn cache_prefix() -> String {
         format!("drg-proof-of-replication-{}", H::name())
@@ -65,11 +63,11 @@ where
 }
 
 impl<'a, H, G> CompoundProof<'a, DrgPoRep<'a, H, G>, DrgPoRepCircuit<'a, H>>
-    for DrgPoRepCompound<H, G>
-where
-    H: 'static + Hasher,
-    G::Key: AsRef<<H as Hasher>::Domain>,
-    G: 'a + Graph<H> + ParameterSetMetadata + Sync + Send,
+for DrgPoRepCompound<H, G>
+    where
+        H: 'static + Hasher,
+        G::Key: AsRef<<H as Hasher>::Domain>,
+        G: 'a + Graph<H> + ParameterSetMetadata + Sync + Send,
 {
     fn generate_public_inputs(
         pub_in: &<DrgPoRep<'a, H, G> as ProofScheme<'a>>::PublicInputs,
@@ -279,8 +277,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use ff::Field;
     use merkletree::store::StoreConfig;
     use pretty_assertions::assert_eq;
@@ -289,7 +285,7 @@ mod tests {
     use storage_proofs_core::{
         cache_key::CacheKey,
         compound_proof,
-        drgraph::{BucketGraph, BASE_DEGREE},
+        drgraph::{BASE_DEGREE, BucketGraph},
         fr32::fr_into_bytes,
         gadgets::{MetricCS, TestConstraintSystem},
         hasher::{Hasher, PedersenHasher, PoseidonHasher},
@@ -299,8 +295,10 @@ mod tests {
         util::default_rows_to_discard,
     };
 
-    use crate::stacked::BINARY_ARITY;
     use crate::{drg, PoRep};
+    use crate::stacked::BINARY_ARITY;
+
+    use super::*;
 
     #[test]
     #[ignore] // Slow test – run only when compiled for release.
@@ -371,7 +369,7 @@ mod tests {
             config,
             replica_path.clone(),
         )
-        .expect("failed to replicate");
+            .expect("failed to replicate");
 
         let public_inputs = drg::PublicInputs::<<Tree::Hasher as Hasher>::Domain> {
             replica_id: Some(replica_id.into()),
@@ -410,7 +408,7 @@ mod tests {
                 &public_inputs,
                 &private_inputs,
             )
-            .unwrap();
+                .unwrap();
 
             let mut cs = TestConstraintSystem::new();
 
@@ -442,7 +440,7 @@ mod tests {
                 Some(rng),
                 &public_params.vanilla_params,
             )
-            .expect("failed to get groth params");
+                .expect("failed to get groth params");
 
             let proof = DrgPoRepCompound::<Tree::Hasher, _>::prove(
                 &public_params,
@@ -450,7 +448,7 @@ mod tests {
                 &private_inputs,
                 &gparams,
             )
-            .expect("failed while proving");
+                .expect("failed while proving");
 
             let verified = DrgPoRepCompound::<Tree::Hasher, _>::verify(
                 &public_params,
@@ -458,7 +456,7 @@ mod tests {
                 &proof,
                 &NoRequirements,
             )
-            .expect("failed while verifying");
+                .expect("failed while verifying");
 
             assert!(verified);
         }

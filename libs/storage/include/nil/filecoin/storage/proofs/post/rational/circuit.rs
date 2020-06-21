@@ -1,16 +1,14 @@
-use std::marker::PhantomData;
-
-use bellperson::gadgets::num;
 use bellperson::{Circuit, ConstraintSystem, SynthesisError};
+use bellperson::gadgets::num;
 use paired::bls12_381::{Bls12, Fr};
-
+use std::marker::PhantomData;
 use storage_proofs_core::{
     compound_proof::CircuitComponent,
     error::Result,
     gadgets::constraint,
     gadgets::por::PoRCircuit,
     gadgets::variables::Root,
-    hasher::{HashFunction, Hasher},
+    hasher::{Hasher, HashFunction},
     merkle::MerkleTreeTrait,
 };
 
@@ -107,26 +105,24 @@ impl<'a, Tree: 'static + MerkleTreeTrait> Circuit<Bls12> for RationalPoStCircuit
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use std::collections::BTreeMap;
-
     use ff::Field;
     use paired::bls12_381::{Bls12, Fr};
     use rand::{Rng, SeedableRng};
     use rand_xorshift::XorShiftRng;
-
+    use std::collections::BTreeMap;
     use storage_proofs_core::{
         compound_proof::CompoundProof,
         gadgets::TestConstraintSystem,
-        hasher::{Domain, HashFunction, Hasher, PedersenHasher, PoseidonHasher},
-        merkle::{generate_tree, get_base_tree_count, BinaryMerkleTree},
+        hasher::{Domain, Hasher, HashFunction, PedersenHasher, PoseidonHasher},
+        merkle::{BinaryMerkleTree, generate_tree, get_base_tree_count},
         proof::ProofScheme,
         sector::OrderedSectorSet,
         util::NODE_SIZE,
     };
 
     use crate::rational::{self, derive_challenges, RationalPoSt, RationalPoStCompound};
+
+    use super::*;
 
     #[test]
     fn test_rational_post_circuit_pedersen() {
@@ -256,7 +252,7 @@ mod tests {
         let expected_inputs = cs.get_inputs();
 
         for ((input, label), generated_input) in
-            expected_inputs.iter().skip(1).zip(generated_inputs.iter())
+        expected_inputs.iter().skip(1).zip(generated_inputs.iter())
         {
             assert_eq!(input, generated_input, "{}", label);
         }

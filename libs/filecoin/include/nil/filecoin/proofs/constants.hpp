@@ -11,7 +11,7 @@
 
 #include <cstdint>
 
-namespace filecoin {
+namespace nil { namespace filecoin {
     constexpr static const std::uint64_t sector_size_2kb = 1 << 11;
     constexpr static const std::uint64_t sector_size_4kb = 1 << 12;
     constexpr static const std::uint64_t sector_size_16kb = 1 << 14;
@@ -27,6 +27,6 @@ namespace filecoin {
     constexpr static const std::size_t winning_post_sector_count = 1;
 
     constexpr static const std::size_t window_post_challenge_count = 10;
-}    // namespace filecoin
+}}    // namespace filecoin
 
 #endif    // FILECOIN_CONSTANTS_HPP

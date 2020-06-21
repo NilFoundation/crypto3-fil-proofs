@@ -1,24 +1,22 @@
-use std::convert::TryInto;
-use std::marker::PhantomData;
-
-#[cfg(target_arch = "x86")]
-use std::arch::x86::*;
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::*;
-
 use anyhow::ensure;
 use log::info;
 use once_cell::sync::OnceCell;
 use rayon::prelude::*;
 use sha2raw::Sha256;
+#[cfg(target_arch = "x86")]
+use std::arch::x86::*;
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+use std::convert::TryInto;
+use std::marker::PhantomData;
 use storage_proofs_core::{
     crypto::{
         derive_porep_domain_seed,
         feistel::{self, FeistelPrecomputed},
         FEISTEL_DST,
     },
-    drgraph::BASE_DEGREE,
     drgraph::{BucketGraph, Graph},
+    drgraph::BASE_DEGREE,
     error::Result,
     hasher::Hasher,
     parameter_cache::ParameterSetMetadata,
@@ -36,9 +34,9 @@ fn parent_cache<H, G>(
     cache_entries: u32,
     graph: &StackedGraph<H, G>,
 ) -> Result<&'static ParentCache>
-where
-    H: Hasher,
-    G: Graph<H> + ParameterSetMetadata + Send + Sync,
+    where
+        H: Hasher,
+        G: Graph<H> + ParameterSetMetadata + Send + Sync,
 {
     static INSTANCE_32_GIB: OnceCell<ParentCache> = OnceCell::new();
     static INSTANCE_64_GIB: OnceCell<ParentCache> = OnceCell::new();
@@ -70,9 +68,9 @@ struct ParentCache {
 
 impl ParentCache {
     pub fn new<H, G>(cache_entries: u32, graph: &StackedGraph<H, G>) -> Result<Self>
-    where
-        H: Hasher,
-        G: Graph<H> + ParameterSetMetadata + Send + Sync,
+        where
+            H: Hasher,
+            G: Graph<H> + ParameterSetMetadata + Send + Sync,
     {
         info!("filling parents cache");
         let mut cache = vec![0u32; DEGREE * cache_entries as usize];
@@ -112,9 +110,9 @@ impl ParentCache {
 
 #[derive(Clone)]
 pub struct StackedGraph<H, G>
-where
-    H: Hasher,
-    G: Graph<H> + 'static,
+    where
+        H: Hasher,
+        G: Graph<H> + 'static,
 {
     expansion_degree: usize,
     base_graph: G,
@@ -126,9 +124,9 @@ where
 }
 
 impl<H, G> std::fmt::Debug for StackedGraph<H, G>
-where
-    H: Hasher,
-    G: Graph<H> + 'static,
+    where
+        H: Hasher,
+        G: Graph<H> + 'static,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("StackedGraph")
@@ -163,9 +161,9 @@ fn read_node<'a>(i: usize, parents: &[u32], data: &'a [u8]) -> &'a [u8] {
 }
 
 impl<H, G> StackedGraph<H, G>
-where
-    H: Hasher,
-    G: Graph<H> + ParameterSetMetadata + Sync + Send,
+    where
+        H: Hasher,
+        G: Graph<H> + ParameterSetMetadata + Sync + Send,
 {
     pub fn new(
         base_graph: Option<G>,
@@ -327,9 +325,9 @@ where
 }
 
 impl<H, G> ParameterSetMetadata for StackedGraph<H, G>
-where
-    H: Hasher,
-    G: Graph<H> + ParameterSetMetadata,
+    where
+        H: Hasher,
+        G: Graph<H> + ParameterSetMetadata,
 {
     fn identifier(&self) -> String {
         self.id.clone()
@@ -341,9 +339,9 @@ where
 }
 
 impl<H, G> Graph<H> for StackedGraph<H, G>
-where
-    H: Hasher,
-    G: Graph<H> + ParameterSetMetadata + Sync + Send,
+    where
+        H: Hasher,
+        G: Graph<H> + ParameterSetMetadata + Sync + Send,
 {
     type Key = Vec<u8>;
 
@@ -400,9 +398,9 @@ where
 }
 
 impl<'a, H, G> StackedGraph<H, G>
-where
-    H: Hasher,
-    G: Graph<H> + ParameterSetMetadata + Sync + Send,
+    where
+        H: Hasher,
+        G: Graph<H> + ParameterSetMetadata + Sync + Send,
 {
     /// Assign one parent to `node` using a Chung's construction with a reversible
     /// permutation function from a Feistel cipher (controlled by `invert_permutation`).
@@ -498,9 +496,9 @@ where
 }
 
 impl<H, G> PartialEq for StackedGraph<H, G>
-where
-    H: Hasher,
-    G: Graph<H>,
+    where
+        H: Hasher,
+        G: Graph<H>,
 {
     fn eq(&self, other: &StackedGraph<H, G>) -> bool {
         self.base_graph == other.base_graph && self.expansion_degree == other.expansion_degree
@@ -508,17 +506,16 @@ where
 }
 
 impl<H, G> Eq for StackedGraph<H, G>
-where
-    H: Hasher,
-    G: Graph<H>,
-{
-}
+    where
+        H: Hasher,
+        G: Graph<H>,
+{}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use std::collections::HashSet;
+
+    use super::*;
 
     // Test that 3 (or more) rounds of the Feistel cipher can be used
     // as a pseudorandom permutation, that is, each input will be mapped

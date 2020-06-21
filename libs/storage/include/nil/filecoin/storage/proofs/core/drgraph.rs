@@ -1,11 +1,10 @@
-use std::cmp::{max, min};
-use std::marker::PhantomData;
-
 use anyhow::ensure;
 use generic_array::typenum;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use sha2::{Digest, Sha256};
+use std::cmp::{max, min};
+use std::marker::PhantomData;
 
 use crate::crypto::{derive_porep_domain_seed, DRSAMPLE_DST};
 use crate::error::*;
@@ -232,8 +231,6 @@ impl<H: Hasher> Graph<H> for BucketGraph<H> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use memmap::MmapMut;
     use memmap::MmapOptions;
     use merkletree::store::StoreConfig;
@@ -244,6 +241,8 @@ mod tests {
     use crate::merkle::{
         create_base_merkle_tree, DiskStore, MerkleProofTrait, MerkleTreeTrait, MerkleTreeWrapper,
     };
+
+    use super::*;
 
     // Create and return an object of MmapMut backed by in-memory copy of data.
     pub fn mmap_from(data: &[u8]) -> MmapMut {
@@ -318,7 +317,7 @@ mod tests {
         let tree = create_base_merkle_tree::<
             MerkleTreeWrapper<H, DiskStore<H::Domain>, U, typenum::U0, typenum::U0>,
         >(config, g.size(), mmapped)
-        .unwrap();
+            .unwrap();
         let proof = tree.gen_proof(2).unwrap();
 
         assert!(proof.verify());

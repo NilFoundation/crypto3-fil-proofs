@@ -1,10 +1,11 @@
-use bellperson::gadgets::num;
 use bellperson::{ConstraintSystem, SynthesisError};
+use bellperson::gadgets::num;
 use paired::bls12_381::{Bls12, Fr};
 use storage_proofs_core::{hasher::Hasher, merkle::MerkleTreeTrait};
 
-use super::hash::hash_single_column;
 use crate::stacked::{Column as VanillaColumn, PublicParams};
+
+use super::hash::hash_single_column;
 
 #[derive(Debug, Clone)]
 pub struct Column {

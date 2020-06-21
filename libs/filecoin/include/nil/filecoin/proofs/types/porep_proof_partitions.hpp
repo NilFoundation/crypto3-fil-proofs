@@ -1,5 +1,5 @@
 #include <cstdint>
 
-namespace filecoin {
+namespace nil { namespace filecoin {
     typedef std::uint8_t porep_proof_partitions;
 }

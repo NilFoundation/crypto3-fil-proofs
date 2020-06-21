@@ -1,9 +1,7 @@
-use std::marker::PhantomData;
-
 use anyhow::{anyhow, ensure};
 use bellperson::Circuit;
 use paired::bls12_381::{Bls12, Fr};
-
+use std::marker::PhantomData;
 use storage_proofs_core::{
     compound_proof::{CircuitComponent, CompoundProof},
     error::Result,
@@ -15,18 +13,19 @@ use storage_proofs_core::{
     util::NODE_SIZE,
 };
 
-use super::circuit::Sector;
 use crate::fallback::{self, FallbackPoSt, FallbackPoStCircuit};
 
+use super::circuit::Sector;
+
 pub struct FallbackPoStCompound<Tree>
-where
-    Tree: MerkleTreeTrait,
+    where
+        Tree: MerkleTreeTrait,
 {
     _t: PhantomData<Tree>,
 }
 
 impl<C: Circuit<Bls12>, P: ParameterSetMetadata, Tree: MerkleTreeTrait> CacheableParameters<C, P>
-    for FallbackPoStCompound<Tree>
+for FallbackPoStCompound<Tree>
 {
     fn cache_prefix() -> String {
         format!("proof-of-spacetime-fallback-{}", Tree::display())
@@ -34,8 +33,8 @@ impl<C: Circuit<Bls12>, P: ParameterSetMetadata, Tree: MerkleTreeTrait> Cacheabl
 }
 
 impl<'a, Tree: 'static + MerkleTreeTrait>
-    CompoundProof<'a, FallbackPoSt<'a, Tree>, FallbackPoStCircuit<Tree>>
-    for FallbackPoStCompound<Tree>
+CompoundProof<'a, FallbackPoSt<'a, Tree>, FallbackPoStCircuit<Tree>>
+for FallbackPoStCompound<Tree>
 {
     fn generate_public_inputs(
         pub_inputs: &<FallbackPoSt<'a, Tree> as ProofScheme<'a>>::PublicInputs,
@@ -159,8 +158,6 @@ impl<'a, Tree: 'static + MerkleTreeTrait>
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use generic_array::typenum::{U0, U2, U4, U8};
     use pretty_assertions::assert_eq;
     use rand::SeedableRng;
@@ -168,13 +165,15 @@ mod tests {
     use storage_proofs_core::{
         compound_proof,
         gadgets::{MetricCS, TestConstraintSystem},
-        hasher::{Domain, HashFunction, Hasher, PedersenHasher, PoseidonHasher},
+        hasher::{Domain, Hasher, HashFunction, PedersenHasher, PoseidonHasher},
         merkle::{generate_tree, get_base_tree_count, LCTree, MerkleTreeTrait},
     };
 
     use crate::fallback::{
         self, ChallengeRequirements, PrivateInputs, PrivateSector, PublicInputs, PublicSector,
     };
+
+    use super::*;
 
     #[ignore]
     #[test]
@@ -345,7 +344,7 @@ mod tests {
             &priv_inputs,
             &blank_groth_params,
         )
-        .expect("failed while proving");
+            .expect("failed while proving");
 
         let verified = FallbackPoStCompound::verify(
             &pub_params,
@@ -355,7 +354,7 @@ mod tests {
                 minimum_challenge_count: total_sector_count * challenge_count,
             },
         )
-        .expect("failed while verifying");
+            .expect("failed while verifying");
 
         assert!(verified);
     }

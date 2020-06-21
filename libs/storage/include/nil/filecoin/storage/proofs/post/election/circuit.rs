@@ -1,20 +1,18 @@
-use std::marker::PhantomData;
-
-use bellperson::gadgets::num;
 use bellperson::{Circuit, ConstraintSystem, SynthesisError};
+use bellperson::gadgets::num;
 use ff::Field;
 use generic_array::typenum;
 use paired::bls12_381::{Bls12, Fr};
-use typenum::marker_traits::Unsigned;
-
+use std::marker::PhantomData;
 use storage_proofs_core::{
     compound_proof::CircuitComponent,
     gadgets::constraint,
     gadgets::por::PoRCircuit,
     gadgets::variables::Root,
-    hasher::{HashFunction, Hasher, PoseidonFunction, PoseidonMDArity},
+    hasher::{Hasher, HashFunction, PoseidonFunction, PoseidonMDArity},
     merkle::MerkleTreeTrait,
 };
+use typenum::marker_traits::Unsigned;
 
 /// This is the `ElectionPoSt` circuit.
 pub struct ElectionPoStCircuit<Tree: MerkleTreeTrait> {
@@ -174,18 +172,15 @@ impl<'a, Tree: 'static + MerkleTreeTrait> Circuit<Bls12> for ElectionPoStCircuit
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use std::collections::BTreeMap;
-
     use ff::Field;
     use paired::bls12_381::{Bls12, Fr};
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
+    use std::collections::BTreeMap;
     use storage_proofs_core::{
         compound_proof::CompoundProof,
         gadgets::TestConstraintSystem,
-        hasher::{Domain, HashFunction, Hasher, PedersenHasher, PoseidonHasher},
+        hasher::{Domain, Hasher, HashFunction, PedersenHasher, PoseidonHasher},
         merkle::{generate_tree, get_base_tree_count, LCTree, MerkleTreeTrait},
         proof::ProofScheme,
         sector::SectorId,
@@ -194,6 +189,8 @@ mod tests {
     use typenum::{U0, U8};
 
     use crate::election::{self, ElectionPoSt, ElectionPoStCompound};
+
+    use super::*;
 
     #[test]
     fn test_election_post_circuit_pedersen() {
@@ -241,7 +238,7 @@ mod tests {
             prover_id,
             randomness,
         )
-        .unwrap();
+            .unwrap();
 
         let candidate = &candidates[0];
         let tree = trees.remove(&candidate.sector_id).unwrap();
@@ -324,7 +321,7 @@ mod tests {
         let expected_inputs = cs.get_inputs();
 
         for ((input, label), generated_input) in
-            expected_inputs.iter().skip(1).zip(generated_inputs.iter())
+        expected_inputs.iter().skip(1).zip(generated_inputs.iter())
         {
             assert_eq!(input, generated_input, "{}", label);
         }

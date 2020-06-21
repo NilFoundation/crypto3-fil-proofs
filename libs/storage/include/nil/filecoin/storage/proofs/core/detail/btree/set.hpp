@@ -23,7 +23,7 @@
 #ifndef BTREE_SET_H__
 #define BTREE_SET_H__
 
-#include <nil/filecoin/storage/proofs/core/detail/btree.hpp>
+#include <nil/filecoin/storage/proofs/core/detail/btree/btree.hpp>
 
 namespace btree {
 

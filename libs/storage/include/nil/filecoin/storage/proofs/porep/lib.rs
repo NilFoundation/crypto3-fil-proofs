@@ -1,14 +1,13 @@
+use merkletree::store::StoreConfig;
+use std::path::PathBuf;
+use storage_proofs_core::{
+    Data, error::Result, hasher::Hasher, merkle::BinaryMerkleTree, proof::ProofScheme,
+};
+
 pub mod drg;
 pub mod stacked;
 
 mod encode;
-
-use std::path::PathBuf;
-
-use merkletree::store::StoreConfig;
-use storage_proofs_core::{
-    error::Result, hasher::Hasher, merkle::BinaryMerkleTree, proof::ProofScheme, Data,
-};
 
 pub trait PoRep<'a, H: Hasher, G: Hasher>: ProofScheme<'a> {
     type Tau;

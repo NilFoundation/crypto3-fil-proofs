@@ -1,14 +1,13 @@
-use bellperson::gadgets::num;
 use bellperson::{Circuit, ConstraintSystem, SynthesisError};
+use bellperson::gadgets::num;
 use paired::bls12_381::{Bls12, Fr};
-
 use storage_proofs_core::{
     compound_proof::CircuitComponent,
     error::Result,
     gadgets::constraint,
     gadgets::por::{AuthPath, PoRCircuit},
     gadgets::variables::Root,
-    hasher::{HashFunction, Hasher},
+    hasher::{Hasher, HashFunction},
     merkle::MerkleTreeTrait,
     por,
     util::NODE_SIZE,
@@ -168,8 +167,6 @@ impl<Tree: 'static + MerkleTreeTrait> Circuit<Bls12> for FallbackPoStCircuit<Tre
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use ff::Field;
     use generic_array::typenum::{U0, U2, U4, U8};
     use paired::bls12_381::{Bls12, Fr};
@@ -178,7 +175,7 @@ mod tests {
     use storage_proofs_core::{
         compound_proof::CompoundProof,
         gadgets::TestConstraintSystem,
-        hasher::{Domain, HashFunction, Hasher, PedersenHasher, PoseidonHasher},
+        hasher::{Domain, Hasher, HashFunction, PedersenHasher, PoseidonHasher},
         merkle::{generate_tree, get_base_tree_count, LCTree, MerkleTreeTrait, OctMerkleTree},
         proof::ProofScheme,
         util::NODE_SIZE,
@@ -188,6 +185,8 @@ mod tests {
         self, FallbackPoSt, FallbackPoStCompound, PrivateInputs, PrivateSector, PublicInputs,
         PublicSector,
     };
+
+    use super::*;
 
     #[test]
     fn fallback_post_pedersen_single_partition_matching_base_8() {
@@ -315,7 +314,7 @@ mod tests {
             &priv_inputs,
             partitions,
         )
-        .expect("proving failed");
+            .expect("proving failed");
         assert_eq!(proofs.len(), partitions);
 
         let is_valid =
@@ -376,11 +375,11 @@ mod tests {
                 &pub_params,
                 Some(j),
             )
-            .unwrap();
+                .unwrap();
             let expected_inputs = cs.get_inputs();
 
             for ((input, label), generated_input) in
-                expected_inputs.iter().skip(1).zip(generated_inputs.iter())
+            expected_inputs.iter().skip(1).zip(generated_inputs.iter())
             {
                 assert_eq!(input, generated_input, "{}", label);
             }

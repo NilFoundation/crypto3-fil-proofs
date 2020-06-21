@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use anyhow::ensure;
 use byteorder::{ByteOrder, LittleEndian};
 use generic_array::typenum::Unsigned;
@@ -8,10 +6,10 @@ use paired::bls12_381::Fr;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-
+use std::marker::PhantomData;
 use storage_proofs_core::{
     error::Result,
-    hasher::{Domain, HashFunction, Hasher},
+    hasher::{Domain, Hasher, HashFunction},
     merkle::{MerkleProof, MerkleProofTrait, MerkleTreeTrait, MerkleTreeWrapper},
     parameter_cache::ParameterSetMetadata,
     proof::ProofScheme,
@@ -96,8 +94,8 @@ pub struct PrivateInputs<'a, Tree: MerkleTreeTrait> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Proof<P: MerkleProofTrait> {
     #[serde(bound(
-        serialize = "SectorProof<P>: Serialize",
-        deserialize = "SectorProof<P>: Deserialize<'de>"
+    serialize = "SectorProof<P>: Serialize",
+    deserialize = "SectorProof<P>: Deserialize<'de>"
     ))]
     pub sectors: Vec<SectorProof<P>>,
 }
@@ -105,11 +103,11 @@ pub struct Proof<P: MerkleProofTrait> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SectorProof<Proof: MerkleProofTrait> {
     #[serde(bound(
-        serialize = "MerkleProof<Proof::Hasher, Proof::Arity, Proof::SubTreeArity, Proof::TopTreeArity>: Serialize",
-        deserialize = "MerkleProof<Proof::Hasher, Proof::Arity, Proof::SubTreeArity, Proof::TopTreeArity>: serde::de::DeserializeOwned"
+    serialize = "MerkleProof<Proof::Hasher, Proof::Arity, Proof::SubTreeArity, Proof::TopTreeArity>: Serialize",
+    deserialize = "MerkleProof<Proof::Hasher, Proof::Arity, Proof::SubTreeArity, Proof::TopTreeArity>: serde::de::DeserializeOwned"
     ))]
     inclusion_proofs:
-        Vec<MerkleProof<Proof::Hasher, Proof::Arity, Proof::SubTreeArity, Proof::TopTreeArity>>,
+    Vec<MerkleProof<Proof::Hasher, Proof::Arity, Proof::SubTreeArity, Proof::TopTreeArity>>,
     pub comm_c: <Proof::Hasher as Hasher>::Domain,
     pub comm_r_last: <Proof::Hasher as Hasher>::Domain,
 }
@@ -151,8 +149,8 @@ impl<P: MerkleProofTrait> SectorProof<P> {
 
 #[derive(Debug, Clone)]
 pub struct FallbackPoSt<'a, Tree>
-where
-    Tree: 'a + MerkleTreeTrait,
+    where
+        Tree: 'a + MerkleTreeTrait,
 {
     _t: PhantomData<&'a Tree>,
 }
@@ -464,16 +462,15 @@ impl<'a, Tree: 'a + MerkleTreeTrait> ProofScheme<'a> for FallbackPoSt<'a, Tree> 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use generic_array::typenum::{U0, U2, U4, U8};
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
-
     use storage_proofs_core::{
         hasher::{PedersenHasher, PoseidonHasher},
         merkle::{generate_tree, get_base_tree_count, LCTree, MerkleTreeTrait},
     };
+
+    use super::*;
 
     fn test_fallback_post<Tree: MerkleTreeTrait>(
         total_sector_count: usize,
@@ -543,7 +540,7 @@ mod tests {
             &priv_inputs,
             partitions,
         )
-        .expect("proving failed");
+            .expect("proving failed");
 
         let is_valid =
             FallbackPoSt::<Tree>::verify_all_partitions(&pub_params, &pub_inputs, &proof)
@@ -616,6 +613,7 @@ mod tests {
     fn fallback_post_pedersen_single_partition_matching_top_8_4_2() {
         test_fallback_post::<LCTree<PedersenHasher, U8, U4, U2>>(5, 5, 1);
     }
+
     #[test]
     fn fallback_post_pedersen_single_partition_matching_top_8_8_2() {
         test_fallback_post::<LCTree<PedersenHasher, U8, U8, U2>>(5, 5, 1);

@@ -61,7 +61,11 @@ set(TESTS_NAMES
 
     "core/pieces"
     "core/por"
-    "core/fr32")
+    "core/fr32"
+
+    "porep/drg/circuit"
+    "porep/drg/compound"
+    "porep/drg/vanilla")
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_storage_test(${TEST_NAME})

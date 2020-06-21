@@ -22,6 +22,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <nil/filecoin/storage/proofs/core/por.hpp>
+#include <nil/filecoin/storage/proofs/core/drgraph.hpp>
 
 BOOST_AUTO_TEST_SUITE(por_test_suite)
 

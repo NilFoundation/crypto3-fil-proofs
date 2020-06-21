@@ -1,9 +1,9 @@
-use sha2::{Digest, Sha256};
+use sha2:: {Digest, Sha256};
 pub mod aes;
 pub mod feistel;
 pub mod pedersen;
 pub mod sloth;
-pub mod xor;
+pub mod xor ;
 
 pub struct DomainSeparationTag(&'static str);
 
@@ -14,9 +14,5 @@ pub fn derive_porep_domain_seed(
     domain_separation_tag: DomainSeparationTag,
     porep_id: [u8; 32],
 ) -> [u8; 32] {
-    Sha256::new()
-        .chain(domain_separation_tag.0)
-        .chain(porep_id)
-        .result()
-        .into()
+    Sha256::new ().chain(domain_separation_tag .0).chain(porep_id).result().into()
 }

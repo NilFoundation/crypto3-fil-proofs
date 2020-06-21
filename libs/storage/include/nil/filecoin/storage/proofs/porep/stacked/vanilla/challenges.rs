@@ -2,7 +2,6 @@ use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-
 use storage_proofs_core::hasher::Domain;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -78,11 +77,11 @@ pub struct ChallengeRequirements {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
-    use rand::{thread_rng, Rng};
+    use rand::{Rng, thread_rng};
     use std::collections::HashMap;
     use storage_proofs_core::hasher::pedersen::PedersenDomain;
+
+    use super::*;
 
     #[test]
     fn challenge_derivation() {

@@ -1,5 +1,5 @@
-use bellperson::gadgets::num;
 use bellperson::{ConstraintSystem, SynthesisError};
+use bellperson::gadgets::num;
 use generic_array::typenum;
 use neptune::circuit::poseidon_hash;
 use paired::bls12_381::Bls12;
@@ -9,8 +9,8 @@ pub fn hash_single_column<CS>(
     cs: CS,
     column: &[num::AllocatedNum<Bls12>],
 ) -> Result<num::AllocatedNum<Bls12>, SynthesisError>
-where
-    CS: ConstraintSystem<Bls12>,
+    where
+        CS: ConstraintSystem<Bls12>,
 {
     match column.len() {
         2 => poseidon_hash::<CS, Bls12, typenum::U2>(
@@ -29,17 +29,17 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use bellperson::ConstraintSystem;
     use ff::Field;
     use paired::bls12_381::{Bls12, Fr};
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
     use storage_proofs_core::gadgets::TestConstraintSystem;
-    use storage_proofs_core::hasher::{HashFunction, Hasher, PedersenHasher};
+    use storage_proofs_core::hasher::{Hasher, HashFunction, PedersenHasher};
 
     use crate::stacked::vanilla::hash::hash_single_column as vanilla_hash_single_column;
+
+    use super::*;
 
     #[test]
     fn test_hash2_circuit() {
@@ -66,7 +66,7 @@ mod tests {
                 &a_num,
                 &b_num,
             )
-            .expect("hash2 function failed");
+                .expect("hash2 function failed");
 
             assert!(cs.is_satisfied(), "constraints not satisfied");
             assert_eq!(cs.num_constraints(), 1_371);

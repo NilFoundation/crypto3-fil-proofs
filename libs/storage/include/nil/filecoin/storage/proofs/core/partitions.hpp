@@ -3,18 +3,20 @@
 
 #include <cstdint>
 
-namespace filecoin {
-    typedef std::int64_t partitions;
+namespace nil {
+    namespace filecoin {
+        typedef std::int64_t partitions;
 
-    std::int64_t partition_count(partitions p) {
-        if (p == -1) {
-            return 1;
-        } else if (p == 0) {
-            return -1;
-        } else {
-            return p;
+        std::int64_t partition_count(partitions p) {
+            if (p == -1) {
+                return 1;
+            } else if (p == 0) {
+                return -1;
+            } else {
+                return p;
+            }
         }
-    }
-}    // namespace filecoin
+    }    // namespace filecoin
+}    // namespace nil
 
 #endif

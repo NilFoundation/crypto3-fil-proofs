@@ -1,8 +1,4 @@
-use std::collections::BTreeMap;
-use std::fmt;
-use std::marker::PhantomData;
-
-use anyhow::{bail, ensure, Context};
+use anyhow::{bail, Context, ensure};
 use byteorder::{ByteOrder, LittleEndian};
 use generic_array::typenum;
 use log::trace;
@@ -10,12 +6,13 @@ use paired::bls12_381::Fr;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use typenum::Unsigned;
-
+use std::collections::BTreeMap;
+use std::fmt;
+use std::marker::PhantomData;
 use storage_proofs_core::{
     error::{Error, Result},
     fr32::fr_into_bytes,
-    hasher::{Domain, HashFunction, Hasher, PoseidonDomain, PoseidonFunction, PoseidonMDArity},
+    hasher::{Domain, Hasher, HashFunction, PoseidonDomain, PoseidonFunction, PoseidonMDArity},
     measurements::{measure_op, Operation},
     merkle::{MerkleProof, MerkleProofTrait, MerkleTreeTrait, MerkleTreeWrapper},
     parameter_cache::ParameterSetMetadata,
@@ -23,6 +20,7 @@ use storage_proofs_core::{
     sector::*,
     util::NODE_SIZE,
 };
+use typenum::Unsigned;
 
 #[derive(Debug, Clone)]
 pub struct SetupParams {
@@ -101,8 +99,8 @@ impl fmt::Debug for Candidate {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Proof<P: MerkleProofTrait> {
     #[serde(bound(
-        serialize = "MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>: Serialize",
-        deserialize = "MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>: serde::de::DeserializeOwned"
+    serialize = "MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>: Serialize",
+    deserialize = "MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>: serde::de::DeserializeOwned"
     ))]
     inclusion_proofs: Vec<MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>>,
     pub ticket: [u8; 32],
@@ -139,8 +137,8 @@ impl<P: MerkleProofTrait> Proof<P> {
 
 #[derive(Debug, Clone)]
 pub struct ElectionPoSt<'a, Tree>
-where
-    Tree: 'a + MerkleTreeTrait,
+    where
+        Tree: 'a + MerkleTreeTrait,
 {
     _t: PhantomData<&'a Tree>,
 }
@@ -212,7 +210,7 @@ fn generate_candidate<Tree: MerkleTreeTrait>(
         let val: Fr = measure_op(Operation::PostReadChallengedRange, || {
             tree.read_at(challenge as usize)
         })?
-        .into();
+            .into();
         data.push(val.into());
     }
 
@@ -225,7 +223,7 @@ fn generate_candidate<Tree: MerkleTreeTrait>(
     let partial_ticket: Fr = measure_op(Operation::PostPartialTicketHash, || {
         PoseidonFunction::hash_md(&data)
     })
-    .into();
+        .into();
 
     // ticket = sha256(partial_ticket)
     let ticket = finalize_ticket(&partial_ticket);
@@ -372,7 +370,7 @@ impl<'a, Tree: 'static + MerkleTreeTrait> ProofScheme<'a> for ElectionPoSt<'a, T
                         pub_inputs.sector_challenge_index,
                         n as u64,
                     )
-                    .unwrap();
+                        .unwrap();
                     (0..pub_params.challenged_nodes)
                         .into_par_iter()
                         .map(move |i| {
@@ -448,16 +446,15 @@ impl<'a, Tree: 'static + MerkleTreeTrait> ProofScheme<'a> for ElectionPoSt<'a, T
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
-    use typenum::{U0, U2, U8};
-
     use storage_proofs_core::{
         hasher::{PedersenHasher, PoseidonHasher},
         merkle::{generate_tree, get_base_tree_count, LCTree},
     };
+    use typenum::{U0, U2, U8};
+
+    use super::*;
 
     fn test_election_post<Tree: 'static + MerkleTreeTrait>() {
         let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);

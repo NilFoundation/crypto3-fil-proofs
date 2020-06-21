@@ -1,10 +1,7 @@
-use std::marker::PhantomData;
-
 use bellperson::Circuit;
 use generic_array::typenum;
 use paired::bls12_381::{Bls12, Fr};
-use typenum::marker_traits::Unsigned;
-
+use std::marker::PhantomData;
 use storage_proofs_core::{
     compound_proof::{CircuitComponent, CompoundProof},
     drgraph,
@@ -16,18 +13,19 @@ use storage_proofs_core::{
     proof::ProofScheme,
     util::NODE_SIZE,
 };
+use typenum::marker_traits::Unsigned;
 
 use crate::election::{self, ElectionPoSt, ElectionPoStCircuit};
 
 pub struct ElectionPoStCompound<Tree>
-where
-    Tree: MerkleTreeTrait,
+    where
+        Tree: MerkleTreeTrait,
 {
     _t: PhantomData<Tree>,
 }
 
 impl<C: Circuit<Bls12>, P: ParameterSetMetadata, Tree: MerkleTreeTrait> CacheableParameters<C, P>
-    for ElectionPoStCompound<Tree>
+for ElectionPoStCompound<Tree>
 {
     fn cache_prefix() -> String {
         format!("proof-of-spacetime-election-{}", Tree::display())
@@ -35,9 +33,9 @@ impl<C: Circuit<Bls12>, P: ParameterSetMetadata, Tree: MerkleTreeTrait> Cacheabl
 }
 
 impl<'a, Tree> CompoundProof<'a, ElectionPoSt<'a, Tree>, ElectionPoStCircuit<Tree>>
-    for ElectionPoStCompound<Tree>
-where
-    Tree: 'static + MerkleTreeTrait,
+for ElectionPoStCompound<Tree>
+    where
+        Tree: 'static + MerkleTreeTrait,
 {
     fn generate_public_inputs(
         pub_inputs: &<ElectionPoSt<'a, Tree> as ProofScheme<'a>>::PublicInputs,
@@ -161,17 +159,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use std::collections::BTreeMap;
-
     use rand::SeedableRng;
     use rand_xorshift::XorShiftRng;
-
+    use std::collections::BTreeMap;
     use storage_proofs_core::{
         compound_proof,
         gadgets::{MetricCS, TestConstraintSystem},
-        hasher::{Domain, HashFunction, Hasher, PedersenHasher, PoseidonHasher},
+        hasher::{Domain, Hasher, HashFunction, PedersenHasher, PoseidonHasher},
         merkle::{generate_tree, get_base_tree_count, LCTree, MerkleTreeTrait},
         proof::NoRequirements,
         sector::SectorId,
@@ -179,6 +173,8 @@ mod tests {
     use typenum::{U0, U8};
 
     use crate::election;
+
+    use super::*;
 
     #[ignore] // Slow test – run only when compiled for release.
     #[test]
@@ -233,7 +229,7 @@ mod tests {
             prover_id,
             randomness,
         )
-        .unwrap();
+            .unwrap();
 
         let candidate = &candidates[0];
         let tree = trees.remove(&candidate.sector_id).unwrap();
@@ -310,7 +306,7 @@ mod tests {
             &priv_inputs,
             &blank_groth_params,
         )
-        .expect("failed while proving");
+            .expect("failed while proving");
 
         let verified =
             ElectionPoStCompound::verify(&pub_params, &pub_inputs, &proof, &NoRequirements)

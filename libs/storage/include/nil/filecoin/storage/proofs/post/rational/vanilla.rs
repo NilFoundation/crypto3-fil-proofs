@@ -1,13 +1,11 @@
-use std::collections::{BTreeMap, HashSet};
-use std::marker::PhantomData;
-
-use anyhow::{bail, ensure, Context};
+use anyhow::{bail, Context, ensure};
 use byteorder::{ByteOrder, LittleEndian};
 use serde::{Deserialize, Serialize};
-
+use std::collections::{BTreeMap, HashSet};
+use std::marker::PhantomData;
 use storage_proofs_core::{
     error::{Error, Result},
-    hasher::{Domain, HashFunction, Hasher},
+    hasher::{Domain, Hasher, HashFunction},
     merkle::{MerkleProof, MerkleProofTrait, MerkleTreeTrait, MerkleTreeWrapper},
     parameter_cache::ParameterSetMetadata,
     proof::{NoRequirements, ProofScheme},
@@ -74,8 +72,8 @@ pub struct PrivateInputs<'a, Tree: 'a + MerkleTreeTrait> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Proof<P: MerkleProofTrait> {
     #[serde(bound(
-        serialize = "MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>: Serialize",
-        deserialize = "MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>: serde::de::DeserializeOwned"
+    serialize = "MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>: Serialize",
+    deserialize = "MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>: serde::de::DeserializeOwned"
     ))]
     inclusion_proofs: Vec<MerkleProof<P::Hasher, P::Arity, P::SubTreeArity, P::TopTreeArity>>,
     pub comm_cs: Vec<<P::Hasher as Hasher>::Domain>,
@@ -107,8 +105,8 @@ impl<P: MerkleProofTrait> Proof<P> {
 
 #[derive(Debug, Clone)]
 pub struct RationalPoSt<'a, Tree>
-where
-    Tree: 'a + MerkleTreeTrait,
+    where
+        Tree: 'a + MerkleTreeTrait,
 {
     _t: PhantomData<&'a Tree>,
 }
@@ -297,20 +295,20 @@ fn derive_challenge(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use generic_array::typenum;
     use rand::{Rng, SeedableRng};
     use rand_xorshift::XorShiftRng;
-    use typenum::{U0, U2, U8};
-
     use storage_proofs_core::{
         hasher::{Blake2sHasher, Domain, Hasher, PedersenHasher, PoseidonHasher, Sha256Hasher},
         merkle::{generate_tree, get_base_tree_count, LCTree, MerkleTreeTrait},
     };
+    use typenum::{U0, U2, U8};
+
+    use super::*;
 
     fn test_rational_post<Tree: MerkleTreeTrait>()
-    where
-        Tree::Store: 'static,
+        where
+            Tree::Store: 'static,
     {
         let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 

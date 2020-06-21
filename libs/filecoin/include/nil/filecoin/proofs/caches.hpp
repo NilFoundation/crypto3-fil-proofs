@@ -9,6 +9,6 @@
 #ifndef FILECOIN_CACHES_HPP
 #define FILECOIN_CACHES_HPP
 
-namespace filecoin { }    // namespace filecoin
+namespace nil { namespace filecoin { }}    // namespace filecoin
 
 #endif    // FILECOIN_CONSTANTS_HPP
