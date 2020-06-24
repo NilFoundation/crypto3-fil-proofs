@@ -27,9 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_CORE_MERKLE_MOD_HPP
 
 namespace nil {
-    namespace filecoin {
-
-    }
-}
+    namespace filecoin { }
+}    // namespace nil
 
 #endif

@@ -23,26 +23,37 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_MOD_HPP
-#define FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_MOD_HPP
+#include <boost/program_options.hpp>
 
-#include <nil/crypto3/hash/sha2.hpp>
+#include <nil/crypto3/hash/blake2b.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
-namespace nil {
-    namespace filecoin {
-        using namespace nil::crypto3::hash;
+int main(int argc, char *argv[]) {
+    let matches =
+        App::new ("fakeipfsadd")
+            .version("0.1")
+            .about("
+                       This program is used to simulate the `ipfs add` command while testing.It accepts a path to a
+                           file and
+                       writes 32 characters of its hex - encoded BLAKE2b checksum to stdout.Note
+                   : The real `ipfs add` command computes and emits a CID.",
+                   )
+            .arg(Arg::with_name("add").index(1).required(true))
+            .arg(Arg::with_name("file-path").index(2).required(true))
+            .arg(Arg::with_name("quieter").short("Q").required(true).help("Simulates the -Q argument to `ipfs add`"), )
+            .get_matches();
 
-        typedef const char *domain_separation_tag;
+    let src_file_path = matches.value_of("file-path").expect("failed to get file path");
 
-        constexpr static domain_separation_tag DRSAMPLE_DST = "Filecoin_DRSample";
-        constexpr static domain_separation_tag FEISTEL_DST = "Filecoin_Feistel";
+    let mut src_file =
+        File::open(&src_file_path).unwrap_or_else(| _ | panic !("failed to open file at {}", &src_file_path));
 
-        template<typename PoRepIDIterator, typename OutputIterator>
-        OutputIterator derive_porep_domain_seed(PoRepIDIterator first, PoRepIDIterator last, OutputIterator out) {
-            return hash<sha2<256>>(hash<sha2<256>>(first, last), out);
-        }
-    }    // namespace filecoin
-}    // namespace nil
+    let mut hasher = Blake2b::new ();
 
-#endif
+    std::io::copy(&mut src_file, &mut hasher).expect("failed to write BLAKE2b bytes to hasher");
+
+    let hex_string : String = hasher.finalize().to_hex()[..32].into();
+
+    println !("{}", hex_string);
+    return 0;
+}

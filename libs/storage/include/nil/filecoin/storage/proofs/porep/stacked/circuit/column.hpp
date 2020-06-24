@@ -37,6 +37,6 @@ namespace nil {
             std::vector<AllocatedNum<Bls12>> rows;
         };
     }    // namespace filecoin
-}
+}    // namespace nil
 
 #endif

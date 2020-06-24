@@ -26,10 +26,45 @@
 #ifndef FILECOIN_FR32_HPP
 #define FILECOIN_FR32_HPP
 
-#include <cstdint>
+#include <boost/endian/arithmetic.hpp>
 
 namespace nil {
     namespace filecoin {
+        typedef std::vector<bool> BitVecLEu8;
+
+        /*!
+         * @brief BitByte represents a size expressed in bytes extended
+         * with bit precision, that is, not rounded.
+         * Invariant: it is an error for bits to be > 7.
+         */
+        struct BitByte {
+            static BitByte from_bits(std::size_t bits) {
+                return {bits % 8, bits / 8};
+            }
+
+            static BitByte from_bytes(std::size_t bytes) {
+                return from_bits(bytes * 8);
+            }
+
+            // How many bits in the BitByte (inverse of from_bits).
+            std::size_t total_bits() {
+                return bytes * 8 + bits;
+            }
+
+            // True if the BitByte has no bits component.
+            bool is_byte_aligned() {
+                return bits == 0;
+            }
+
+            // How many distinct bytes are needed to represent data of this size?
+            std::size_t bytes_needed() {
+                bytes + (bits == 1);
+            }
+
+            std::size_t bits;
+            std::size_t bytes;
+        }
+
         /*!
          * @brief PaddingMap represents a mapping between data and its padded equivalent.
          *
@@ -178,6 +213,112 @@ namespace nil {
         struct padding_map {
             std::size_t data_bits;
             std::size_t element_bits;
+
+            padding_map(std::size_t data_bits, std::size_t element_bits) {
+                // Check that we add less than 1 byte of padding (sub-byte padding).
+                assert(("Padding (num bits: " element_bits - data_bits ") must be less than 1 byte.",
+                        element_bits - data_bits <= 7, ));
+                // Check that the element is byte aligned.
+                assert(("Element (num bits: " element_bits ") must be byte aligned.", !element_bits % CHAR_BIT));
+            }
+
+            inline void pad(BitVecLEu8 &bits_out) {
+                bits_out.insert(std::back_inserter(bits.out), pad_bits(), false);
+                // TODO: Optimization: Drop this explicit `push` padding, the padding
+                // should happen implicitly when byte-aligning the data unit.
+            }
+
+            inline std::size_t pad_bits() const {
+                return element_bits - data_bits;
+            }
+
+            // Transform an offset (either a position or a size) *expressed in
+            // bits* in a raw byte-aligned data stream to its equivalent in a
+            // generated padded bit stream, that is, not byte aligned (so we
+            // don't count the extra bits here). If `padding` is `false` calculate
+            // the inverse transformation.
+            std::size_t transform_bit_offset(std::size_t pos, bool padding) {
+                // Set the sizes we're converting to and from.
+                let(from_size, to_size) = if padding {
+                    (self.data_bits, self.element_bits)
+                }
+                else {(self.element_bits, self.data_bits)};
+
+                // For both the padding and unpadding cases the operation is the same.
+                // The quotient is the number of full, either elements, in the padded layout,
+                // or groups of `data_bits`, in the raw data input (that will be converted
+                // to full elements).
+                // The remainder (in both cases) is the last *incomplete* part of either of
+                // the two. Even in the padded layout, if there is an incomplete element it
+                // has to consist *only* of data (see `PaddingMap#padded-layout`). That amount
+                // of spare raw data doesn't need conversion, it can just be added to the new
+                // position.
+                let(full_elements, incomplete_data) = div_rem(pos, from_size);
+                (full_elements * to_size) + incomplete_data
+            }
+
+            // Similar to `transform_bit_pos` this function transforms an offset
+            // expressed in bytes, that is, we are taking into account the extra
+            // bits here.
+            // TODO: Evaluate the relationship between this function and `transform_bit_offset`,
+            // it seems the two could be merged, or at least restructured to better expose
+            // their differences.
+            std::size_t transform_byte_offset(std::size_t pos, bool padding) {
+                let transformed_bit_pos = transform_bit_offset(pos * 8, padding);
+
+                let transformed_byte_pos = transformed_bit_pos as f64 / 8.;
+                // TODO: Optimization: It might end up being cheaper to avoid this
+                // float conversion and use / and %.
+
+                // When padding, the final bits in the bit stream will grow into the
+                // last (potentially incomplete) byte of the byte stream, so round the
+                // number up (`ceil`). When unpadding, there's no way to know a priori
+                // how many valid bits are in the last byte, we have to choose the number
+                // that fits in a byte-aligned raw data stream, so round the number down
+                // to that (`floor`).
+                return padding ? transformed_byte_pos.ceil() : transformed_byte_pos.floor();
+            }
+
+            // From the `position` specified, it returns:
+            // - the absolute position of the start of the next element,
+            //   in bytes (since elements -with padding- are byte aligned).
+            // - the number of bits left to read (write) from (to) the current
+            //   data unit (assuming it's full).
+            std::tuple<std::size_t, std::size_t> next_boundary(const BitByte &position) {
+                std::size_t position_bits = position.total_bits();
+
+                let(_, bits_after_last_boundary) = div_rem(position_bits, self.element_bits);
+
+                let remaining_data_unit_bits = data_bits - bits_after_last_boundary;
+
+                let next_element_position_bits = position_bits + remaining_data_unit_bits + pad_bits();
+
+                (next_element_position_bits / 8, remaining_data_unit_bits)
+            }
+
+            // For a `Seek`able `target` of a byte-aligned padded layout, return:
+            // - the size in bytes
+            // - the size in bytes of raw data which corresponds to the `target` size
+            // - a BitByte representing the number of padded bits contained in the
+            //   byte-aligned padded layout
+            template<typename SeekableType>
+            std::tuple<std::uint64_t, std::uint64_t, BitByte> target_offsets(SeekableType &target) {
+                // The current position in `target` is the number of padded bytes already written
+                // to the byte-aligned stream.
+                let padded_bytes = target.seek(SeekFrom::End(0)) ? ;
+
+                // Deduce the number of input raw bytes that generated that padded byte size.
+                let raw_data_bytes = self.transform_byte_offset(padded_bytes as usize, false);
+
+                // With the number of raw data bytes elucidated it can now be specified the
+                // number of padding bits in the generated bit stream (before it was converted
+                // to a byte-aligned stream), that is, `raw_data_bytes * 8` is not necessarily
+                // `padded_bits`).
+                let padded_bits = self.transform_bit_offset(raw_data_bytes * 8, true);
+
+                Ok((padded_bytes, raw_data_bytes as u64, BitByte::from_bits(padded_bits), ))
+                // TODO: Why do we use `usize` internally and `u64` externally?
+            }
         };
 
         // TODO: Optimization: Evaluate saving the state of a (un)padding operation
@@ -190,6 +331,37 @@ namespace nil {
         // Most of the code in this module is general-purpose and could move elsewhere.
         // The application-specific wrappers which implicitly use Fr32 embed the FR32_PADDING_MAP.
         const static padding_map FR32_PADDING_MAP = {254, 256};
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Convenience interface for API functions – all bundling FR32_PADDING_MAP
+        // parameter/return types are tuned for current caller convenience.
+        template<typename SeekableType>
+        std::uint64_t target_unpadded_bytes(SeekableType &target) {
+            let(_, unpadded, _) = FR32_PADDING_MAP.target_offsets(target) ? ;
+
+            return unpadded;
+        }
+
+        // Leave the actual truncation to caller, since we can't do it generically.
+        // Return the length to which target should be truncated.
+        // We might should also handle zero-padding what will become the final byte of target.
+        // Technically, this should be okay though because that byte will always be overwritten later.
+        // If we decide this is unnecessary, then we don't need to pass target at all.
+        template<typename SeekableType>
+        std::size_t almost_truncate_to_unpadded_bytes(SeekableType &_target, std::uint64_t length) {
+            let padded = BitByte::from_bits(FR32_PADDING_MAP.transform_bit_offset((length * 8) as usize, true));
+            let real_length = padded.bytes_needed();
+            let _final_bit_count = padded.bits;
+            Ok(real_length)
+        }
+
+        std::uint64_t to_unpadded_bytes(std::uint64_t padded_bytes) {
+            return FR32_PADDING_MAP.transform_byte_offset(padded_bytes as usize, false);
+        }
+
+        std::size_t to_padded_bytes(std::size_t unpadded_bytes) {
+            return FR32_PADDING_MAP.transform_byte_offset(unpadded_bytes, true);
+        }
     }    // namespace filecoin
 }    // namespace nil
 #endif

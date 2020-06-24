@@ -27,9 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_CORE_HASHER_PEDERSEN_HPP
 
 namespace nil {
-    namespace filecoin {
-
-    }
-}
+    namespace filecoin { }
+}    // namespace nil
 
 #endif

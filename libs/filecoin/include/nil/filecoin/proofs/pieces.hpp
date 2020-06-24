@@ -23,7 +23,15 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_PIECES_HPP
-#define FILECOIN_PIECES_HPP
+#ifndef FILECOIN_PROOFS_PIECES_HPP
+#define FILECOIN_PROOFS_PIECES_HPP
+
+#include <nil/filecoin/storage/proofs/core/utilities.hpp>
+
+#include <nil/filecoin/proofs/types/sector_size.hpp>
+
+namespace nil {
+    namespace filecoin { }
+}    // namespace nil
 
 #endif

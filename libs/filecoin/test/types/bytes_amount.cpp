@@ -31,7 +31,6 @@
 
 #include <nil/filecoin/proofs/types/bytes_amount.hpp>
 
-
 BOOST_AUTO_TEST_SUITE(filecoin_bytes_amount_test_suite)
 
 BOOST_AUTO_TEST_CASE(allowed_operations) {
@@ -63,7 +62,6 @@ BOOST_AUTO_TEST_CASE(allowed_operations) {
     // But not between BytesAmount types
     // BOOST_CHECK_EQUAL(a + UnpaddedBytesAmount::from(e), c);
     // BOOST_CHECK_EQUAL(d + UnpaddedBytesAmount::from(b), f);
-
 
     // But must be explicit or won't compile.
     // BOOST_CHECK_EQUAL(1u64 + b, 3u64);

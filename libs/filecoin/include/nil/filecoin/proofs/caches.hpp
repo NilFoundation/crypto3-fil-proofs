@@ -23,8 +23,8 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_CACHES_HPP
-#define FILECOIN_CACHES_HPP
+#ifndef FILECOIN_PROOFS_CACHES_HPP
+#define FILECOIN_PROOFS_CACHES_HPP
 
 #include <unordered_map>
 

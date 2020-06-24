@@ -27,9 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_CORE_GADGETS_XOR_HPP
 
 namespace nil {
-    namespace filecoin {
-
-    }
-}
+    namespace filecoin { }
+}    // namespace nil
 
 #endif

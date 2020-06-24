@@ -41,8 +41,8 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     let cache_dir = tempfile::tempdir().unwrap();
-    let config = StoreConfig::new (
-        cache_dir.path(), CacheKey::CommDTree.to_string(), default_rows_to_discard(nodes, BINARY_ARITY), );
+    let config = StoreConfig::new (cache_dir.path(), CacheKey::CommDTree.to_string(),
+                                   default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
     let replica_path = cache_dir.path().join("replica-path");
@@ -107,17 +107,9 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
              "failed to verify data commitment with data");
 
     let mut cs = TestConstraintSystem::<Bls12>::new ();
-    DrgPoRepCircuit::<PedersenHasher>::synthesize(cs.namespace(|| "drgporep"),
-                                                  vec ![replica_node],
-                                                  vec ![replica_node_path],
-                                                  replica_root,
-                                                  replica_parents,
-                                                  replica_parents_paths,
-                                                  vec ![data_node],
-                                                  vec ![data_node_path],
-                                                  data_root,
-                                                  replica_id,
-                                                  false, )
+    DrgPoRepCircuit::<PedersenHasher>::synthesize(
+        cs.namespace(|| "drgporep"), vec ![replica_node], vec ![replica_node_path], replica_root, replica_parents,
+        replica_parents_paths, vec ![data_node], vec ![data_node_path], data_root, replica_id, false, )
         .expect("failed to synthesize circuit");
 
     if
@@ -158,17 +150,12 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_num_constraints) {
 
     let mut cs = TestConstraintSystem::<Bls12>::new ();
     DrgPoRepCircuit::<PedersenHasher>::synthesize(
-        cs.namespace(|| "drgporep"),
-        vec ![Some(Fr::random(rng)); 1],
-        vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; 1],
-        Root::Val(Some(Fr::random(rng))),
+        cs.namespace(|| "drgporep"), vec ![Some(Fr::random(rng)); 1],
+        vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; 1], Root::Val(Some(Fr::random(rng))),
         vec ![vec ![Some(Fr::random(rng)); m]; 1],
-        vec ![vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; m]; 1],
-        vec ![Some(Fr::random(rng)); 1],
-        vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; 1],
-        Root::Val(Some(Fr::random(rng))),
-        Some(Fr::random(rng)),
-        false, )
+        vec ![vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; m]; 1], vec ![Some(Fr::random(rng)); 1],
+        vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; 1], Root::Val(Some(Fr::random(rng))),
+        Some(Fr::random(rng)), false, )
         .expect("failed to synthesize circuit");
 
     assert_eq !(cs.num_inputs(), 18, "wrong number of inputs");
