@@ -27,9 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_PARAMS_HPP
 
 namespace nil {
-    namespace filecoin {
-
-    }    // namespace filecoin
-}
+    namespace filecoin { }    // namespace filecoin
+}    // namespace nil
 
 #endif

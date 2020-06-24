@@ -47,23 +47,23 @@ namespace btree {
 
     public:
         // Default constructor.
-        btree_map_container(const key_compare& comp = key_compare(), const allocator_type& alloc = allocator_type()) :
+        btree_map_container(const key_compare &comp = key_compare(), const allocator_type &alloc = allocator_type()) :
             super_type(comp, alloc) {
         }
 
         // Copy constructor.
-        btree_map_container(const self_type& x) : super_type(x) {
+        btree_map_container(const self_type &x) : super_type(x) {
         }
 
         // Range constructor.
         template<class InputIterator>
-        btree_map_container(InputIterator b, InputIterator e, const key_compare& comp = key_compare(),
-                            const allocator_type& alloc = allocator_type()) :
+        btree_map_container(InputIterator b, InputIterator e, const key_compare &comp = key_compare(),
+                            const allocator_type &alloc = allocator_type()) :
             super_type(b, e, comp, alloc) {
         }
 
         template<typename... Args>
-        std::pair<iterator, bool> try_emplace(const key_type& key, Args&&... args) {
+        std::pair<iterator, bool> try_emplace(const key_type &key, Args &&... args) {
             return this->__tree.emplace_unique_key_args(key,
                                                         std::piecewise_construct,
                                                         std::forward_as_tuple(key),
@@ -71,7 +71,7 @@ namespace btree {
         }
 
         template<typename... Args>
-        std::pair<iterator, bool> try_emplace(key_type&& key, Args&&... args) {
+        std::pair<iterator, bool> try_emplace(key_type &&key, Args &&... args) {
             return this->__tree.emplace_unique_key_args(key,
                                                         std::piecewise_construct,
                                                         std::forward_as_tuple(std::move(key)),
@@ -79,28 +79,28 @@ namespace btree {
         }
 
         template<typename... Args>
-        iterator try_emplace(const_iterator hint, const key_type& key, Args&&... args) {
+        iterator try_emplace(const_iterator hint, const key_type &key, Args &&... args) {
             return this->__tree.emplace_hint_unique_key_args(hint, key, std::piecewise_construct,
                                                              std::forward_as_tuple(key),
                                                              std::forward_as_tuple(std::forward<Args>(args)...));
         }
 
         template<typename... Args>
-        iterator try_emplace(const_iterator hint, key_type&& key, Args&&... args) {
+        iterator try_emplace(const_iterator hint, key_type &&key, Args &&... args) {
             return this->__tree.emplace_hint_unique_key_args(hint, key, std::piecewise_construct,
                                                              std::forward_as_tuple(std::move(key)),
                                                              std::forward_as_tuple(std::forward<Args>(args)...));
         }
 
         // Access specified element with bounds checking.
-        mapped_type& at(const key_type& key) {
+        mapped_type &at(const key_type &key) {
             auto it = this->find(key);
             if (it == this->end()) {
                 throw std::out_of_range("map::at:  key not found");
             }
             return it->second;
         }
-        const mapped_type& at(const key_type& key) const {
+        const mapped_type &at(const key_type &key) const {
             auto it = this->find(key);
             if (it == this->end()) {
                 throw std::out_of_range("map::at:  key not found");
@@ -109,11 +109,11 @@ namespace btree {
         }
 
         // Insertion routines.
-        data_type& operator[](const key_type& key) {
+        data_type &operator[](const key_type &key) {
             return this->try_emplace(key).first->second;
         }
 
-        data_type& operator[](key_type&& key) {
+        data_type &operator[](key_type &&key) {
             return this->try_emplace(std::move(key)).first->second;
         }
     };
@@ -134,18 +134,18 @@ namespace btree {
 
     public:
         // Default constructor.
-        map(const key_compare& comp = key_compare(), const allocator_type& alloc = allocator_type()) :
+        map(const key_compare &comp = key_compare(), const allocator_type &alloc = allocator_type()) :
             super_type(comp, alloc) {
         }
 
         // Copy constructor.
-        map(const self_type& x) : super_type(x) {
+        map(const self_type &x) : super_type(x) {
         }
 
         // Range constructor.
         template<class InputIterator>
-        map(InputIterator b, InputIterator e, const key_compare& comp = key_compare(),
-            const allocator_type& alloc = allocator_type()) :
+        map(InputIterator b, InputIterator e, const key_compare &comp = key_compare(),
+            const allocator_type &alloc = allocator_type()) :
             super_type(b, e, comp, alloc) {
         }
     };
@@ -153,37 +153,37 @@ namespace btree {
 }    // namespace btree
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator==(const btree::map<K, V, C, A, N>& lhs, const btree::map<K, V, C, A, N>& rhs) {
+bool operator==(const btree::map<K, V, C, A, N> &lhs, const btree::map<K, V, C, A, N> &rhs) {
     return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator<(const btree::map<K, V, C, A, N>& lhs, const btree::map<K, V, C, A, N>& rhs) {
+bool operator<(const btree::map<K, V, C, A, N> &lhs, const btree::map<K, V, C, A, N> &rhs) {
     return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator!=(const btree::map<K, V, C, A, N>& lhs, const btree::map<K, V, C, A, N>& rhs) {
+bool operator!=(const btree::map<K, V, C, A, N> &lhs, const btree::map<K, V, C, A, N> &rhs) {
     return !(lhs == rhs);
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator>(const btree::map<K, V, C, A, N>& lhs, const btree::map<K, V, C, A, N>& rhs) {
+bool operator>(const btree::map<K, V, C, A, N> &lhs, const btree::map<K, V, C, A, N> &rhs) {
     return rhs < lhs;
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator>=(const btree::map<K, V, C, A, N>& lhs, const btree::map<K, V, C, A, N>& rhs) {
+bool operator>=(const btree::map<K, V, C, A, N> &lhs, const btree::map<K, V, C, A, N> &rhs) {
     return !(lhs < rhs);
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator<=(const btree::map<K, V, C, A, N>& lhs, const btree::map<K, V, C, A, N>& rhs) {
+bool operator<=(const btree::map<K, V, C, A, N> &lhs, const btree::map<K, V, C, A, N> &rhs) {
     return !(rhs < lhs);
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-inline void swap(btree::map<K, V, C, A, N>& x, btree::map<K, V, C, A, N>& y) {
+inline void swap(btree::map<K, V, C, A, N> &x, btree::map<K, V, C, A, N> &y) {
     x.swap(y);
 }
 
@@ -207,18 +207,18 @@ namespace btree {
 
     public:
         // Default constructor.
-        multimap(const key_compare& comp = key_compare(), const allocator_type& alloc = allocator_type()) :
+        multimap(const key_compare &comp = key_compare(), const allocator_type &alloc = allocator_type()) :
             super_type(comp, alloc) {
         }
 
         // Copy constructor.
-        multimap(const self_type& x) : super_type(x) {
+        multimap(const self_type &x) : super_type(x) {
         }
 
         // Range constructor.
         template<class InputIterator>
-        multimap(InputIterator b, InputIterator e, const key_compare& comp = key_compare(),
-                 const allocator_type& alloc = allocator_type()) :
+        multimap(InputIterator b, InputIterator e, const key_compare &comp = key_compare(),
+                 const allocator_type &alloc = allocator_type()) :
             super_type(b, e, comp, alloc) {
         }
     };
@@ -226,37 +226,37 @@ namespace btree {
 }    // namespace btree
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator==(const btree::multimap<K, V, C, A, N>& lhs, const btree::multimap<K, V, C, A, N>& rhs) {
+bool operator==(const btree::multimap<K, V, C, A, N> &lhs, const btree::multimap<K, V, C, A, N> &rhs) {
     return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator<(const btree::multimap<K, V, C, A, N>& lhs, const btree::multimap<K, V, C, A, N>& rhs) {
+bool operator<(const btree::multimap<K, V, C, A, N> &lhs, const btree::multimap<K, V, C, A, N> &rhs) {
     return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator!=(const btree::multimap<K, V, C, A, N>& lhs, const btree::multimap<K, V, C, A, N>& rhs) {
+bool operator!=(const btree::multimap<K, V, C, A, N> &lhs, const btree::multimap<K, V, C, A, N> &rhs) {
     return !(lhs == rhs);
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator>(const btree::multimap<K, V, C, A, N>& lhs, const btree::multimap<K, V, C, A, N>& rhs) {
+bool operator>(const btree::multimap<K, V, C, A, N> &lhs, const btree::multimap<K, V, C, A, N> &rhs) {
     return rhs < lhs;
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator>=(const btree::multimap<K, V, C, A, N>& lhs, const btree::multimap<K, V, C, A, N>& rhs) {
+bool operator>=(const btree::multimap<K, V, C, A, N> &lhs, const btree::multimap<K, V, C, A, N> &rhs) {
     return !(lhs < rhs);
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-bool operator<=(const btree::multimap<K, V, C, A, N>& lhs, const btree::multimap<K, V, C, A, N>& rhs) {
+bool operator<=(const btree::multimap<K, V, C, A, N> &lhs, const btree::multimap<K, V, C, A, N> &rhs) {
     return !(rhs < lhs);
 }
 
 template<typename K, typename V, typename C, typename A, int N>
-inline void swap(btree::multimap<K, V, C, A, N>& x, btree::multimap<K, V, C, A, N>& y) {
+inline void swap(btree::multimap<K, V, C, A, N> &x, btree::multimap<K, V, C, A, N> &y) {
     x.swap(y);
 }
 

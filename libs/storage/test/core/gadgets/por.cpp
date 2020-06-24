@@ -39,7 +39,7 @@ fn por_test_compound_poseidon_base_8() {
 
 fn por_compound < Tree : 'static + MerkleTreeTrait>() { let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-let leaves = 64 * get_base_tree_count::<Tree>();
+    let leaves = 64 * get_base_tree_count::<Tree>();
 
 let data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 let tree = create_base_merkle_tree::<Tree>(None, leaves, data.as_slice()).unwrap();
@@ -315,8 +315,8 @@ fn test_private_por_compound_poseidon_top_8_2_4() {
     private_por_test_compound::<TestTree3<PoseidonHasher, typenum::U8, typenum::U2, typenum::U4>>();
 }
 
-fn private_por_test_compound < Tree : 'static + MerkleTreeTrait>() { let rng =
-    &mut XorShiftRng::from_seed(crate::TEST_SEED);
+fn private_por_test_compound < Tree
+    : 'static + MerkleTreeTrait>() { let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
 // Ensure arity will evenly fill tree.
 let leaves = 64 * get_base_tree_count::<Tree>();

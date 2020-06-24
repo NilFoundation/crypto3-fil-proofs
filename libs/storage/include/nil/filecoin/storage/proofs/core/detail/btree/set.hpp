@@ -43,18 +43,18 @@ namespace btree {
 
     public:
         // Default constructor.
-        set(const key_compare& comp = key_compare(), const allocator_type& alloc = allocator_type()) :
+        set(const key_compare &comp = key_compare(), const allocator_type &alloc = allocator_type()) :
             super_type(comp, alloc) {
         }
 
         // Copy constructor.
-        set(const self_type& x) : super_type(x) {
+        set(const self_type &x) : super_type(x) {
         }
 
         // Range constructor.
         template<class InputIterator>
-        set(InputIterator b, InputIterator e, const key_compare& comp = key_compare(),
-            const allocator_type& alloc = allocator_type()) :
+        set(InputIterator b, InputIterator e, const key_compare &comp = key_compare(),
+            const allocator_type &alloc = allocator_type()) :
             super_type(b, e, comp, alloc) {
         }
     };
@@ -62,37 +62,37 @@ namespace btree {
 }    // namespace btree
 
 template<typename K, typename C, typename A, int N>
-bool operator==(const btree::set<K, C, A, N>& lhs, const btree::set<K, C, A, N>& rhs) {
+bool operator==(const btree::set<K, C, A, N> &lhs, const btree::set<K, C, A, N> &rhs) {
     return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator<(const btree::set<K, C, A, N>& lhs, const btree::set<K, C, A, N>& rhs) {
+bool operator<(const btree::set<K, C, A, N> &lhs, const btree::set<K, C, A, N> &rhs) {
     return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator!=(const btree::set<K, C, A, N>& lhs, const btree::set<K, C, A, N>& rhs) {
+bool operator!=(const btree::set<K, C, A, N> &lhs, const btree::set<K, C, A, N> &rhs) {
     return !(lhs == rhs);
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator>(const btree::set<K, C, A, N>& lhs, const btree::set<K, C, A, N>& rhs) {
+bool operator>(const btree::set<K, C, A, N> &lhs, const btree::set<K, C, A, N> &rhs) {
     return rhs < lhs;
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator>=(const btree::set<K, C, A, N>& lhs, const btree::set<K, C, A, N>& rhs) {
+bool operator>=(const btree::set<K, C, A, N> &lhs, const btree::set<K, C, A, N> &rhs) {
     return !(lhs < rhs);
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator<=(const btree::set<K, C, A, N>& lhs, const btree::set<K, C, A, N>& rhs) {
+bool operator<=(const btree::set<K, C, A, N> &lhs, const btree::set<K, C, A, N> &rhs) {
     return !(rhs < lhs);
 }
 
 template<typename K, typename C, typename A, int N>
-inline void swap(btree::set<K, C, A, N>& x, btree::set<K, C, A, N>& y) {
+inline void swap(btree::set<K, C, A, N> &x, btree::set<K, C, A, N> &y) {
     x.swap(y);
 }
 
@@ -114,18 +114,18 @@ namespace btree {
 
     public:
         // Default constructor.
-        multiset(const key_compare& comp = key_compare(), const allocator_type& alloc = allocator_type()) :
+        multiset(const key_compare &comp = key_compare(), const allocator_type &alloc = allocator_type()) :
             super_type(comp, alloc) {
         }
 
         // Copy constructor.
-        multiset(const self_type& x) : super_type(x) {
+        multiset(const self_type &x) : super_type(x) {
         }
 
         // Range constructor.
         template<class InputIterator>
-        multiset(InputIterator b, InputIterator e, const key_compare& comp = key_compare(),
-                 const allocator_type& alloc = allocator_type()) :
+        multiset(InputIterator b, InputIterator e, const key_compare &comp = key_compare(),
+                 const allocator_type &alloc = allocator_type()) :
             super_type(b, e, comp, alloc) {
         }
     };
@@ -133,37 +133,37 @@ namespace btree {
 }    // namespace btree
 
 template<typename K, typename C, typename A, int N>
-bool operator==(const btree::multiset<K, C, A, N>& lhs, const btree::multiset<K, C, A, N>& rhs) {
+bool operator==(const btree::multiset<K, C, A, N> &lhs, const btree::multiset<K, C, A, N> &rhs) {
     return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator<(const btree::multiset<K, C, A, N>& lhs, const btree::multiset<K, C, A, N>& rhs) {
+bool operator<(const btree::multiset<K, C, A, N> &lhs, const btree::multiset<K, C, A, N> &rhs) {
     return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator!=(const btree::multiset<K, C, A, N>& lhs, const btree::multiset<K, C, A, N>& rhs) {
+bool operator!=(const btree::multiset<K, C, A, N> &lhs, const btree::multiset<K, C, A, N> &rhs) {
     return !(lhs == rhs);
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator>(const btree::multiset<K, C, A, N>& lhs, const btree::multiset<K, C, A, N>& rhs) {
+bool operator>(const btree::multiset<K, C, A, N> &lhs, const btree::multiset<K, C, A, N> &rhs) {
     return rhs < lhs;
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator>=(const btree::multiset<K, C, A, N>& lhs, const btree::multiset<K, C, A, N>& rhs) {
+bool operator>=(const btree::multiset<K, C, A, N> &lhs, const btree::multiset<K, C, A, N> &rhs) {
     return !(lhs < rhs);
 }
 
 template<typename K, typename C, typename A, int N>
-bool operator<=(const btree::multiset<K, C, A, N>& lhs, const btree::multiset<K, C, A, N>& rhs) {
+bool operator<=(const btree::multiset<K, C, A, N> &lhs, const btree::multiset<K, C, A, N> &rhs) {
     return !(rhs < lhs);
 }
 
 template<typename K, typename C, typename A, int N>
-inline void swap(btree::multiset<K, C, A, N>& x, btree::multiset<K, C, A, N>& y) {
+inline void swap(btree::multiset<K, C, A, N> &x, btree::multiset<K, C, A, N> &y) {
     x.swap(y);
 }
 

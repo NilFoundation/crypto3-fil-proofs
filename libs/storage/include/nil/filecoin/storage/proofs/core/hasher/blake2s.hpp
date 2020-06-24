@@ -27,9 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_CORE_HASHES_BLAKE2S_HPP
 
 namespace nil {
-    namespace filecoin {
-
-    }
-}
+    namespace filecoin { }
+}    // namespace nil
 
 #endif

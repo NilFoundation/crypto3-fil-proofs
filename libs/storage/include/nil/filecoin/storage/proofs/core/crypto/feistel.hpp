@@ -172,5 +172,5 @@ fn feistel(right : Index, key : Index, right_mask : Index)->Index {
             Index::from(hash[6]) << 8 | Index::from(hash[7])
     };
 
-    r& right_mask
+    r &right_mask
 }

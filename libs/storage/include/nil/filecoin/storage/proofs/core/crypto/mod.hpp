@@ -33,7 +33,7 @@ namespace nil {
     namespace filecoin {
         using namespace nil::crypto3::hash;
 
-        typedef const char* domain_separation_tag;
+        typedef const char *domain_separation_tag;
 
         constexpr static domain_separation_tag DRSAMPLE_DST = "Filecoin_DRSample";
         constexpr static domain_separation_tag FEISTEL_DST = "Filecoin_Feistel";

@@ -34,6 +34,8 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        crypto3::block
                        crypto3::hash
 
+                       ${CMAKE_WORKSPACE_NAME}::storage-proofs
+
                        ${Boost_LIBRARIES})
 
 macro(define_filecoin_test test)
@@ -65,7 +67,10 @@ macro(define_filecoin_test test)
 endmacro()
 
 set(TESTS_NAMES
-    types/bytes_amount)
+    types/bytes_amount
+
+    pieces
+    parameters)
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_filecoin_test(${TEST_NAME})

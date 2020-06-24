@@ -30,7 +30,7 @@
 
 namespace nil {
     namespace filecoin {
-        typedef std::uint64_t sector_size;
+        typedef std::uint64_t sector_size_t;
     }
 }    // namespace nil
 
