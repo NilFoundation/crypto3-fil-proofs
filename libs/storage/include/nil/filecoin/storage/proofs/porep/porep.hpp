@@ -2,7 +2,8 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_POREP_HPP
 
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif

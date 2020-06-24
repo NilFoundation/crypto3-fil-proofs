@@ -26,4 +26,135 @@
 #ifndef FILECOIN_PARAM_HPP
 #define FILECOIN_PARAM_HPP
 
+#include <nil/crypto3/hash/blake2b.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
+
+#include <nil/filecoin/proofs/detail/btree.hpp>
+
+#include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
+
+namespace nil {
+    namespace filecoin {
+        struct parameter_data {
+            std::string cid;
+            std::string digest;
+            std::uint64_t sector_size;
+        };
+
+        typedef btree<std::string, parameter_data> parameter_map;
+
+        // Produces an absolute path to a file within the cache
+        boost::filesystem::path get_full_path_for_file_within_cache(const std::string &filename) {
+            return parameter_cache_dir() / filename;
+        }
+
+        // Produces a BLAKE2b checksum for a file within the cache
+        std::string get_digest_for_file_within_cache(const std::string &filename) {
+            let path = get_full_path_for_file_within_cache(filename);
+            let mut file = File::open(&path).with_context(|| format !("could not open path={:?}", path)) ? ;
+            let mut hasher = Blake2b::new ();
+
+            std::io::copy(&mut file, &mut hasher) ? ;
+
+            Ok(hasher.finalize().to_hex()[..32].into())
+        }
+
+        // Prompts the user to approve/reject the message
+        bool choose(const std::string &message) {
+            loop {
+                print !("[y/n] {}: ", message);
+
+                let _ = stdout().flush();
+                let mut s = String::new ();
+                stdin().read_line(&mut s).expect(ERROR_STRING);
+
+                match s.trim().to_uppercase().as_str() {
+                    "Y" = > return true, "N" = > return false, _ = > {
+                    }
+                }
+            }
+        }
+
+        // Predicate which matches the provided extension against the given filename
+        template<typename S, typename P>
+        bool has_extension(const P &filename, const S &ext) {
+            filename.as_ref().extension().and_then(OsStr::to_str).map(| s | s == ext.as_ref()).unwrap_or(false);
+        }
+
+        /*!
+         * @brief Adds a file extension to the given filename
+         * @param filename
+         * @param ext
+         * @return
+         */
+        std::string add_extension(const std::string &filename, const std::string &ext) {
+            return filename + "." + ext;
+        }
+
+        /*!
+         * @brief Builds a map from a parameter_id (file in cache) to metadata
+         * @tparam ParameterIdInputIterator
+         * @param first
+         * @param last
+         * @return
+         */
+        template<typename ParameterIdInputIterator>
+        btree::map<std::string, cache_entry_metadata> parameter_id_to_metadata_map(ParameterIdInputIterator first,
+                                                                                   ParameterIdInputIterator last) {
+            btree::map<std::string, cache_entry_metadata> map;
+
+            while (first != last) {
+                std::string filename = add_extension(*first, PARAMETER_METADATA_EXT);
+                boost::filesystem::path file_path = get_full_path_for_file_within_cache(filename);
+                let file = File::open(&file_path).with_context(|| format !("could not open path={:?}", file_path)) ? ;
+
+                let meta = serde_json::from_reader(file) ? ;
+
+                map.insert(parameter_id.to_string(), meta);
+                ++first;
+            }
+
+            return map;
+        }
+
+        /*!
+         * @brief Prompts the user to approve/reject the filename
+         * @tparam FilenameInputIterator
+         * @tparam UnaryPredicate Takes typename std::iterator_traits<FilenameInputIterator>::value_type as
+         * an argument and returns std::uint64_t
+         * @param first
+         * @param last
+         * @param lookup
+         * @return
+         */
+        template<typename FilenameInputIterator, typename FilenameOutputIterator, typename UnaryPredicate>
+        std::vector<std::string> choose_from(FilenameInputIterator first, FilenameInputIterator last,
+                                             FilenameOutputIterator out, UnaryPredicate lookup) {
+            std::vector<std::string> chosen_filenames;
+
+            while (first != last) {
+                std::size_t sector_size =
+                    lookup(*first).with_context(|| format !("no sector size found for filename {}", *first)) ?
+                    ;
+
+                std::string msg = format !("(sector size: {}B) {}", sector_size, *first);
+
+                if (choose(msg)) {
+                    out++ = msg;
+                }
+                ++first;
+            }
+
+            return chosen_filenames;
+        }
+
+        /// Maps the name of a file in the cache to its parameter id. For example,
+        /// ABCDEF.vk corresponds to parameter id ABCDEF.
+        template<typename PathType>
+        std::string filename_to_parameter_id(const PathType &filename) {
+            filename.as_ref().file_stem().and_then(OsStr::to_str).map(ToString::to_string);
+        }
+    }    // namespace filecoin
+}    // namespace nil
+
 #endif

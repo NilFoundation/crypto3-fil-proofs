@@ -23,8 +23,49 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#ifndef FILECOIN_PROOFS_TYPES_POREP_CONFIG_HPP
+#define FILECOIN_PROOFS_TYPES_POREP_CONFIG_HPP
+
+#include <nil/filecoin/proofs/types/porep_proof_partitions.hpp>
+#include <nil/filecoin/proofs/types/sector_size.hpp>
+
 namespace nil {
     namespace filecoin {
-        struct porep_config { };
-    }    // namespace filecoin
+        struct porep_config {
+            typedef std::uint64_t sector_size;
+
+            sector_size ss;
+            porep_proof_partitions partitions;
+            std::array<std::uint8_t, 32> porep_id;
+
+            /// Returns the cache identifier as used by `storage-proofs::paramater_cache`.
+            template<typename MerkleTreeType>
+            std::string get_cache_identifier() {
+                let params = crate::parameters::public_params::<Tree>(self.sector_size.into(), self.partitions.into(),
+                                                                      self.porep_id, ) ?
+                    ;
+
+                Ok(<StackedCompound<Tree, DefaultPieceHasher> as CacheableParameters<
+                       StackedCircuit<Tree, DefaultPieceHasher>, _, >>::cache_identifier(&params), )
+            }
+
+            template<typename MerkleTreeType>
+            boost::filesystem::path get_cache_metadata_path() {
+                let id = self.get_cache_identifier::<Tree>() ? ;
+                Ok(parameter_cache::parameter_cache_metadata_path(&id))
+            }
+
+            template<typename MerkleTreeType>
+            boost::filesystem::path get_cache_verifying_key_path() {
+                let id = self.get_cache_identifier::<Tree>() ? ;
+                Ok(parameter_cache::parameter_cache_verifying_key_path(&id))
+            }    // namespace filecoin
+
+            template<typename MerkleTreeType>
+            boost::filesystem::config get_cache_params_path() {
+                let id = self.get_cache_identifier::<Tree>() ? ;
+                Ok(parameter_cache::parameter_cache_params_path(&id))
+            }    // namespace filecoin
+        };       // namespace filecoin
+    }            // namespace filecoin
 }    // namespace nil

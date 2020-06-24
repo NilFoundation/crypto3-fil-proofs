@@ -23,6 +23,9 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#ifndef FILECOIN_PROOFS_TYPES_SECTOR_SIZE_HPP
+#define FILECOIN_PROOFS_TYPES_SECTOR_SIZE_HPP
+
 #include <cstdint>
 
 namespace nil {
@@ -30,3 +33,5 @@ namespace nil {
         typedef std::uint64_t sector_size;
     }
 }    // namespace nil
+
+#endif
