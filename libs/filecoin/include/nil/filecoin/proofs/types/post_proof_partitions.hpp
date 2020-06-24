@@ -23,6 +23,9 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#ifndef FILECOIN_PROOFS_TYPES_POST_PROOF_PARTITIONS_HPP
+#define FILECOIN_PROOFS_TYPES_POST_PROOF_PARTITIONS_HPP
+
 #include <cstdint>
 
 namespace nil {
@@ -30,3 +33,5 @@ namespace nil {
         typedef std::uint8_t post_proof_partitions;
     }
 }    // namespace nil
+
+#endif

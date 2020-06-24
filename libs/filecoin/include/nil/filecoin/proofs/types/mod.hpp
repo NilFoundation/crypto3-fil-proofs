@@ -28,7 +28,9 @@
 
 #include <cstdint>
 
-#include <nil/filecoin/storage/proofs/porep/stacked/proof.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
+
+#include <nil/filecoin/proofs/constants.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -38,13 +40,37 @@ namespace nil {
         /// Arity for binary trees, used for comm_d.
         constexpr static const std::size_t binary_arity = 2;
 
-        typedef std::array<std::uint8_t, 32> commitment;
+        typedef std::array<std::uint8_t, 32> commitment_type;
         typedef std::array<std::uint8_t, 32> challenge_seed;
         typedef std::array<std::uint8_t, 32> proved_id;
         typedef std::array<std::uint8_t, 32> ticket;
 
         struct seal_pre_commit_output {
             commitment comm_r;
+            commitment comm_d;
+        };
+
+        template<typename MerkleTreeType, typename PieceHasherType = default_piece_hasher_type>
+        using vanilla_seal_proof = proof<MerkleTreeType, PieceHasherType>;
+
+        template<typename MerkleTreeType>
+        struct seal_commit_phase1_output {
+            std::vector<std::vector<vanilla_seal_proof<MerkleTreeType>>> vanilla_proofs;
+            commitment comm_r;
+            commitment comm_d;
+            typename MerkleTreeType::hash_type::domain_type replica_id;
+            ticket seed;
+            ticket tckt;
+        };
+
+        struct seal_commit_output {
+            std::vector<std::uint8_t> proof;
+        };
+
+        template<typename MerkleTreeType>
+        struct seal_precommit_phase1_output {
+            labels<MerkleTreeType> labels;
+            store_config config;
             commitment comm_d;
         };
     }    // namespace filecoin

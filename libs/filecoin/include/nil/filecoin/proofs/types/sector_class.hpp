@@ -26,12 +26,17 @@
 #ifndef FILECOIN_PROOFS_TYPES_SECTOR_CLASS_HPP
 #define FILECOIN_PROOFS_TYPES_SECTOR_CLASS_HPP
 
-#include <cstdint>
+#include <nil/filecoin/proofs/types/sector_size.hpp>
+#include <nil/filecoin/proofs/types/porep_proof_partitions.hpp>
 
 namespace nil {
     namespace filecoin {
-        typedef std::uint64_t sector_class;
-    }
+        struct sector_class {
+            sector_size ss;
+            porep_proof_partitions partitions;
+            std::array<std::uint8_t, 32> porep_id;
+        };
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif

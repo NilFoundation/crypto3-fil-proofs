@@ -27,9 +27,24 @@
 #define FILECOIN_PROOFS_TYPES_PIECE_INFO_HPP
 
 #include <nil/filecoin/proofs/types/mod.hpp>
+#include <nil/filecoin/proofs/types/bytes_amount.hpp>
 
 namespace nil {
-    namespace filecoin { }
+    namespace filecoin {
+        struct piece_info {
+            piece_info(const commitment_type &commitment, unpadded_bytes_amount size) {
+                assert(
+                    ("Invalid all zero commitment",
+                     commitment.empty() || !std::accumulate(commitment.begin(), commitment.end(), false,
+                                                            [&](bool c, const typename commitment_type::value_type &v) {
+                                                                return c * v;
+                                                            })));
+            }
+
+            commitment_type commitment;
+            unpadded_bytes_amount size;
+        };
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif
