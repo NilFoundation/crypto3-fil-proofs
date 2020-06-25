@@ -73,7 +73,9 @@ set(TESTS_NAMES
 
     "porep/drg/circuit"
     "porep/drg/compound"
-    "porep/drg/vanilla")
+    "porep/drg/vanilla"
+
+    "porep/stacked/vanilla/challenges")
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_storage_test(${TEST_NAME})

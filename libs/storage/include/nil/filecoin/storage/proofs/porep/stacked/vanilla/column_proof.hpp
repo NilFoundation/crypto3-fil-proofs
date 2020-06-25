@@ -26,8 +26,42 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_COLUMN_PROOF_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_COLUMN_PROOF_HPP
 
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/column.hpp>
+
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace stacked {
+            namespace vanilla {
+                template<typename MerkleTreeType>
+                struct ColumnProof {
+                    typedef MerkleTreeType tree_type;
+                    typedef typename tree_type::hash_type hash_type;
+
+                    typename hash_type::domain_type root() {
+                        return inclusion_proof.root();
+                    }
+
+                    typename hash_type::domain_type get_node_at_layer(std::size_t layer) {
+                        return column.get_node_at_layer(layer);
+                    }
+
+                    Fr column_hash() {
+                        return column.hash();
+                    }
+
+                    bool verify(std::uint32_t challenge, typename hash_type::domain_type &expected_root) {
+                        Fr c_i = column_hash();
+
+                        return inclusion_proof.root() == expected_root && inclusion_proof.validate_data(c_i.into()) &&
+                               inclusion_proof.validate(challenge);
+                    }
+
+                    Column<hash_type> column;
+                    tree_type inclusion_proof;
+                };
+            }    // namespace vanilla
+        }        // namespace stacked
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif
