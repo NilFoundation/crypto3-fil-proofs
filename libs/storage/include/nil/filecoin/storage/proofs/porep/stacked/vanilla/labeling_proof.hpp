@@ -27,7 +27,47 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_LABELING_PROOF_HPP
 
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        template<typename Hash>
+        struct LabelingProof {
+            typedef Hash hash_type;
+
+            typename Hash::domain_type create_label(const typename Hash::domain_type &replica_id) {
+                let mut hasher = Sha256::new ();
+                let mut buffer = [0u8; 64];
+
+                // replica_id
+                buffer[..32].copy_from_slice(AsRef::<[u8]>::as_ref(replica_id));
+
+                // layer index
+                buffer[32..36].copy_from_slice(&(self.layer_index as u32).to_be_bytes());
+
+                // node id
+                buffer[36..44].copy_from_slice(&(self.node as u64).to_be_bytes());
+
+                hasher.input(&buffer[..]);
+
+                // parents
+                for (parent : parents) {
+                    let data = AsRef::<[u8]>::as_ref(parent);
+                    hasher.input(data);
+                }
+
+                bytes_into_fr_repr_safe(hasher.result().as_ref()).into()
+            }
+
+            bool verify(const typename Hash::domain_type &replica_id,
+                        const typename Hash::domain_type &expected_label) {
+                typename Hash::domain_type label = create_label(replica_id);
+                return expected_label == label;
+            }
+
+            typename Hash::domain_type parents;
+            std::uint32_t layer_index;
+            std::uint64_t node;
+            Hash &_h;
+        };
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif

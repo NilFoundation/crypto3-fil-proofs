@@ -27,7 +27,52 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_COLUMN_HPP
 
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace stacked {
+            namespace vanilla {
+                template<typename Hash>
+                struct Column {
+                    typedef Hash hash_type;
+
+                    Column(std::uint32_t index, std::vector < typename hash_type::domain_type rows) :
+                        index(index), rows(rows) {
+                    }
+
+                    Column(std::uint32_t index, std::size_t capacity) : index(index), rows(capacity) {
+                    }
+
+                    /// Calculate the column hashes `C_i = H(E_i, O_i)` for the passed in column.
+                    Fr hash() {
+                        return hash_single_column(rows.iter().copied().map(Into::into).collect::<Vec<_>>());
+                    }
+
+                    typename Hash::domain_type get_node_at_layer(std::size_t layer) {
+                        assert(("layer must be greater than 0", layer > 0));
+                        std::size_t row_index = layer - 1;
+
+                        return self.rows[row_index];
+                    }
+
+                    /// Create a column proof for this column.
+                    template<template<typename = typename hash_type::domain_type> class StoreType,
+                             template<typename = hash_type,
+                                      typename = StoreType<typename hash_type::domain_type> class MerkleTreeType>
+                             ColumnProof into_proof<S : Store<H::Domain>, Tree : MerkleTreeTrait<Hasher = H, Store =
+                                                                                                                       S>>(
+                                 self, tree_c
+                                 : &Tree, )
+                                 ->Result<ColumnProof<Tree::Proof>> {
+                        let inclusion_proof = tree_c.gen_proof(self.index() as usize) ? ;
+                        ColumnProof::<Tree::Proof>::from_column(self, inclusion_proof)
+                    }
+
+                    std::uint32_t index;
+                    std::vector<typename Hash::domain_type> rows;
+                    H &_h;
+                };
+            }    // namespace vanilla
+        }        // namespace stacked
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif
