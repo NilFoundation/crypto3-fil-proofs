@@ -26,8 +26,50 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_POREP_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_POREP_HPP
 
+#include <nil/filecoin/storage/proofs/core/data.hpp>
+#include <nil/filecoin/storage/proofs/core/proof/proof.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
+
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        template<typename Hash>
+        struct binary_merkle_tree;
+
+        template<typename H, typename G, typename TauType, typename AuxType, typename PublicParams,
+                 typename SetupParams, typename PublicInputs, typename PrivateInputs, typename Proof,
+                 typename Requirements>
+        class PoRep : public ProofScheme<PublicParams, SetupParams, PublicInputs, PrivateInputs, Proof, Requirements> {
+            typedef ProofScheme<PublicParams, SetupParams, PublicInputs, PrivateInputs, Proof, Requirements>
+                policy_type;
+
+        public:
+            typedef TauType tau_type;
+            typedef AuxType aux_type;
+
+            typedef typename policy_type::public_params_type public_params_type;
+            typedef typename policy_type::setup_params_type setup_params_type;
+            typedef typename policy_type::public_inputs_type public_inputs_type;
+            typedef typename policy_type::private_inputs_type private_inputs_type;
+            typedef typename policy_type::proof_type proof_type;
+
+            virtual std::pair<Tau, ProverAux> replicate(const public_params_type &pub_params,
+                                                        const typename H::domain_type &replica_id, const data &data,
+                                                        const binary_merkle_tree<G> &data_tree,
+                                                        const store_config &config,
+                                                        const boost::filesystem::path &replica_path) = 0;
+
+            virtual std::vector<std::uint8_t> extract_all(const public_params_type &pub_params,
+                                                          const typename H::domain_type &replica_id,
+                                                          const std::vector<std::uint8_t> &replica,
+                                                          const store_config &config) = 0;
+
+            virtual std::vector<std::uint8_t> extract(const public_params_type &pub_params,
+                                                          const typename H::domain_type &replica_id,
+                                                          const std::vector<std::uint8_t> &replica,
+                                                          std::size_t node,
+                                                          const store_config &config) = 0;
+        };
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif
