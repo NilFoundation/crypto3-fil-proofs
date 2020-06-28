@@ -87,10 +87,10 @@ namespace nil {
                 return leaf() == data;
             }
 
-            fn leaf(&self)-><Self::Hasher as Hasher>::Domain;
-            fn root(&self)-><Self::Hasher as Hasher>::Domain;
-            fn len(&self)->usize;
-            fn path(&self)->Vec<(Vec << Self::Hasher as Hasher > ::Domain >, usize)>;
+            virtual typename Hash::domain_type leaf() = 0;
+            virtual typename Hash::domain_type root() = 0;
+            virtual std::size_t typename Hash::domain_type len() = 0;
+            virtual std::vector<std::pair<std::vector<typename Hash::domain_type>, std::size_t>> path() = 0;
 
             std::size_t path_index() {
                 return path().iter().rev().fold(0, | acc, (_, index) | (acc * Self::Arity::to_usize()) + index);
