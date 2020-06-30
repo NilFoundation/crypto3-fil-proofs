@@ -26,8 +26,34 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_PROOF_SCHEME_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_PROOF_SCHEME_HPP
 
+#include <nil/filecoin/storage/core/proof/proof_scheme.hpp>
+
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace vanilla {
+            template<typename PublicParams, typename SetupParams, typename PublicInputs, typename PrivateInputs,
+                     typename Proof, typename Requirements>
+            struct proof_scheme : public filecoin::proof_scheme<PublicParams, SetupParams, PublicInputs, PrivateInputs,
+                                                                Proof, Requirements> {
+                /// setup is used to generate public parameters from setup parameters in order to specialize
+                /// a ProofScheme to the specific parameters required by a consumer.
+                virtual public_params_type setup(const setup_params_type &p) override {
+                }
+
+                virtual proof_type prove(const public_params_type &params, const public_inputs_type &inputs,
+                                         const private_inputs_type &pinputs) override {
+                }
+
+                /// verify returns true if the supplied proof is valid for the given public parameter and public inputs.
+                /// Note that verify does not have access to private inputs.
+                /// Remember that proof is untrusted, and any data it provides MUST be validated as corresponding
+                /// to the supplied public parameters and inputs.
+                virtual bool verify(const public_params_type &pub_params, const public_inputs_type &pub_inputs,
+                                    const proof_type &pr) override {
+                }
+            };
+        }    // namespace vanilla
+    }        // namespace filecoin
 }    // namespace nil
 
 #endif
