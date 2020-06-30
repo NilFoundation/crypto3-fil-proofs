@@ -27,7 +27,20 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_PROOF_HPP
 
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace vanilla {
+            constexpr static const std::size_t TOTAL_PARENTS = 37;
+
+            template<typename MerkleTreeType, typename Hash>
+            struct StackedDrg {
+                typedef MerkleTreeType tree_type;
+                typedef Hash hash_type;
+
+                tree_type &_a;
+                hash_type &_b;
+            };
+        }
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif

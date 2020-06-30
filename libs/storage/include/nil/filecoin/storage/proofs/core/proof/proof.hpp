@@ -38,6 +38,7 @@ namespace nil {
             typedef PublicInputs public_inputs_type;
             typedef PrivateInputs private_inputs_type;
             typedef Proof proof_type;
+            typedef Requirements requirements_type;
 
             /// setup is used to generate public parameters from setup parameters in order to specialize
             /// a ProofScheme to the specific parameters required by a consumer.
