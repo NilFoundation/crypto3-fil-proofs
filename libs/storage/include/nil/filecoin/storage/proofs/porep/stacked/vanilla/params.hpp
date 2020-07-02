@@ -550,16 +550,10 @@ namespace nil {
                                                        const std::array<std::uint8_t> &porep_seed) {
             using namespace nil::crypto3::hash;
 
-            accumulator_set<sha2<256>> acc;
-            let hash = Sha256::new ()
-                           .chain(prover_id)
-                           .chain(&sector_id.to_be_bytes()[..])
-                           .chain(ticket)
-                           .chain(AsRef::<[u8]>::as_ref(&comm_d))
-                           .chain(porep_seed)
-                           .result();
-
-            bytes_into_fr_repr_safe(hash.as_ref()).into()
+            return hash<sha2<256>>(
+                porep_seed,
+                hash<sha2<256>>(comm_d,
+                                hash<sha2<256>>(ticket, hash<sha2<256>>(sector_id, hash<sha2<256>>(prover_id)))));
         }
     }    // namespace filecoin
 }    // namespace nil
