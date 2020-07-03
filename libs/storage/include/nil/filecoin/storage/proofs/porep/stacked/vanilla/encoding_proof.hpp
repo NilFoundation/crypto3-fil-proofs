@@ -48,7 +48,7 @@ namespace nil {
                         hash<KeyHash>({node}, acc);
                         hash<KeyHash>(parents, acc);
 
-                        return crypto3::accumulators::extract<KeyHash>(acc);
+                        return crypto3::accumulators::extract::hash<KeyHash>(acc);
                     }
 
                     template<typename VerifyingHash>

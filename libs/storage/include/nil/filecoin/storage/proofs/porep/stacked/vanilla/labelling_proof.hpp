@@ -48,7 +48,7 @@ namespace nil {
                         hash<LabelHash>({node}, acc);
                         hash<LabelHash>(parents, acc);
 
-                        return crypto3::accumulators::extract<LabelHash>(acc);
+                        return crypto3::accumulators::extract::hash<LabelHash>(acc);
                     }
 
                     bool verify(const typename Hash::digest_type &replica_id,

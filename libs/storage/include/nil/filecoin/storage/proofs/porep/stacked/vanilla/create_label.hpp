@@ -64,7 +64,7 @@ namespace nil {
                         _mm_prefetch(prev.as_ptr() as *const i8, _MM_HINT_T0);
                         hash = graph.copy_parents_data(node as u32, &*layer_labels, hasher, cache);
                     } else {
-                        hash = crypto3::accumulators::extract<LabelHash>(acc);
+                        hash = crypto3::accumulators::extract::hash<LabelHash>(acc);
                     }
 
                     // store the newly generated key
@@ -107,7 +107,7 @@ namespace nil {
 
                         hash = graph.copy_parents_data_exp(node, layer_labels, exp_parents_data, hasher, cache);
                     } else {
-                        hash = crypto3::accumulators::extract<LabelHash>(acc);
+                        hash = crypto3::accumulators::extract::hash<LabelHash>(acc);
                     }
 
                     // store the newly generated key
