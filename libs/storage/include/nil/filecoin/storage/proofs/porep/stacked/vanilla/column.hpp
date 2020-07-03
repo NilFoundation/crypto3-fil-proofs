@@ -57,7 +57,6 @@ namespace nil {
 
                     std::uint32_t index;
                     std::vector<typename hash_type::digest_type> rows;
-                    Hash &_h;
                 };
             }    // namespace vanilla
         }        // namespace stacked
