@@ -38,13 +38,14 @@ namespace nil {
 
                     template<typename LabelHash = crypto3::hash::sha2<256>>
                     typename Hash::domain_type create_label(const typename Hash::domain_type &replica_id) {
-                        crypto3::hash::accumulator_set<LabelHash> acc;
+                        using namespace nil::crypto3::hash;
 
-                        crypto3::hash::hash<LabelHash>(replica_id, acc);
-                        crypto3::hash::hash<LabelHash>({layer_index}, acc);
-                        crypto3::hash::hash<LabelHash>({node}, acc);
-                        crypto3::hash::hash<LabelHash>(buffer, acc);
-                        crypto3::hash::hash<LabelHash>(parents, acc);
+                        accumulator_set<LabelHash> acc;
+
+                        hash<LabelHash>(replica_id, acc);
+                        hash<LabelHash>({layer_index}, acc);
+                        hash<LabelHash>({node}, acc);
+                        hash<LabelHash>(parents, acc);
 
                         return bytes_into_fr_repr_safe(hasher.result().as_ref()).into();
                     }
