@@ -105,7 +105,7 @@ namespace nil {
                         }
                     }
 
-                    DiskStore<typename MerkleTreeType::hash_type::domain_type> labels_for_layer(std::size_t layer) {
+                    DiskStore<typename MerkleTreeType::hash_type::digest_type> labels_for_layer(std::size_t layer) {
                         assert(("Layer cannot be 0", layer != 0));
                         assert(layer <= layers(), "Layer {} is not available (only {} layers available)", layer,
                                layers());
@@ -118,7 +118,7 @@ namespace nil {
                     }
 
                     /// Returns label for the last layer.
-                    DiskStore<typename MerkleTreeType::hash_type::domain_type> labels_for_last_layer() {
+                    DiskStore<typename MerkleTreeType::hash_type::digest_type> labels_for_last_layer() {
                         return labels_for_layer(labels.len() - 1);
                     }
 
@@ -166,11 +166,11 @@ namespace nil {
                         tree_c_config.path = cp;
                     }
 
-                    DiskStore<typename MerkleTreeType::hash_type::domain_type> labels_for_layer(std::size_t layer) {
+                    DiskStore<typename MerkleTreeType::hash_type::digest_type> labels_for_layer(std::size_t layer) {
                         return labels.labels_for_layer(layer);
                     }
 
-                    typename MerkleTreeType::hash_type::domain_type domain_node_at_layer(std::size_t layer,
+                    typename MerkleTreeType::hash_type::digest_type domain_node_at_layer(std::size_t layer,
                                                                                          std::uint32_t node_index) {
                         return labels_for_layer(layer).read_at(node_index);
                     }
@@ -282,7 +282,7 @@ namespace nil {
 
                 template<typename MerkleTreeType, typename Hash>
                 struct PrivateInputs {
-                    PersistentAux<typename MerkleTreeType::hash_type::domain_type> p_aux;
+                    PersistentAux<typename MerkleTreeType::hash_type::digest_type> p_aux;
                     TemporaryAuxCache<MerkleTreeType, Hash> t_aux;
                 };
 
@@ -297,18 +297,18 @@ namespace nil {
                     ReplicaColumnProof<MerkleProof<tree_hash_type, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>>
                         replica_column_proofs;
 
-                    typename tree_hash_type::domain_type comm_r_last() {
+                    typename tree_hash_type::digest_type comm_r_last() {
                         return comm_r_last_proof.root();
                     }
 
-                    typename tree_hash_type::domain_type comm_c() {
+                    typename tree_hash_type::digest_type comm_c() {
                         return replica_column_proofs.c_x.root();
                     }
 
                     /// Verify the full proof.
                     bool verify(const PublicParams<MerkleTreeType> &pub_params,
-                                const PublicInputs<typename tree_hash_type::domain_type,
-                                                   typename hash_type::domain_type> &pub_inputs,
+                                const PublicInputs<typename tree_hash_type::digest_type,
+                                                   typename hash_type::digest_type> &pub_inputs,
                                 std::size_t challenge, const StackedBucketGraph<tree_hash_type> &graph) {
                         let replica_id = &pub_inputs.replica_id;
 
@@ -346,7 +346,7 @@ namespace nil {
                     }
 
                     /// Verify all labels.
-                    bool verify_labels(const typename tree_hash_type::domain_type &replica_id,
+                    bool verify_labels(const typename tree_hash_type::digest_type &replica_id,
                                        const LayerChallenges &layer_challenges) {
                         // Verify Labels Layer 1..layers
                         for (layer : layer_challenges.layers()) {
@@ -404,8 +404,8 @@ namespace nil {
 
                 template<typename MerkleTreeType, typename Hash>
                 using TransformedLayers =
-                    std::tuple<Tau<typename MerkleTreeType::hash_type::domain_type, typename Hash::domain_type>,
-                               PersistentAux<typename MerkleTreeType::hash_type::domain_type>,
+                    std::tuple<Tau<typename MerkleTreeType::hash_type::digest_type, typename Hash::digest_type>,
+                               PersistentAux<typename MerkleTreeType::hash_type::digest_type>,
                                TemporaryAux<MerkleTreeType, Hash>>;
 
                 template<typename MerkleTreeType>
@@ -414,7 +414,7 @@ namespace nil {
                     typedef typename tree_type::hash_type tree_hash_type;
 
                     LabelsCache(const Labels<MerkleTreeType> &labels) {
-                        std::vector<DiskStore<typename tree_hash_type::domain_type>> disk_store_labels(labels.size());
+                        std::vector<DiskStore<typename tree_hash_type::digest_type>> disk_store_labels(labels.size());
                         for (i in 0..labels.len()) {
                             disk_store_labels.push(labels.labels_for_layer(i + 1));
                         }
@@ -430,7 +430,7 @@ namespace nil {
                         return labels.empty();
                     }
 
-                    const DiskStore<typename tree_hash_type::domain_type> &labels_for_layer(std::size_t layer) {
+                    const DiskStore<typename tree_hash_type::digest_type> &labels_for_layer(std::size_t layer) {
                         assert(("Layer cannot be 0", layer != 0));
                         assert(layer <= self.layers(), "Layer {} is not available (only {} layers available)", layer,
                                self.layers());
@@ -440,7 +440,7 @@ namespace nil {
                     }
 
                     /// Returns the labels on the last layer.
-                    const DiskStore<typename tree_hash_type::domain_type> &labels_for_last_layer() {
+                    const DiskStore<typename tree_hash_type::digest_type> &labels_for_last_layer() {
                         return labels[labels.size() - 1];
                     }
 
@@ -457,7 +457,7 @@ namespace nil {
                         return {node, rows};
                     }
 
-                    std::vector<DiskStore<typename MerkleTreeType::hash_type::domain_type>> labels;
+                    std::vector<DiskStore<typename MerkleTreeType::hash_type::digest_type>> labels;
                 };
 
                 template<typename MerkleTreeType, typename Hash>
@@ -541,11 +541,11 @@ namespace nil {
         };
                     }
 
-                    DiskStore<typename MerkleTreeType::hash_type::domain_type> &labels_for_layer(std::size_t layer) {
+                    DiskStore<typename MerkleTreeType::hash_type::digest_type> &labels_for_layer(std::size_t layer) {
                         return labels.labels_for_layer(layer);
                     }
 
-                    typename MerkleTreeType::hash_type::domain_type domain_node_at_layer(std::size_t layer,
+                    typename MerkleTreeType::hash_type::digest_type domain_node_at_layer(std::size_t layer,
                                                                                          std::uint32_t node_index) {
                         return labels_for_layer(layer).read_at(node_index);
                     }
@@ -558,13 +558,13 @@ namespace nil {
                 typedef std::function<void(const StoreConfig &, std::size_t, std::size_t)> VerifyCallback;
 
                 template<typename Hash, typename InputDataRange>
-                typename Hash::domain_type get_node(const InputDataRange &data, std::size_t index) {
-                    return Hash::domain_type::try_from_bytes(data_at_node(data, index).expect("invalid node math"));
+                typename Hash::digest_type get_node(const InputDataRange &data, std::size_t index) {
+                    return Hash::digest_type::try_from_bytes(data_at_node(data, index).expect("invalid node math"));
                 }
 
                 /// Generate the replica id as expected for Stacked DRG.
                 template<typename Hash, typename InputDataRange>
-                typename Hash::domain_type
+                typename Hash::digest_type
                     generate_replica_id(const std::array<std::uint8_t, 32> &prover_id, std::uint64_t sector_id,
                                         const std::array<std::uint8_t, 32> &ticket, const InputDataRange &comm_d,
                                         const std::array<std::uint8_t, 32> &porep_seed) {

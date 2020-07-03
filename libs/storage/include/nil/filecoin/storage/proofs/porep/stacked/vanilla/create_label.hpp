@@ -35,7 +35,7 @@ namespace nil {
                 template<template<typename> class StackedBucketGraph, typename GraphHash,
                          typename LabelHash = crypto3::hash::sha2<256>>
                 void create_label(const StackedBucketGraph<GraphHash> &graph, ParentCache &cache,
-                                  const typename GraphHash::domain_type &replica_id,
+                                  const typename GraphHash::digest_type &replica_id,
                                   std::vector<std::uint8_t> &layer_labels, std::size_t layer_index, std::size_t node) {
                     let mut hasher = Sha256::new ();
                     let mut buffer = [0u8; 32];
@@ -68,7 +68,7 @@ namespace nil {
                 template<template<typename> class StackedBucketGraph, typename GraphHash,
                                             typename LabelHash = crypto3::hash::sha2<256>>
                 void create_label_exp(const StackedBucketGraph<GraphHash> &graph, ParentCache &cache,
-                                      const typename GraphHash::domain_type &replica_id,
+                                      const typename GraphHash::digest_type &replica_id,
                                       const std::vector<std::uint8_t> &exp_parents_data,
                                       std::vector<std::uint8_t> &layer_labels, std::size_t layer_index,
                                       std::size_t node) {

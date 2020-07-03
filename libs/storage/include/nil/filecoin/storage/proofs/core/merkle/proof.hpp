@@ -39,7 +39,7 @@ namespace nil {
 
             /// Try to convert a merkletree proof into this structure.
             static MerkleProofTrait<Hash, Arity, SubTreeArity, TopTreeArity>
-                try_from_proof(const Proof<typename Hash::domain_type, Arity> &p) {
+                try_from_proof(const Proof<typename Hash::digest_type, Arity> &p) {
             }
 
             std::vector<std::pair<std::vector<Fr>, std::size_t>> as_options(&self) {
@@ -87,10 +87,10 @@ namespace nil {
                 return leaf() == data;
             }
 
-            virtual typename Hash::domain_type leaf() = 0;
-            virtual typename Hash::domain_type root() = 0;
-            virtual std::size_t typename Hash::domain_type len() = 0;
-            virtual std::vector<std::pair<std::vector<typename Hash::domain_type>, std::size_t>> path() = 0;
+            virtual typename Hash::digest_type leaf() = 0;
+            virtual typename Hash::digest_type root() = 0;
+            virtual std::size_t typename Hash::digest_type len() = 0;
+            virtual std::vector<std::pair<std::vector<typename Hash::digest_type>, std::size_t>> path() = 0;
 
             std::size_t path_index() {
                 return path().iter().rev().fold(0, | acc, (_, index) | (acc * Self::Arity::to_usize()) + index);

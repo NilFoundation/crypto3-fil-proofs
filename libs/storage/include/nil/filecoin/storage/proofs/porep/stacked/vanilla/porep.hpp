@@ -53,18 +53,18 @@ namespace nil {
             typedef typename policy_type::proof_type proof_type;
 
             virtual std::pair<Tau, ProverAux> replicate(const public_params_type &pub_params,
-                                                        const typename H::domain_type &replica_id, const data &data,
+                                                        const typename H::digest_type &replica_id, const data &data,
                                                         const binary_merkle_tree<G> &data_tree,
                                                         const store_config &config,
                                                         const boost::filesystem::path &replica_path) = 0;
 
             virtual std::vector<std::uint8_t> extract_all(const public_params_type &pub_params,
-                                                          const typename H::domain_type &replica_id,
+                                                          const typename H::digest_type &replica_id,
                                                           const std::vector<std::uint8_t> &replica,
                                                           const store_config &config) = 0;
 
             virtual std::vector<std::uint8_t> extract(const public_params_type &pub_params,
-                                                          const typename H::domain_type &replica_id,
+                                                          const typename H::digest_type &replica_id,
                                                           const std::vector<std::uint8_t> &replica,
                                                           std::size_t node,
                                                           const store_config &config) = 0;

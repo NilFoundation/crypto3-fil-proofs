@@ -37,7 +37,7 @@ namespace nil {
                     typedef Hash hash_type;
 
                     template<typename KeyHash = crypto3::hash::sha2<256>>
-                    typename hash_type::domain_type create_key(const typename hash_type::domain_type &replica_id) {
+                    typename hash_type::digest_type create_key(const typename hash_type::digest_type &replica_id) {
                         using namespace nil::crypto3::hash;
 
                         accumulator_set<LabelHash> acc;
@@ -54,9 +54,9 @@ namespace nil {
                     }
 
                     template<typename VerifyingHash>
-                    bool verify(const typename hash_type::domain_type &replica_id,
-                                const typename hash_type::domain_type &exp_encoded_node,
-                                const typename VerifyingHash::domain_type &decoded_node) {
+                    bool verify(const typename hash_type::digest_type &replica_id,
+                                const typename hash_type::digest_type &exp_encoded_node,
+                                const typename VerifyingHash::digest_type &decoded_node) {
                         let key = create_key(replica_id);
 
                         let fr : Fr = (*decoded_node).into();
@@ -65,7 +65,7 @@ namespace nil {
                         return exp_encoded_node == encoded_node;
                     }
 
-                    std::vector<typename hash_type::domain_type> parents;
+                    std::vector<typename hash_type::digest_type> parents;
                     std::uint32_t layer_index;
                     std::uint64_t node;
                     hash_type &_h;
