@@ -38,25 +38,19 @@ namespace nil {
 
                     template<typename KeyHash = crypto3::hash::sha2<256>>
                     typename hash_type::domain_type create_key(const typename hash_type::domain_type &replica_id) {
+                        using namespace nil::crypto3::hash;
+
+                        accumulator_set<LabelHash> acc;
+
+                        hash<LabelHash>(replica_id, acc);
+                        hash<LabelHash>({layer_index}, acc);
+                        hash<LabelHash>({node}, acc);
+                        hash<LabelHash>(parents, acc);
+
                         let mut hasher = Sha256::new ();
                         let mut buffer = [0u8; 64];
 
-                        // replica_id
-                        buffer[..32].copy_from_slice(AsRef::<[u8]>::as_ref(replica_id));
-
-                        // layer index
-                        buffer[32..36].copy_from_slice(&(layer_index as u32).to_be_bytes());
-                        // node id
-                        buffer[36..44].copy_from_slice(&(node as u64).to_be_bytes());
-
-                        hasher.input(&buffer[..]);
-
-                        // parents
-                        for (parent : parents) {
-                            hasher.input(AsRef::<[u8]>::as_ref(parent));
-                        }
-
-                        bytes_into_fr_repr_safe(hasher.result().as_ref()).into()
+                        return bytes_into_fr_repr_safe(hasher.result().as_ref()).into();
                     }
 
                     template<typename VerifyingHash>
