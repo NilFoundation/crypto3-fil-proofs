@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_LABELING_PROOF_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_LABELING_PROOF_HPP
 
+#include <nil/crypto3/hash/sha2.hpp>
+
 namespace nil {
     namespace filecoin {
         namespace stacked {
@@ -34,29 +36,17 @@ namespace nil {
                 struct LabelingProof {
                     typedef Hash hash_type;
 
-                    template<typename LabelHash>
+                    template<typename LabelHash = crypto3::hash::sha2<256>>
                     typename Hash::domain_type create_label(const typename Hash::domain_type &replica_id) {
-                        let mut hasher = Sha256::new ();
-                        let mut buffer = [0u8; 64];
+                        crypto3::hash::accumulator_set<LabelHash> acc;
 
-                        // replica_id
-                        buffer[..32].copy_from_slice(AsRef::<[u8]>::as_ref(replica_id));
+                        crypto3::hash::hash<LabelHash>(replica_id, acc);
+                        crypto3::hash::hash<LabelHash>({layer_index}, acc);
+                        crypto3::hash::hash<LabelHash>({node}, acc);
+                        crypto3::hash::hash<LabelHash>(buffer, acc);
+                        crypto3::hash::hash<LabelHash>(parents, acc);
 
-                        // layer index
-                        buffer[32..36].copy_from_slice(&(self.layer_index as u32).to_be_bytes());
-
-                        // node id
-                        buffer[36..44].copy_from_slice(&(self.node as u64).to_be_bytes());
-
-                        hasher.input(&buffer[..]);
-
-                        // parents
-                        for (parent : parents) {
-                            let data = AsRef::<[u8]>::as_ref(parent);
-                            hasher.input(data);
-                        }
-
-                        bytes_into_fr_repr_safe(hasher.result().as_ref()).into()
+                        return bytes_into_fr_repr_safe(hasher.result().as_ref()).into();
                     }
 
                     bool verify(const typename Hash::domain_type &replica_id,

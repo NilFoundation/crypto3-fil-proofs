@@ -555,7 +555,7 @@ namespace nil {
                     }
                 };
 
-                typedef std::function<void(StoreConfig &, std::size_t, std::size_t)> VerifyCallback;
+                typedef std::function<void(const StoreConfig &, std::size_t, std::size_t)> VerifyCallback;
 
                 template<typename Hash, typename InputDataRange>
                 typename Hash::domain_type get_node(const InputDataRange &data, std::size_t index) {
