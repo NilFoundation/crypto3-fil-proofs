@@ -563,17 +563,21 @@ namespace nil {
                 }
 
                 /// Generate the replica id as expected for Stacked DRG.
-                template<typename Hash, typename InputDataRange>
+                template<typename InputDataRange, typename Hash = crypto3::hash::sha2<256>>
                 typename Hash::digest_type
                     generate_replica_id(const std::array<std::uint8_t, 32> &prover_id, std::uint64_t sector_id,
                                         const std::array<std::uint8_t, 32> &ticket, const InputDataRange &comm_d,
                                         const std::array<std::uint8_t, 32> &porep_seed) {
                     using namespace nil::crypto3::hash;
 
-                    return hash<sha2<256>>(
-                        porep_seed,
-                        hash<sha2<256>>(
-                            comm_d, hash<sha2<256>>(ticket, hash<sha2<256>>(sector_id, hash<sha2<256>>(prover_id)))));
+                    accumulator_set<Hash> acc;
+                    hash<Hash>(prover_id, acc);
+                    hash<Hash>(sector_id, acc);
+                    hash<Hash>(ticket, acc);
+                    hash<Hash>(comm_d, acc);
+                    hash<Hash>(porep_seed, acc);
+
+                    return crypto3::accumulators::extract::hash<Hash>(acc);
                 }
             }    // namespace vanilla
         }        // namespace stacked

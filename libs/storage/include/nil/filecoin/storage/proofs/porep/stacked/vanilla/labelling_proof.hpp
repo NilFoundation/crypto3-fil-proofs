@@ -27,6 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_LABELING_PROOF_HPP
 
 #include <nil/crypto3/hash/sha2.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -47,7 +48,7 @@ namespace nil {
                         hash<LabelHash>({node}, acc);
                         hash<LabelHash>(parents, acc);
 
-                        return bytes_into_fr_repr_safe(hasher.result().as_ref()).into();
+                        return crypto3::accumulators::extract<LabelHash>(acc);
                     }
 
                     bool verify(const typename Hash::digest_type &replica_id,
@@ -59,7 +60,6 @@ namespace nil {
                     typename Hash::digest_type parents;
                     std::uint32_t layer_index;
                     std::uint64_t node;
-                    Hash &_h;
                 };
             }    // namespace vanilla
         }        // namespace stacked
