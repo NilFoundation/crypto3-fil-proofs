@@ -539,7 +539,7 @@ namespace nil {
 
         template<typename Hash, typename InputDataRange>
         typename Hash::domain_type get_node(const InputDataRange &data, std::size_t index) {
-            return H::Domain::try_from_bytes(data_at_node(data, index).expect("invalid node math"));
+            return Hash::domain_type::try_from_bytes(data_at_node(data, index).expect("invalid node math"));
         }
 
         /// Generate the replica id as expected for Stacked DRG.
