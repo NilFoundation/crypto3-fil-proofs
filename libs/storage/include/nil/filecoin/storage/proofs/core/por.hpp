@@ -64,7 +64,7 @@ namespace nil {
         struct private_inputs {
             typedef MerkleTreeType tree_type;
 
-            typename tree_type::hash_type::domain_type leaf;
+            typename tree_type::hash_type::digest_type leaf;
             tree_type tree;
         };
 
@@ -83,10 +83,10 @@ namespace nil {
         template<typename MerkleTreeType>
         class por_proof_scheme
             : public proof_scheme<
-                  public_params, setup_params, public_inputs<typename MerkleTreeType::hash_type::domain_type>,
+                  public_params, setup_params, public_inputs<typename MerkleTreeType::hash_type::digest_type>,
                   private_inputs<MerkleTreeType>, data_proof<typename MerkleTreeType::proof_type>, no_requirements> {
             typedef proof_scheme<
-                public_params, setup_params, public_inputs<typename MerkleTreeType::hash_type::domain_type>,
+                public_params, setup_params, public_inputs<typename MerkleTreeType::hash_type::digest_type>,
                 private_inputs<MerkleTreeType>, data_proof<typename MerkleTreeType::proof_type>, no_requirements>
                 policy_type;
 

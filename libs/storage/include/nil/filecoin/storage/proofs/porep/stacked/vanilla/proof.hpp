@@ -51,9 +51,9 @@ namespace nil {
 
                     std::vector<std::vector<Proof<tree_type, hash_type>>> prove_layers(
                         const StackedBucketGraph<tree_hash_type> &graph,
-                        const PublicInputs<typename tree_hash_type::domain_type, typename hash_type::domain_type>
+                        const PublicInputs<typename tree_hash_type::digest_type, typename hash_type::digest_type>
                             &pub_inputs,
-                        const PersistentAux<typename tree_hash_type::domain_type> &p_aux,
+                        const PersistentAux<typename tree_hash_type::digest_type> &p_aux,
                         const TemporaryAuxCache<tree_type, hash_type> &t_aux,
                         const LayerChallenges &layer_challenges,
                         std::size_t layers,
@@ -161,7 +161,7 @@ namespace nil {
 
                             for (int layer = 1; layer != layers; layer++) {
                             trace !("  encoding proof layer {}", layer);
-                            std::vector<typename tree_hash_type::domain_type> parents_data;
+                            std::vector<typename tree_hash_type::digest_type> parents_data;
                             if (layer == 1) {
                                 let mut parents = vec ![0; graph.base_graph().degree()];
                                 graph.base_parents(challenge, &mut parents) ? ;
@@ -230,7 +230,7 @@ namespace nil {
 
             void extract_and_invert_transform_layers(const StackedBucketGraph<tree_hash_type> &graph,
                                                      const LayerChallenges &layer_challenges,
-                                                     const typename tree_hash_type::domain_type &replica_id,
+                                                     const typename tree_hash_type::digest_type &replica_id,
                                                      const std::vector<std::uint8_t> &data, const StoreConfig &config) {
                 trace !("extract_and_invert_transform_layers");
 
@@ -256,7 +256,7 @@ namespace nil {
             std::tuple<LabelsCache<tree_type>, Labels<tree_type>>
                 generate_labels(const StackedBucketGraph<tree_hash_type> &graph,
                                 const LayerChallenges &layer_challenges,
-                                const typename tree_hash_type::domain_type &replica_id, const StoreConfig &config) {
+                                const typename tree_hash_type::digest_type &replica_id, const StoreConfig &config) {
                 info !("generate labels");
 
                 let layers = layer_challenges.layers();
@@ -309,7 +309,7 @@ namespace nil {
 
                             info !("  storing labels on disk");
                             // Construct and persist the layer data.
-                            DiskStore<typename tree_hash_type::domain_type> layer_store =
+                            DiskStore<typename tree_hash_type::digest_type> layer_store =
                                 DiskStore::new_from_slice_with_config(graph.size(), Tree::Arity::to_usize(),
                                                                       &labels_buffer[..layer_size],
                                                                       layer_config.clone());
@@ -760,7 +760,7 @@ namespace nil {
             TransformedLayers<tree_type, hash_type>
                 transform_and_replicate_layers(const StackedBucketGraph<tree_hash_type> &graph,
                                                const LayerChallenges &layer_challenges,
-                                               const typename hash_type::domain_type &replica_id, const Data &data,
+                                               const typename hash_type::digest_type &replica_id, const Data &data,
                                                const BinaryMerkleTree<G> &data_tree, const StoreConfig &config,
                                                const boost::filesystem::path &replica_path) {
                 // Generate key layers.
@@ -775,7 +775,7 @@ namespace nil {
 
             TransformedLayers<tree_type, hash_type> transform_and_replicate_layers_inner(
                 const StackedBucketGraph<tree_hash_type> &graph, const LayerChallenges &layer_challenges,
-                const typename hash_type::domain_type &replica_id, const Data &data,
+                const typename hash_type::digest_type &replica_id, const Data &data,
                 const BinaryMerkleTree<G> &data_tree, const StoreConfig &config,
                 const boost::filesystem::path &replica_path, const Labels<tree_type> &label_configs) {
                 trace !("transform_and_replicate_layers");
@@ -826,7 +826,7 @@ namespace nil {
                 LabelsCache<tree_type> labels(&label_configs);
                 let configs = split_config(tree_c_config.clone(), tree_count) ? ;
 
-                typename tree_hash_type::domain_type tree_c_root;
+                typename tree_hash_type::digest_type tree_c_root;
                 if (layers == 2) {
                     let tree_c =
                         Self::generate_tree_c::<U2, Tree::Arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
@@ -902,7 +902,7 @@ namespace nil {
 
             /// Phase1 of replication.
             Labels<tree_type> replicate_phase1(const PublicParams<tree_type> &pp,
-                                               const typename tree_hash_type::domain_type &replica_id,
+                                               const typename tree_hash_type::digest_type &replica_id,
                                                const StoreConfig &config) {
                 info !("replicate_phase1");
 

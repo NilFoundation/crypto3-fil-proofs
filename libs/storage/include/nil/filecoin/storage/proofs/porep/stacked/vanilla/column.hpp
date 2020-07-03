@@ -36,7 +36,7 @@ namespace nil {
                 struct Column {
                     typedef Hash hash_type;
 
-                    Column(std::uint32_t index, const std::vector<typename hash_type::domain_type> &rows) :
+                    Column(std::uint32_t index, const std::vector<typename hash_type::digest_type> &rows) :
                         index(index), rows(rows) {
                     }
 
@@ -48,7 +48,7 @@ namespace nil {
                         return hash_single_column(rows.iter().copied().map(Into::into).collect::<Vec<_>>());
                     }
 
-                    typename Hash::domain_type get_node_at_layer(std::size_t layer) {
+                    typename Hash::digest_type get_node_at_layer(std::size_t layer) {
                         assert(("layer must be greater than 0", layer > 0));
                         std::size_t row_index = layer - 1;
 
@@ -56,7 +56,7 @@ namespace nil {
                     }
 
                     std::uint32_t index;
-                    std::vector<typename hash_type::domain_type> rows;
+                    std::vector<typename hash_type::digest_type> rows;
                     Hash &_h;
                 };
             }    // namespace vanilla

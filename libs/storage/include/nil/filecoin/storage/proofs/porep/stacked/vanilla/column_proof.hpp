@@ -37,11 +37,11 @@ namespace nil {
                     typedef MerkleTreeType tree_type;
                     typedef typename tree_type::hash_type hash_type;
 
-                    typename hash_type::domain_type root() {
+                    typename hash_type::digest_type root() {
                         return inclusion_proof.root();
                     }
 
-                    typename hash_type::domain_type get_node_at_layer(std::size_t layer) {
+                    typename hash_type::digest_type get_node_at_layer(std::size_t layer) {
                         return column.get_node_at_layer(layer);
                     }
 
@@ -49,7 +49,7 @@ namespace nil {
                         return column.hash();
                     }
 
-                    bool verify(std::uint32_t challenge, typename hash_type::domain_type &expected_root) {
+                    bool verify(std::uint32_t challenge, typename hash_type::digest_type &expected_root) {
                         Fr c_i = column_hash();
 
                         return inclusion_proof.root() == expected_root && inclusion_proof.validate_data(c_i.into()) &&
@@ -61,9 +61,9 @@ namespace nil {
                 };
 
                 /// Create a column proof for this column.
-                template<template<typename = typename hash_type::domain_type> class StoreType,
+                template<template<typename = typename hash_type::digest_type> class StoreType,
                          template<typename = hash_type,
-                                  typename = StoreType<typename hash_type::domain_type> class MerkleTreeType>
+                                  typename = StoreType<typename hash_type::digest_type> class MerkleTreeType>
                          ColumnProof make_proof(const Column &columnself, tree_c
                                                 : &Tree, )
                              ->Result<ColumnProof<Tree::Proof>> {

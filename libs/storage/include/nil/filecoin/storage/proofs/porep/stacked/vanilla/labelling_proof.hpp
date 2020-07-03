@@ -37,7 +37,7 @@ namespace nil {
                     typedef Hash hash_type;
 
                     template<typename LabelHash = crypto3::hash::sha2<256>>
-                    typename Hash::domain_type create_label(const typename Hash::domain_type &replica_id) {
+                    typename Hash::digest_type create_label(const typename Hash::digest_type &replica_id) {
                         using namespace nil::crypto3::hash;
 
                         accumulator_set<LabelHash> acc;
@@ -50,13 +50,13 @@ namespace nil {
                         return bytes_into_fr_repr_safe(hasher.result().as_ref()).into();
                     }
 
-                    bool verify(const typename Hash::domain_type &replica_id,
-                                const typename Hash::domain_type &expected_label) {
-                        typename Hash::domain_type label = create_label(replica_id);
+                    bool verify(const typename Hash::digest_type &replica_id,
+                                const typename Hash::digest_type &expected_label) {
+                        typename Hash::digest_type label = create_label(replica_id);
                         return expected_label == label;
                     }
 
-                    typename Hash::domain_type parents;
+                    typename Hash::digest_type parents;
                     std::uint32_t layer_index;
                     std::uint64_t node;
                     Hash &_h;
