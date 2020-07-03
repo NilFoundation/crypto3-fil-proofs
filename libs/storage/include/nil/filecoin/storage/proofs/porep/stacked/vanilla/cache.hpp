@@ -26,134 +26,142 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_HASH_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_HASH_HPP
 
+#include <boost/filesystem/path.hpp>
+
+#include <nil/crypto3/detail/pack.hpp>
+
+#include <nil/crypto3/hash/algorithm/hash.hpp>
+#include <nil/crypto3/hash/sha2.hpp>
+
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/graph.hpp>
+
 namespace nil {
     namespace filecoin {
-        /// Path in which to store the parents caches.
-        const PARENT_CACHE_DIR : &str = "/var/tmp/filecoin-parents";
+        namespace stacked {
+            namespace vanilla {
+                /// Path in which to store the parents caches.
+                constexpr static const char *PARENT_CACHE_DIR = "/var/tmp/filecoin-parents";
 
-        /// u32 = 4 bytes
-        const NODE_BYTES : usize = 4;
+                /// u32 = 4 bytes
+                constexpr static const std::size_t NODE_BYTES = 4;
 
-        struct CacheData {
-            /// Change the cache to point to the newly passed in offset.
-            ///
-            /// The `new_offset` must be set, such that `new_offset + len` does not
-            /// overflow the underlying data.
-            void shift(std::uint32_t new_offset) {
-                if (offset == new_offset) {
-                    return;
-                }
+                struct CacheData {
+                    /// Change the cache to point to the newly passed in offset.
+                    ///
+                    /// The `new_offset` must be set, such that `new_offset + len` does not
+                    /// overflow the underlying data.
+                    void shift(std::uint32_t new_offset) {
+                        if (offset == new_offset) {
+                            return;
+                        }
 
-                std::size_t offset = new_offset * DEGREE * NODE_BYTES;
-                std::size_t len = len * DEGREE * NODE_BYTES;
+                        std::size_t offset = new_offset * DEGREE * NODE_BYTES;
+                        std::size_t len = len * DEGREE * NODE_BYTES;
 
-                data = unsafe {memmap::MmapOptions::new ()
-                                   .offset(offset as u64)
-                                   .len(len)
-                                   .map(self.file.as_ref())
-                                   .context("could not shift mmap}") ? };
-                offset = new_offset;
-            }
+                        data = unsafe {memmap::MmapOptions::new ()
+                                           .offset(offset as u64)
+                                           .len(len)
+                                           .map(self.file.as_ref())
+                                           .context("could not shift mmap}") ? };
+                        offset = new_offset;
+                    }
 
-            /// Returns true if this node is in the cached range.
-            bool contains(std::uint32_t node) {
-                return node >= offset && node < offset + len;
-            }
+                    /// Returns true if this node is in the cached range.
+                    bool contains(std::uint32_t node) {
+                        return node >= offset && node < offset + len;
+                    }
 
-            /// Read the parents for the given node from cache.
-            ///
-            /// Panics if the `node` is not in the cache.
-            std::array<std::uint32_t, DEGREE> read(std::uint32_t node) {
-                assert(("node not in cache", node >= self.offset));
-                std::size_t start = (node - offset) * DEGREE * NODE_BYTES;
-                std::size_t end = start + DEGREE * NODE_BYTES;
+                    /// Read the parents for the given node from cache.
+                    ///
+                    /// Panics if the `node` is not in the cache.
+                    std::array<std::uint32_t, DEGREE> read(std::uint32_t node) {
+                        assert(("node not in cache", node >= offset));
+                        std::size_t start = (node - offset) * DEGREE * NODE_BYTES;
+                        std::size_t end = start + DEGREE * NODE_BYTES;
 
-                std::array<std::uint32_t, DEGREE> res;
-                res.fill(0);
-                LittleEndian::read_u32_into(&self.data[start..end], &mut res);
-                return res;
-            }
+                        std::array<std::uint32_t, DEGREE> res;
+                        res.fill(0);
+                        LittleEndian::read_u32_into(data[start..end], res);
+                        return res;
+                    }
 
-            void reset(&mut self) {
-                if (offset == 0) {
-                    return;
-                }
+                    void reset() {
+                        if (offset == 0) {
+                            return;
+                        }
 
-                shift(0)
-            }
+                        shift(0)
+                    }
 
-            static CacheData open(std::uint32_t offset, std::uint32_t len, boost::filesystem::path &path) {
-                std::size_t min_cache_size = (offset + len) * DEGREE * NODE_BYTES;
+                    static CacheData open(std::uint32_t offset, std::uint32_t len,
+                                          const boost::filesystem::path &path) {
+                        std::size_t min_cache_size = (offset + len) * DEGREE * NODE_BYTES;
 
-                let file = LockedFile::open_shared_read(path).with_context(
-                    || format !("could not open path={}", path.display())) ?
-                    ;
+                        let file = LockedFile::open_shared_read(path).with_context(
+                            || format !("could not open path={}", path.display())) ?
+                            ;
 
-                let actual_len = file.as_ref().metadata() ?.len();
-                if (actual_len < min_cache_size) {
-                    bail !("corrupted cache: {}, expected at least {}, got {} bytes",
-                           path.display(),
-                           min_cache_size,
-                           actual_len);
-                }
+                        let actual_len = file.as_ref().metadata() ?.len();
+                        if (actual_len < min_cache_size) {
+                            bail !("corrupted cache: {}, expected at least {}, got {} bytes",
+                                   path.display(),
+                                   min_cache_size,
+                                   actual_len);
+                        }
 
-                let data = unsafe {memmap::MmapOptions::new ()
-                                       .offset((offset as usize * DEGREE * NODE_BYTES) as u64)
-                                       .len(len as usize * DEGREE * NODE_BYTES)
-                                       .map(file.as_ref())
-                                       .with_context(|| format !("could not mmap path={}", path.display())) ? };
+                        let data = unsafe {memmap::MmapOptions::new ()
+                                               .offset((offset as usize * DEGREE * NODE_BYTES) as u64)
+                                               .len(len as usize * DEGREE * NODE_BYTES)
+                                               .map(file.as_ref())
+                                               .with_context(|| format !("could not mmap path={}", path.display())) ? };
 
-                return {data, file, len, offset};
-            }
+                        return {data, file, len, offset};
+                    }
 
-            /// This is a large list of fixed (parent) sized arrays.
-            memmap::mmap data;
-            /// Offset in nodes.
-            std::uint32_t offset;
-            /// Len in nodes.
-            std::uint32_t len;
-            /// The underlyling file.
-            LockedFile file;
-        }
+                    /// This is a large list of fixed (parent) sized arrays.
+                    memmap::mmap data;
+                    /// Offset in nodes.
+                    std::uint32_t offset;
+                    /// Len in nodes.
+                    std::uint32_t len;
+                    /// The underlyling file.
+                    LockedFile file;
+                };
 
-        // StackedGraph will hold two different (but related) `ParentCache`,
-        struct ParentCache {
-            template<template<typename, typename> class StackedGraph, typename Hash, typename Graph>
-            ParentCache(std::uint32_t len, std::uint32_t cache_entries, StackedGraph<Hash, Graph> &graph) {
-                boost::filesystem::path path = cache_path(cache_entries, graph);
-                if (path.exists()) {
-                    Self::open(len, cache_entries, path)
-                } else {
-                    Self::generate(len, cache_entries, graph, path)
-                }
-            }
+                // StackedGraph will hold two different (but related) `ParentCache`,
+                struct ParentCache {
+                    template<template<typename, typename> class StackedGraph, typename Hash, typename Graph>
+                    ParentCache(std::uint32_t len, std::uint32_t cache_entries, StackedGraph<Hash, Graph> &graph) {
+                        boost::filesystem::path path = cache_path(cache_entries, graph);
+                        if (path.is_complete()) {
+                            open(len, cache_entries, path);
+                        } else {
+                            generate(len, cache_entries, graph, path);
+                        }
+                    }
 
-            /// Opens an existing cache from disk.
-            static ParentCache open(std::uint32_t len, std::uint32_t cache_entries,
-                                    const boost::filesystem::path &path) {
-                info !("parent cache: opening {}", path.display());
+                    /// Opens an existing cache from disk.
+                    static ParentCache open(std::uint32_t len, std::uint32_t cache_entries,
+                                            const boost::filesystem::path &path) {
+                        info !("parent cache: opening {}", path.display());
 
-                CacheData cache = CacheData::open(0, len, &path);
-                info !("parent cache: opened");
+                        CacheData cache = CacheData::open(0, len, &path);
+                        info !("parent cache: opened");
 
-                return {cache, path, cache_entries};
-            }
+                        return {cache, path, cache_entries};
+                    }
 
-            /// Generates a new cache and stores it on disk.
-            template<template<typename, typename> class StackedGraph, typename Hash, typename Graph>
-            static ParentCache generate(std::uint32_t len, std::uint32_t cache_entries,
-                                        StackedGraph<Hash, Graph> &graph, const boost::filesystem::path &path) {
-                info !("parent cache: generating {}", path.display());
+                    /// Generates a new cache and stores it on disk.
+                    template<template<typename, typename> class StackedGraph, typename Hash, typename Graph>
+                    static ParentCache generate(std::uint32_t len, std::uint32_t cache_entries,
+                                                StackedGraph<Hash, Graph> &graph, const boost::filesystem::path &path) {
+                        info !("parent cache: generating {}", path.display());
 
-                with_exclusive_lock(
-                    &path.clone(),
-                    | file |
-                        {
-                            let cache_size = cache_entries as usize * NODE_BYTES * DEGREE;
+                        with_exclusive_lock(path, [&](const boost::filesystem::path &file) {
+                            std::size_t cache_size = cache_entries as usize * NODE_BYTES * DEGREE;
                             file.as_ref()
                                 .set_len(cache_size as u64)
-                                .with_context(|| format !("failed to set length: {}", cache_size)) ?
-                                ;
+                                .with_context(|| format !("failed to set length: {}", cache_size));
 
                             let mut data =
                                 unsafe {memmap::MmapOptions::new ()
@@ -162,17 +170,14 @@ namespace nil {
 
                             data.par_chunks_mut(DEGREE * NODE_BYTES)
                                 .enumerate()
-                                .try_for_each(
-                                    | (node, entry) |
-                                          ->Result<()> {
-                                              let mut parents = [0u32; DEGREE];
-                                              graph.base_graph().parents(node, &mut parents[..BASE_DEGREE]) ? ;
-                                              graph.generate_expanded_parents(node, &mut parents[BASE_DEGREE..]);
+                                .try_for_each(| (node, entry) |->Result<()> {
+                                    let mut parents = [0u32; DEGREE];
+                                    graph.base_graph().parents(node, &mut parents[..BASE_DEGREE]) ? ;
+                                    graph.generate_expanded_parents(node, &mut parents[BASE_DEGREE..]);
 
-                                              LittleEndian::write_u32_into(&parents, entry);
-                                              Ok(())
-                                          }) ?
-                                ;
+                                    LittleEndian::write_u32_into(&parents, entry);
+                                    Ok(())
+                                });
 
                             info !("parent cache: generated");
                             data.flush().context("failed to flush parent cache") ? ;
@@ -180,56 +185,59 @@ namespace nil {
 
                             info !("parent cache: written to disk");
                             Ok(())
-                        }) ?
-                    ;
+                        });
 
-                return {CacheData::open(0, len, &path), path, cache_entries};
-            }
+                        return {CacheData::open(0, len, &path), path, cache_entries};
+                    }
 
-            /// Read a single cache element at position `node`.
-            std::array<std::uint32_t, DEGREE> read(std::uint32_t node) {
-                if (cache.contains(node)) {
-                    return cache.read(node);
+                    /// Read a single cache element at position `node`.
+                    std::array<std::uint32_t, DEGREE> read(std::uint32_t node) {
+                        if (cache.contains(node)) {
+                            return cache.read(node);
+                        }
+
+                        // not in memory, shift cache
+                        ensure !(node >= self.cache.offset + self.cache.len,
+                                 "cache must be read in ascending order {} < {} + {}", node, self.cache.offset,
+                                 self.cache.len, );
+
+                        // Shift cache by its current size.
+                        std::size_t new_offset = (num_cache_entries - cache.len).min(cache.offset + cache.len);
+                        cache.shift(new_offset);
+
+                        return cache.read(node);
+                    }
+
+                    /// Resets the partial cache to the beginning.
+                    void reset() {
+                        cache.reset();
+                    }
+
+                    /// Disk path for the cache.
+                    boost::filesystem::path path;
+                    /// The total number of cache entries.
+                    std::uint32_t num_cache_entries;
+                    CacheData cache;
+                };
+
+                template<template<typename, typename> class StackedGraph, typename Hash, typename Graph,
+                         typename FormatHash = crypto3::hash::sha2<256>>
+                boost::filesystem::path cache_path(std::uint32_t cache_entries, StackedGraph<Hash, Graph> &graph) {
+                    let mut hasher = Sha256::default();
+
+                    hasher.input(H::name());
+                    hasher.input(graph.identifier());
+                    for (key : graph.feistel_keys) {
+                        hasher.input(key.to_le_bytes());
+                    }
+                    hasher.input(cache_entries.to_le_bytes());
+                    let h = hasher.result();
+                    return PathBuf::from(PARENT_CACHE_DIR)
+                        .join(format !("v{}-sdr-parent-{}.cache", VERSION, hex::encode(h)))
                 }
-
-                // not in memory, shift cache
-                ensure !(node >= self.cache.offset + self.cache.len,
-                         "cache must be read in ascending order {} < {} + {}", node, self.cache.offset,
-                         self.cache.len, );
-
-                // Shift cache by its current size.
-                let new_offset = (self.num_cache_entries - self.cache.len).min(self.cache.offset + self.cache.len);
-                self.cache.shift(new_offset) ? ;
-
-                Ok(self.cache.read(node))
-            }
-
-            /// Resets the partial cache to the beginning.
-            void reset() {
-                cache.reset();
-            }
-
-            /// Disk path for the cache.
-            boost::filesystem::path path;
-            /// The total number of cache entries.
-            std::uint32_t num_cache_entries;
-            CacheData cache;
-        };
-
-        template<template<typename, typename> class StackedGraph, typename Hash, typename Graph>
-        boost::filesystem::path cache_path(std::uint32_t cache_entries, StackedGraph<Hash, Graph> &graph) {
-            let mut hasher = Sha256::default();
-
-            hasher.input(H::name());
-            hasher.input(graph.identifier());
-            for (key : graph.feistel_keys) {
-                hasher.input(key.to_le_bytes());
-            }
-            hasher.input(cache_entries.to_le_bytes());
-            let h = hasher.result();
-            return PathBuf::from(PARENT_CACHE_DIR).join(format !("v{}-sdr-parent-{}.cache", VERSION, hex::encode(h)))
-        }
-    }    // namespace filecoin
+            }    // namespace vanilla
+        }        // namespace stacked
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif

@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_COLUMN_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_COLUMN_HPP
 
+#include <vector>
+
 namespace nil {
     namespace filecoin {
         namespace stacked {
@@ -34,7 +36,7 @@ namespace nil {
                 struct Column {
                     typedef Hash hash_type;
 
-                    Column(std::uint32_t index, std::vector < typename hash_type::domain_type rows) :
+                    Column(std::uint32_t index, const std::vector<typename hash_type::domain_type> &rows) :
                         index(index), rows(rows) {
                     }
 
@@ -50,25 +52,12 @@ namespace nil {
                         assert(("layer must be greater than 0", layer > 0));
                         std::size_t row_index = layer - 1;
 
-                        return self.rows[row_index];
-                    }
-
-                    /// Create a column proof for this column.
-                    template<template<typename = typename hash_type::domain_type> class StoreType,
-                             template<typename = hash_type,
-                                      typename = StoreType<typename hash_type::domain_type> class MerkleTreeType>
-                             ColumnProof into_proof<S : Store<H::Domain>, Tree : MerkleTreeTrait<Hasher = H, Store =
-                                                                                                                       S>>(
-                                 self, tree_c
-                                 : &Tree, )
-                                 ->Result<ColumnProof<Tree::Proof>> {
-                        let inclusion_proof = tree_c.gen_proof(self.index() as usize) ? ;
-                        ColumnProof::<Tree::Proof>::from_column(self, inclusion_proof)
+                        return rows[row_index];
                     }
 
                     std::uint32_t index;
-                    std::vector<typename Hash::domain_type> rows;
-                    H &_h;
+                    std::vector<typename hash_type::domain_type> rows;
+                    Hash &_h;
                 };
             }    // namespace vanilla
         }        // namespace stacked

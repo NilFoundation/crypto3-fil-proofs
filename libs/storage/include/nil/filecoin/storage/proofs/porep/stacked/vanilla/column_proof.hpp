@@ -59,6 +59,17 @@ namespace nil {
                     Column<hash_type> column;
                     tree_type inclusion_proof;
                 };
+
+                /// Create a column proof for this column.
+                template<template<typename = typename hash_type::domain_type> class StoreType,
+                         template<typename = hash_type,
+                                  typename = StoreType<typename hash_type::domain_type> class MerkleTreeType>
+                         ColumnProof make_proof(const Column &columnself, tree_c
+                                                : &Tree, )
+                             ->Result<ColumnProof<Tree::Proof>> {
+                    let inclusion_proof = tree_c.gen_proof(self.index() as usize) ? ;
+                    ColumnProof::<Tree::Proof>::from_column(self, inclusion_proof)
+                }
             }    // namespace vanilla
         }        // namespace stacked
     }            // namespace filecoin
