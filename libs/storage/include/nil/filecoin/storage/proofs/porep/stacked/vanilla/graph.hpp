@@ -26,8 +26,19 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_GRAPH_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_GRAPH_HPP
 
+#include <nil/filecoin/storage/proofs/core/drgraph.hpp>
+
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace stacked {
+            namespace vanilla {
+                /// The expansion degree used for Stacked Graphs.
+                constexpr static const std::size_t EXP_DEGREE = 8;
+
+                constexpr static const std::size_t DEGREE = BASE_DEGREE + EXP_DEGREE;
+            }    // namespace vanilla
+        }        // namespace stacked
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif

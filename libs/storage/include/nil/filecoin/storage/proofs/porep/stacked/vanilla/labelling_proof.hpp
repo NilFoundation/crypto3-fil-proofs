@@ -23,21 +23,19 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_ENCODING_PROOF_HPP
-#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_ENCODING_PROOF_HPP
-
-#include <nil/crypto3/hash/sha2.hpp>
+#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_LABELING_PROOF_HPP
+#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_LABELING_PROOF_HPP
 
 namespace nil {
     namespace filecoin {
         namespace stacked {
             namespace vanilla {
                 template<typename Hash>
-                struct EncodingProof {
+                struct LabelingProof {
                     typedef Hash hash_type;
 
-                    template<typename KeyHash = crypto3::hash::sha2<256>>
-                    typename hash_type::domain_type create_key(const typename hash_type::domain_type &replica_id) {
+                    template<typename LabelHash>
+                    typename Hash::domain_type create_label(const typename Hash::domain_type &replica_id) {
                         let mut hasher = Sha256::new ();
                         let mut buffer = [0u8; 64];
 
@@ -45,36 +43,32 @@ namespace nil {
                         buffer[..32].copy_from_slice(AsRef::<[u8]>::as_ref(replica_id));
 
                         // layer index
-                        buffer[32..36].copy_from_slice(&(layer_index as u32).to_be_bytes());
+                        buffer[32..36].copy_from_slice(&(self.layer_index as u32).to_be_bytes());
+
                         // node id
-                        buffer[36..44].copy_from_slice(&(node as u64).to_be_bytes());
+                        buffer[36..44].copy_from_slice(&(self.node as u64).to_be_bytes());
 
                         hasher.input(&buffer[..]);
 
                         // parents
                         for (parent : parents) {
-                            hasher.input(AsRef::<[u8]>::as_ref(parent));
+                            let data = AsRef::<[u8]>::as_ref(parent);
+                            hasher.input(data);
                         }
 
                         bytes_into_fr_repr_safe(hasher.result().as_ref()).into()
                     }
 
-                    template<typename VerifyingHash>
-                    bool verify(const typename hash_type::domain_type &replica_id,
-                                const typename hash_type::domain_type &exp_encoded_node,
-                                const typename VerifyingHash::domain_type &decoded_node) {
-                        let key = create_key(replica_id);
-
-                        let fr : Fr = (*decoded_node).into();
-                        let encoded_node = encode(key, fr.into());
-
-                        return exp_encoded_node == encoded_node;
+                    bool verify(const typename Hash::domain_type &replica_id,
+                                const typename Hash::domain_type &expected_label) {
+                        typename Hash::domain_type label = create_label(replica_id);
+                        return expected_label == label;
                     }
 
-                    std::vector<typename hash_type::domain_type> parents;
+                    typename Hash::domain_type parents;
                     std::uint32_t layer_index;
                     std::uint64_t node;
-                    hash_type &_h;
+                    Hash &_h;
                 };
             }    // namespace vanilla
         }        // namespace stacked

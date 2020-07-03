@@ -27,6 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_CHALLENGES_HPP
 
 #include <vector>
+#include <string>
 
 namespace nil {
     namespace filecoin {
@@ -45,7 +46,6 @@ namespace nil {
                         return derive_internal(max_count, leaves, replica_id, seed, k);
                     }
 
-                protected:
                     template<typename Domain>
                     std::vector<std::size_t> derive_internal(std::size_t challenges_count, std::size_t leaves,
                                                              Domain &replica_id,

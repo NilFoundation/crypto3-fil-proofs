@@ -28,9 +28,13 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/column.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/porep.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/challenges.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/create_label.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/encoding_proof.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/labelling_proof.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -81,7 +85,7 @@ namespace nil {
                             return columns;
                         };
 
-                        auto get_exp_parents_columns = [&](std::size_t x) -> std::vector<Column<Tree::Hasher>> {
+                        auto get_exp_parents_columns = [&](std::size_t x) -> std::vector<Column<tree_hash_type>> {
                             let mut parents = vec ![0; graph.expansion_degree()];
                             graph.expanded_parents(x, &mut parents) ? ;
 
@@ -155,61 +159,60 @@ namespace nil {
                             let mut labeling_proofs = Vec::with_capacity(layers);
                             let mut encoding_proof = None;
 
-                            for layer in 1..=layers {
-                            trace !("  encoding proof layer {}", layer, );
-                            let parents_data : Vec << Tree::Hasher as Hasher > ::Domain > = if layer == 1 {
+                            for (int layer = 1; layer != layers; layer++) {
+                            trace !("  encoding proof layer {}", layer);
+                            std::vector<typename tree_hash_type::domain_type> parents_data;
+                            if (layer == 1) {
                                 let mut parents = vec ![0; graph.base_graph().degree()];
                                 graph.base_parents(challenge, &mut parents) ? ;
 
-                                parents.into_iter()
-                                    .map(| parent | t_aux.domain_node_at_layer(layer, parent))
-                                    .collect::<Result<_>>() ?
-                            }
-                            else {
+                                parents_data = parents.into_iter()
+                                                   .map(| parent | t_aux.domain_node_at_layer(layer, parent))
+                                                   .collect::<Result<_>>();
+                            } else {
                                 let mut parents = vec ![0; graph.degree()];
                                 graph.parents(challenge, &mut parents) ? ;
                                 let base_parents_count = graph.base_graph().degree();
 
-                                parents.into_iter()
-                                    .enumerate()
-                                    .map(| (i, parent) |
-                                         {
-                                             if i
-                                                 < base_parents_count {
-                                                     // parents data for base parents is from the current layer
-                                                     t_aux.domain_node_at_layer(layer, parent)
-                                                 }
-                                             else {
-                                                 // parents data for exp parents is from the previous layer
-                                                 t_aux.domain_node_at_layer(layer - 1, parent)
-                                             }
-                                         })
-                                    .collect::<Result<_>>() ?
+                                parents_data = parents.into_iter()
+                                                   .enumerate()
+                                                   .map(| (i, parent) |
+                                                        {
+                                                            if (i < base_parents_count) {
+                                                                // parents data for base parents is from the current
+                                                                // layer
+                                                                t_aux.domain_node_at_layer(layer, parent)
+                                                            } else {
+                                                                // parents data for exp parents is from the previous
+                                                                // layer
+                                                                t_aux.domain_node_at_layer(layer - 1, parent)
+                                                            }
+                                                        })
+                                                   .collect::<Result<_>>();
                             };
 
                             // repeat parents
                             let mut parents_data_full = vec ![Default::default(); TOTAL_PARENTS];
-                                for
-                                    chunk in parents_data_full.chunks_mut(parents_data.len()) {
-                                        chunk.copy_from_slice(&parents_data[..chunk.len()]);
-                                    }
+                            for (chunk : parents_data_full.chunks_mut(parents_data.size())) {
+                                chunk.copy_from_slice(&parents_data[..chunk.size()]);
+                            }
 
-                                let proof = LabelingProof::<Tree::Hasher>::new (layer as u32, challenge as u64,
-                                                                                parents_data_full.clone(), );
+                            let proof = LabelingProof::<Tree::Hasher>::new (layer as u32, challenge as u64,
+                                                                            parents_data_full.clone(), );
 
-                                {
-                                    let labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
-                                    assert !(proof.verify(&pub_inputs.replica_id, &labeled_node),
-                                             format !("Invalid encoding proof generated at layer {}", layer));
-                                    trace !("Valid encoding proof generated at layer {}", layer);
-                                }
+                            {
+                                let labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
+                                assert !(proof.verify(&pub_inputs.replica_id, &labeled_node),
+                                         format !("Invalid encoding proof generated at layer {}", layer));
+                                trace !("Valid encoding proof generated at layer {}", layer);
+                            }
 
-                                labeling_proofs.push(proof);
+                            labeling_proofs.push(proof);
 
-                                if (layer == layers) {
-                                    encoding_proof =
-                                        Some(EncodingProof::new (layer as u32, challenge as u64, parents_data_full, ));
-                                }
+                            if (layer == layers) {
+                                encoding_proof =
+                                    Some(EncodingProof::new (layer as u32, challenge as u64, parents_data_full, ));
+                            }
                             }
 
                             Ok(Proof {
@@ -235,7 +238,7 @@ namespace nil {
                 assert(layers > 0);
 
                 // generate labels
-                let(labels, _) = Self::generate_labels(graph, layer_challenges, replica_id, config) ? ;
+                let(labels, _) = generate_labels(graph, layer_challenges, replica_id, config) ? ;
 
                 let last_layer_labels = labels.labels_for_last_layer() ? ;
                 let size = merkletree::store::Store::len(last_layer_labels);
