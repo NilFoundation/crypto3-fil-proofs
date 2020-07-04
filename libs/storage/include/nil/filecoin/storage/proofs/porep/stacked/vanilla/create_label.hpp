@@ -38,12 +38,12 @@ namespace nil {
         namespace stacked {
             namespace vanilla {
                 template<template<typename> class StackedBucketGraph, typename GraphHash,
-                         typename LabelHash = crypto3::hash::sha2<256>>
+                         typename LabelHash = hashes::sha2<256>>
                 void create_label(const StackedBucketGraph<GraphHash> &graph, ParentCache &cache,
                                   const typename GraphHash::digest_type &replica_id,
                                   std::vector<std::uint8_t> &layer_labels, std::uint32_t layer_index,
                                   std::uint64_t node) {
-                    using namespace nil::crypto3::hash;
+                    using namespace nil::crypto3;
 
                     std::array<std::uint8_t, 12> buffer;
                     buffer.fill(0);
@@ -64,7 +64,7 @@ namespace nil {
                         _mm_prefetch(prev.as_ptr() as *const i8, _MM_HINT_T0);
                         hash = graph.copy_parents_data(node as u32, &*layer_labels, hasher, cache);
                     } else {
-                        hash = crypto3::accumulators::extract::hash<LabelHash>(acc);
+                        hash = accumulators::extract::hash<LabelHash>(acc);
                     }
 
                     // store the newly generated key
@@ -77,13 +77,13 @@ namespace nil {
                 }
 
                 template<template<typename> class StackedBucketGraph, typename GraphHash,
-                         typename LabelHash = crypto3::hash::sha2<256>>
+                         typename LabelHash = hashes::sha2<256>>
                 void create_label_exp(const StackedBucketGraph<GraphHash> &graph, ParentCache &cache,
                                       const typename GraphHash::digest_type &replica_id,
                                       const std::vector<std::uint8_t> &exp_parents_data,
                                       std::vector<std::uint8_t> &layer_labels, std::uint32_t layer_index,
                                       std::uint64_t node) {
-                    using namespace nil::crypto3::hash;
+                    using namespace nil::crypto3;
 
                     std::array<std::uint8_t, 12> buffer;
                     buffer.fill(0);
@@ -107,7 +107,7 @@ namespace nil {
 
                         hash = graph.copy_parents_data_exp(node, layer_labels, exp_parents_data, hasher, cache);
                     } else {
-                        hash = crypto3::accumulators::extract::hash<LabelHash>(acc);
+                        hash = accumulators::extract::hash<LabelHash>(acc);
                     }
 
                     // store the newly generated key

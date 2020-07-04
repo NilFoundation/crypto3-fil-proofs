@@ -37,9 +37,9 @@ namespace nil {
                 struct LabelingProof {
                     typedef Hash hash_type;
 
-                    template<typename LabelHash = crypto3::hash::sha2<256>>
+                    template<typename LabelHash = hashes::sha2<256>>
                     typename Hash::digest_type create_label(const typename Hash::digest_type &replica_id) {
-                        using namespace nil::crypto3::hash;
+                        using namespace nil::crypto3;
 
                         accumulator_set<LabelHash> acc;
 
@@ -48,7 +48,7 @@ namespace nil {
                         hash<LabelHash>({node}, acc);
                         hash<LabelHash>(parents, acc);
 
-                        return crypto3::accumulators::extract::hash<LabelHash>(acc);
+                        return accumulators::extract::hash<LabelHash>(acc);
                     }
 
                     bool verify(const typename Hash::digest_type &replica_id,
