@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_PROOF_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_PROOF_HPP
 
+#include <nil/filecoin/storage/proofs/porep/stacked/circuit/column.hpp>
+
 namespace nil {
     namespace filecoin { }    // namespace filecoin
 }    // namespace nil
