@@ -37,9 +37,9 @@ namespace nil {
                 struct EncodingProof {
                     typedef Hash hash_type;
 
-                    template<typename KeyHash = crypto3::hash::sha2<256>>
+                    template<typename KeyHash = hashes::sha2<256>>
                     typename hash_type::digest_type create_key(const typename hash_type::digest_type &replica_id) {
-                        using namespace nil::crypto3::hash;
+                        using namespace nil::crypto3;
 
                         accumulator_set<KeyHash> acc;
 
@@ -48,7 +48,7 @@ namespace nil {
                         hash<KeyHash>({node}, acc);
                         hash<KeyHash>(parents, acc);
 
-                        return crypto3::accumulators::extract::hash<KeyHash>(acc);
+                        return accumulators::extract::hash<KeyHash>(acc);
                     }
 
                     template<typename VerifyingHash>

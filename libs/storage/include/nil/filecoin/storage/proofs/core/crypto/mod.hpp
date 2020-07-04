@@ -31,7 +31,7 @@
 
 namespace nil {
     namespace filecoin {
-        using namespace nil::crypto3::hash;
+        using namespace nil::crypto3;
 
         typedef const char *domain_separation_tag;
 
@@ -40,7 +40,7 @@ namespace nil {
 
         template<typename PoRepIDIterator, typename OutputIterator>
         OutputIterator derive_porep_domain_seed(PoRepIDIterator first, PoRepIDIterator last, OutputIterator out) {
-            return hash<sha2<256>>(hash<sha2<256>>(first, last), out);
+            return hash<hashes::sha2<256>>(hash<hashes::sha2<256>>(first, last), out);
         }
     }    // namespace filecoin
 }    // namespace nil

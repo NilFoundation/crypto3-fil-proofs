@@ -108,9 +108,9 @@ namespace nil {
             }
 
             std::string cache_identifier(const P &pub_params) {
-                using namespace nil::crypto3::hash;
+                using namespace nil::crypto3;
 
-                std::string circuit_hash = hash<sha2<256>>(pub_params.identifier());
+                std::string circuit_hash = hash<hashes::sha2<256>>(pub_params.identifier());
                 format !("{}-{:02x}", Self::cache_prefix(), circuit_hash.iter().format(""))
             }
 
@@ -217,8 +217,8 @@ namespace nil {
         }
 
         template<typename Bls12>
-        groth16::parameters<Bls12>
-            write_cached_params(const boost::filesystem::path &cache_entry_path, groth16::parameters<Bls12> value) {
+        groth16::parameters<Bls12> write_cached_params(const boost::filesystem::path &cache_entry_path,
+                                                       groth16::parameters<Bls12> value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);
                 return value;
