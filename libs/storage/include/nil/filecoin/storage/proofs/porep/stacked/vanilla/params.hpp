@@ -182,15 +182,14 @@ namespace nil {
                     // 'clear_temp' will discard all persisted merkle and layer data
                     // that is no longer required.
                     void clear_temp(TemporaryAux<MerkleTreeType, Hash> t_aux) {
-                        let cached = |
-                                     config : &StoreConfig |
-                                              {Path::new (&StoreConfig::data_path(&config.path, &config.id)).exists()};
+                        auto cached = [&](const StoreConfig &config) -> bool {
+                            return boost::filesystem::path(&StoreConfig::data_path(&config.path, &config.id)).exists();
+                        };
 
-                        let delete_tree_c_store = | config : &StoreConfig, tree_c_size : usize |->Result<()> {
+                        auto delete_tree_c_store = [&](const StoreConfig &config, std::size_t tree_c_size) {
                             let tree_c_store =
                                 DiskStore:: << Tree::Hasher as Hasher > ::Domain >
-                                ::new_from_disk(tree_c_size, Tree::Arity::to_usize(), &config, ).context("tree_c") ?
-                                ;
+                                ::new_from_disk(tree_c_size, Tree::Arity::to_usize(), &config, ).context("tree_c");
                             // Note: from_data_store requires the base tree leaf count
                     let tree_c = DiskTree::<
                     Tree::Hasher,
@@ -203,11 +202,9 @@ namespace nil {
                     )
                     .context("tree_c")?;
                     tree_c.delete(config.clone()).context("tree_c") ? ;
-
-                    Ok(())
                         };
 
-                        if cached (&t_aux.tree_d_config) {
+                        if (cached(&t_aux.tree_d_config)) {
                             let tree_d_size = t_aux.tree_d_config.size.context("tree_d config has no size") ? ;
                             let tree_d_store
                                 : DiskStore<G::Domain> =
@@ -229,17 +226,18 @@ namespace nil {
                         let tree_c_size = t_aux.tree_c_config.size.context("tree_c config has no size") ? ;
                         let configs = split_config(t_aux.tree_c_config.clone(), tree_count) ? ;
 
-                        if cached (&t_aux.tree_c_config) {
+                        if (cached(&t_aux.tree_c_config)) {
                             delete_tree_c_store(&t_aux.tree_c_config, tree_c_size) ? ;
-                        } else if cached (&configs[0]) {
-                    for
-                        config in &configs {
-                            // Trees with sub-trees cannot be instantiated and deleted via the existing tree interface
-                            // since knowledge of how the base trees are split exists outside of merkle light.  For now,
-                            // we manually remove each on disk tree file since we know where they are here.
-                            let tree_c_path = StoreConfig::data_path(&config.path, &config.id);
-                            remove_file(&tree_c_path).with_context(|| format !("Failed to delete {:?}", &tree_c_path)) ?
-                        }
+                        } else if (cached(&configs[0])) {
+                            for (config : configs) {
+                                // Trees with sub-trees cannot be instantiated and deleted via the existing tree
+                                // interface since knowledge of how the base trees are split exists outside of merkle
+                                // light.  For now, we manually remove each on disk tree file since we know where they
+                                // are here.
+                                let tree_c_path = StoreConfig::data_path(&config.path, &config.id);
+                                remove_file(&tree_c_path)
+                                    .with_context(|| format !("Failed to delete {:?}", &tree_c_path)) ?
+                            }
                         }
                         trace !("tree c deleted");
 
@@ -267,7 +265,7 @@ namespace nil {
                                                         std::size_t partition_k) {
                         let k = partition_k.unwrap_or(0);
 
-                        return layer_challenges.derive::<T>(leaves, &self.replica_id, &self.seed, k);
+                        return layer_challenges.derive<T>(leaves, replica_id, seed, k);
                     }
 
                     T replica_id;
@@ -293,8 +291,12 @@ namespace nil {
                     typedef typename tree_type::hash_type tree_hash_type;
 
                     MerkleProof<hash_type, typenum::U2> comm_d_proofs;
-                    MerkleProof<tree_hash_type, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity> comm_r_last_proof;
-                    ReplicaColumnProof<MerkleProof<tree_hash_type, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>>
+                    MerkleProof<tree_hash_type, typename MerkleTreeType::Arity, typename MerkleTreeType::SubTreeArity,
+                                typename MerkleTreeType::TopTreeArity>
+                        comm_r_last_proof;
+                    ReplicaColumnProof<
+                        MerkleProof<tree_hash_type, typename MerkleTreeType::Arity,
+                                    typename MerkleTreeType::SubTreeArity, typename MerkleTreeType::TopTreeArity>>
                         replica_column_proofs;
 
                     typename tree_hash_type::digest_type comm_r_last() {
