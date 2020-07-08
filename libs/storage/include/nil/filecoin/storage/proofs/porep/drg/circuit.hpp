@@ -32,6 +32,14 @@
 #include <nil/crypto3/hash/sha2.hpp>
 
 namespace nil {
+    namespace crypto3 {
+        namespace zk {
+            namespace snark {
+                template<typename ScalarEngine>
+                struct circuit;
+            }
+        }    // namespace zk
+    }        // namespace crypto3
     namespace filecoin {
         /*!
          * @brief DRG based Proof of Replication.
@@ -59,7 +67,7 @@ namespace nil {
          * @tparam Bls12
          */
         template<typename Hash, template<typename> class ConstraintSystem, typename Bls12, typename Fr>
-        struct drg_porep_circuit {
+        struct DrgPoRepCircuit : public crypto3::zk::snark::circuit<Bls12> {
             typedef Hash hash_type;
 
             std::vector<Fr> replica_nodes;
@@ -72,7 +80,117 @@ namespace nil {
             root<Bls12> data_root;
             Fr replica_id;
             bool priv;
-            crypto3::hash::accumulator_set<Hash> _h;
+
+            void synthesize(ConstraintSystem<Bls12> &cs) {
+                Fr replica_id = replica_id;
+                root<Bls12> replica_root = replica_root;
+                root<Bls12> data_root = data_root;
+
+                std::size_t nodes = data_nodes.size();
+
+                assert(replica_nodes.size() == nodes);
+                assert(replica_nodes_paths.size() == nodes);
+                assert(replica_parents.size() == nodes);
+                assert(replica_parents_paths.size() == nodes);
+                assert(data_nodes_paths.size() == nodes);
+
+                std::size_t replica_node_num =
+                    num::AllocatedNum::alloc(cs.namespace(|| "replica_id_num"),
+                                             || {replica_id.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
+                    ;
+
+                replica_node_num.inputize(cs.namespace(|| "replica_id")) ? ;
+
+                // get the replica_id in bits
+                let replica_id_bits =
+                reverse_bit_numbering(replica_node_num.to_bits_le(cs.namespace(|| "replica_id_bits"))?);
+
+                let replica_root_var = Root::Var(replica_root.allocated(cs.namespace(|| "replica_root"))?);
+                let data_root_var = Root::Var(data_root.allocated(cs.namespace(|| "data_root"))?);
+
+                for (int i = 0; i < data_nodes.size(); i++) {
+                    let mut cs = cs.namespace(|| format !("challenge_{}", i));
+                    // ensure that all inputs are well formed
+                    let replica_node_path = &self.replica_nodes_paths[i];
+                    let replica_parents_paths = &self.replica_parents_paths[i];
+                    let data_node_path = &self.data_nodes_paths[i];
+
+                    let replica_node = &self.replica_nodes[i];
+                    let replica_parents = &self.replica_parents[i];
+                    let data_node = &self.data_nodes[i];
+
+                    assert(replica_parents.size() == replica_parents_paths.size());
+                    assert(data_node_path.size() == replica_node_path.size());
+                    assert(replica_node.is_some() == data_node.is_some());
+
+                    // Inclusion checks
+                    {
+                        let mut cs = cs.namespace(|| "inclusion_checks");
+                        PoRCircuit::<BinaryMerkleTree<H>>::synthesize(
+                            cs.namespace(|| "replica_inclusion"), Root::Val(*replica_node),
+                            replica_node_path.clone().into(), replica_root_var.clone(), self.private, ) ?
+                            ;
+
+                        // validate each replica_parents merkle proof
+                        for (int i = 0; i < replica_parents.size(); i++) {
+                            PoRCircuit::<BinaryMerkleTree<H>>::synthesize(
+                                cs.namespace(|| format !("parents_inclusion_{}", j)), Root::Val(replica_parents[j]),
+                                replica_parents_paths[j].clone().into(), replica_root_var.clone(), self.private, ) ?
+                                ;
+                        }
+
+                        // validate data node commitment
+                        PoRCircuit::<BinaryMerkleTree<H>>::synthesize(
+                            cs.namespace(|| "data_inclusion"), Root::Val(*data_node), data_node_path.clone().into(),
+                            data_root_var.clone(), self.private, ) ?
+                            ;
+                    }
+
+                    // Encoding checks
+                    {
+                        let mut cs = cs.namespace(|| "encoding_checks");
+                        // get the parents into bits
+                        let parents_bits
+                            : Vec<Vec<Boolean>> =
+                                  replica_parents.iter()
+                                      .enumerate()
+                                      .map(| (i, val) |
+                                           {
+                                               let num = num::AllocatedNum::alloc(
+                                                   cs.namespace(|| format !("parents_{}_num", i)),
+                                                   || {val.map(Into::into)
+                                                           .ok_or_else(|| SynthesisError::AssignmentMissing)}, ) ?
+                                                   ;
+                        Ok(reverse_bit_numbering(num.to_bits_le(
+                        cs.namespace(|| format!("parents_{}_bits", i)),
+                        )?))
+                                           })
+                                      .collect::<Result<Vec<Vec<Boolean>>, SynthesisError>>() ?
+                            ;
+
+                        // generate the encryption key
+                        let key = kdf(cs.namespace(|| "kdf"), &replica_id_bits, parents_bits, None, None, ) ? ;
+
+                        let replica_node_num = num::AllocatedNum::alloc(
+                            cs.namespace(|| "replica_node"),
+                            || {(*replica_node).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
+                            ;
+
+                        let decoded = encode::decode(cs.namespace(|| "decode"), &key, &replica_node_num) ? ;
+
+                        // TODO this should not be here, instead, this should be the leaf Fr in the data_auth_path
+                        // TODO also note that we need to change/makesurethat the leaves are the data, instead of
+                        // hashes of the data
+                        let expected =
+                            num::AllocatedNum::alloc(cs.namespace(|| "data node"),
+                                                     || {data_node.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
+                            ;
+
+                        // ensure the encrypted data and data_node match
+                        constraint::equal(&mut cs, || "equality", &expected, &decoded);
+                    }
+                }
+            }
         };
     }    // namespace filecoin
 }    // namespace nil

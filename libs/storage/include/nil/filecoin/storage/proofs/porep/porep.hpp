@@ -23,24 +23,42 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_POREP_DRG_COMPOUND_HPP
-#define FILECOIN_STORAGE_PROOFS_POREP_DRG_COMPOUND_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_POREP_HPP
+#define FILECOIN_STORAGE_PROOFS_POREP_HPP
 
-#include <nil/filecoin/storage/proofs/porep/drg/compound.hpp>
-#include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
+
 namespace nil {
     namespace filecoin {
-        template<typename Hash, typename Graph, template<typename> class Circuit, typename Bls12>
-        struct drg_porep_compound : public cacheable_parameters<Circuit<Bls12>, parameter_set_metadata> {
-            typedef Hash hash_type;
-            typedef Graph graph_type;
+        template<typename H, typename G>
+        struct PoRep {
+            type Tau;
+            type ProverAux;
 
-            virtual std::string cache_prefix() const override {
-                return "drg-proof-of-replication-" + typename Hash::name();
-            }
+            fn replicate(pub_params
+                         : &'a Self::PublicParams, replica_id
+                         : &H::Domain, data
+                         : Data <'a>, data_tree
+                         : Option<BinaryMerkleTree<G>>, config
+                         : StoreConfig, replica_path
+                         : PathBuf, )
+                ->Result<(Self::Tau, Self::ProverAux)>;
 
-            Graph _g;
-        };
+            fn extract_all(pub_params
+                           : &'a Self::PublicParams, replica_id
+                           : &H::Domain, replica
+                           : &[u8], config
+                           : Option<StoreConfig>, )
+                ->Result<Vec<u8>>;
+
+            fn extract(pub_params
+                       : &'a Self::PublicParams, replica_id
+                       : &H::Domain, replica
+                       : &[u8], node
+                       : usize, config
+                       : Option<StoreConfig>, )
+                ->Result<Vec<u8>>;
+        }
     }    // namespace filecoin
 }    // namespace nil
 

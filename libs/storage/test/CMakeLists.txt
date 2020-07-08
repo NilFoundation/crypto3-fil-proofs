@@ -65,7 +65,11 @@ macro(define_storage_test test)
 endmacro()
 
 set(TESTS_NAMES
+    "core/crypto/feistel"
+
     "core/gadgets/por"
+
+    "core/merkle/proof"
 
     "core/pieces"
     "core/por"

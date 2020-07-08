@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/plugin/blob/master/LICENSE_1_0.txt>.
 //----------------------------------------------------------------------------
 
-#define BOOST_TEST_MODULE crypto_fesitedl_test
+#define BOOST_TEST_MODULE crypto_feistel_test
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -25,7 +25,7 @@
 
 using namespace nil::filecoin;
 
-BOOST_AUTO_TEST_SUITE(fr32_test_suite)
+BOOST_AUTO_TEST_SUITE(feistel_test_suite)
 
 // Some sample n-values which are not powers of four and also don't coincidentally happen to
 // encode/decode correctly.

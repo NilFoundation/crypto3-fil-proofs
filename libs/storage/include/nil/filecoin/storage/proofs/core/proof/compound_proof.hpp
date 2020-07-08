@@ -138,9 +138,9 @@ namespace nil {
              * @param partition_k
              * @return
              */
-            std::vector<fr> generate_public_inputs(const public_inputs_type &pub_in,
-                                                   const public_params_type &pub_params, std::size_t partition_k) {
-            }
+            virtual std::vector<fr> generate_public_inputs(const public_inputs_type &pub_in,
+                                                           const public_params_type &pub_params,
+                                                           std::size_t partition_k) = 0;
 
             /*!
              * @brief circuit constructs an instance of this CompoundProof's bellperson::Circuit.
@@ -154,14 +154,12 @@ namespace nil {
              * @param partition_k
              * @return
              */
-            Circuit<Bls12> circuit(const public_inputs_type &public_inputs,
-                                   const ComponentsPrivateInputs &components_private_inputs,
-                                   const proof_type &vanilla_proof, const public_params_type &public_param,
-                                   const std::size_t partition_k) {
-            }
+            virtual Circuit<Bls12> circuit(const public_inputs_type &public_inputs,
+                                           const ComponentsPrivateInputs &components_private_inputs,
+                                           const proof_type &vanilla_proof, const public_params_type &public_param,
+                                           std::size_t partition_k) = 0;
 
-            Circuit<Bls12> blank_circuit(const public_params_type &pp) {
-            }
+            virtual Circuit<Bls12> blank_circuit(const public_params_type &pp) = 0;
 
             /*!
              * @brief If the rng option argument is set, parameters will be
@@ -175,7 +173,8 @@ namespace nil {
              * @return
              */
             template<typename UniformRandomGenerator>
-            groth16::mapped_params<Bls12> groth_params(UniformRandomGenerator &rng, const public_params_type &pp) {
+            virtual groth16::mapped_params<Bls12> groth_params(UniformRandomGenerator &rng,
+                                                               const public_params_type &pp) {
                 return get_groth_params(rng, blank_circuit(pp), pp);
             }
 
@@ -191,7 +190,8 @@ namespace nil {
              * @return
              */
             template<typename UniformRandomGenerator>
-            groth16::verifying_key<Bls12> verifying_key(UniformRandomGenerator &rng, const public_params_type &pp) {
+            virtual groth16::verifying_key<Bls12> verifying_key(UniformRandomGenerator &rng,
+                                                                const public_params_type &pp) {
                 return get_verifying_key(rng, blank_circuit(pp), pp);
             }
         };
