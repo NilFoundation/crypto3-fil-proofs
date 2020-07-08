@@ -28,6 +28,7 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
 namespace nil {
@@ -100,28 +101,27 @@ namespace nil {
             typedef Circuit<Bls12> C;
             typedef ParameterSetMetadata P;
 
-            std::string cache_prefix() {
-            }
+            virtual std::string cache_prefix() const = 0;
 
             cache_entry_metadata cache_meta(const P &pub_params) {
                 return {pub_params.sector_size()};
             }
 
-            std::string cache_identifier(const P &pub_params) {
+            virtual std::string cache_identifier(const P &pub_params) {
                 using namespace nil::crypto3;
 
                 std::string circuit_hash = hash<hashes::sha2<256>>(pub_params.identifier());
-                format !("{}-{:02x}", Self::cache_prefix(), circuit_hash.iter().format(""))
+                format !("{}-{:02x}", cache_prefix(), circuit_hash.iter().format(""))
             }
 
             cache_entry_metadata get_param_metadata(const C &circuit, const P &pub_params) {
-                let id = Self::cache_identifier(pub_params);
+                let id = cache_identifier(pub_params);
 
                 // generate (or load) metadata
                 boost::filesystem::path meta_path =
                     detail::ensure_ancestor_dirs_exist(parameter_cache_metadata_path(&id));
                 read_cached_metadata(&meta_path)
-                    .or_else(| _ | write_cached_metadata(&meta_path, Self::cache_meta(pub_params)))
+                    .or_else(| _ | write_cached_metadata(&meta_path, cache_meta(pub_params)))
             }
 
             template<typename Bls12, typename UniformRandomGenerator>
