@@ -370,9 +370,10 @@ namespace nil {
                     }
                 };    // namespace vanilla
 
-                template<typename Hash, template<typename = Hash> class Graph>
+                template<typename Hash, template<typename> class Graph>
                 std::vector<std::uint8_t>
-                    decode(Graph &graph, typename Hash::digest_type &replica_id, const std::vector<std::uint8_t> &data,
+                    decode(Graph<Hash> &graph, typename Hash::digest_type &replica_id,
+                           const std::vector<std::uint8_t> &data,
                            const std::vector<std::uint8_t> &exp_parents_data = std::vector<std::uint8_t>()) {
                     // TODO: proper error handling
                     let result = (0..graph.size())
@@ -386,71 +387,64 @@ namespace nil {
                     return result;
                 }
 
-                                pub fn decode_block <'a, H, G>( graph
-                            : &'a G, replica_id
-                            : &'a <H as Hasher>::Domain, data
-                            : &'a [u8], exp_parents_data
-                            : Option < &'a [u8]>, v
-                            : usize, )
-                            ->Result
-                        << H as Hasher
-                    > ::Domain > where H : Hasher,
-                    G::Key : AsRef<H::Domain>, G : Graph<H>, {
-                                    let mut parents = vec ![0; graph.degree()];
-                                    graph.parents(v, &mut parents) ? ;
-                                    let key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
-                let node_data = <H as Hasher>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
+                template<typename Hash, template<typename> class Graph>
+                typename Hash::digest_type
+                    decode_block(Graph<Hash> &graph, typename Hash::digest_type &replica_id,
+                                 const std::vector<std::uint8_t> &data, std::size_t v,
+                                 const std::vector<std::uint8_t> &exp_parents_data = std::vector<std::uint8_t>()) {
+                    let mut parents = vec ![0; graph.degree()];
+                    graph.parents(v, &mut parents) ? ;
+                    let key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
+                    let node_data = <H as Hasher>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
 
-                Ok(encode::decode(*key.as_ref(), node_data))
-                                }
-
-                                pub fn decode_domain_block<H : Hasher>(replica_id
-                                                                       : &H::Domain, tree
-                                                                       : &BinaryLCMerkleTree<H>, node
-                                                                       : usize, node_data
-                                                                       : H::Domain, parents
-                                                                       : &[u32], )
-                                    ->Result<H::Domain> where H : Hasher,
-                                {
-                                    let key = create_key_from_tree::<H, _>(replica_id, node, parents, tree) ? ;
-
-                                    Ok(encode::decode(key, node_data))
-                                }
-
-                                /// Creates the encoding key from a `MerkleTree`.
-                                /// The algorithm for that is `Blake2s(id | encodedParentNode1 | encodedParentNode1 |
-                                /// ...)`. It is only public so that it can be used for benchmarking
-        pub fn create_key_from_tree<H: Hasher, U: 'static + PoseidonArity>(
-        id: &H::Domain,
-        node: usize,
-        parents: &[u32],
-        tree: &LCMerkleTree<H, U>,
-        ) -> Result<H::Domain> {
-            let mut hasher = Sha256::new ();
-            hasher.input(AsRef::<[u8]>::as_ref(&id));
-
-            // The hash is about the parents, hence skip if a node doesn't have any parents
-            if node
-                != parents[0] as usize {
-                    let mut scratch : [u8; NODE_SIZE] = [0; NODE_SIZE];
-            for
-                parent in parents.iter() {
-                    tree.read_into(*parent as usize, &mut scratch) ? ;
-                    hasher.input(&scratch);
-                }
+                    return encode::decode(*key.as_ref(), node_data));
                 }
 
-            let hash = hasher.result();
-            Ok(bytes_into_fr_repr_safe(hash.as_ref()).into())
-        }
+                template<typename Hash, template<typename> class BinaryLCMerkleTree>
+                typename Hash::digest_type decode_domain_block(const typename Hash::digest_type &replica_id,
+                                                               const BinaryLCMerkleTree<Hash> &tree, std::size_t node,
+                                                               const typename Hash::digest_type &node_data,
+                                                               const std::vector<std::uint32_t> &parents) {
+                    let key = create_key_from_tree::<H, _>(replica_id, node, parents, tree);
 
-        pub fn replica_id<H : Hasher>(prover_id : [u8; 32], sector_id : [u8; 32])->H::Domain {
-            let mut to_hash = [0; 64];
-            to_hash[..32].copy_from_slice(&prover_id);
-            to_hash[32..].copy_from_slice(&sector_id);
+                    return encode::decode(key, node_data);
+                }
 
-            H::Function::hash_leaf(&to_hash)
-        }
+                /// Creates the encoding key from a `MerkleTree`.
+                /// The algorithm for that is `Blake2s(id | encodedParentNode1 | encodedParentNode1 |
+                /// ...)`. It is only public so that it can be used for benchmarking
+                template<typename Hash, typename Arity, template<typename, typename> class LCMerkleTree,
+                         typename IdHash = crypto3::hashes::sha2<256>>
+                typename Hash::digest_type create_key_from_tree(const typename Hash::digest_type &id, std::size_t node,
+                                                                const std::vector<std::uint32_t> &parents,
+                                                                const LCMerkleTree<Hash, Arity> &tree) {
+                    let mut hasher = Sha256::new ();
+                    hasher.input(AsRef::<[u8]>::as_ref(&id));
+
+                    // The hash is about the parents, hence skip if a node doesn't have any parents
+                    if (node != parents[0]) {
+                        std::array<std::uint8_t, NODE_SIZE> scratch;
+                        scratch.fill(0);
+
+                        for (parent : parents.iter()) {
+                            tree.read_into(*parent as usize, &mut scratch) ? ;
+                            hasher.input(&scratch);
+                        }
+                    }
+
+                    let hash = hasher.result();
+                    return bytes_into_fr_repr_safe(hash.as_ref()).into();
+                }
+
+                template<typename Hash>
+                typename Hash::digest_type replica_id(const std::array<std::uint8_t, 32> &prover_id,
+                                                      const std::array<std::uint8_t, 32> &sector_id) {
+                    let mut to_hash = [0; 64];
+                    to_hash[..32].copy_from_slice(&prover_id);
+                    to_hash[32..].copy_from_slice(&sector_id);
+
+                    H::Function::hash_leaf(&to_hash)
+                }
             }    // namespace drg
         }        // namespace porep
     }            // namespace filecoin
