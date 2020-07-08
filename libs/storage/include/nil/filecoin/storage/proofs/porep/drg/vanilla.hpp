@@ -28,7 +28,8 @@
 
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
-#include <nil/filecoin/storage/proofs/core/proof/proof.hpp>
+
+#include <nil/filecoin/storage/proofs/porep/porep.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -41,11 +42,8 @@ namespace nil {
                         T comm_d;
                     };
 
-                    template<typename Hash,
-                             template<typename>
-                             class BinaryMerkleTree,
-                             template<typename>
-                             class BinaryLCMerkleTree>
+                    template<typename Hash, template<typename> class BinaryMerkleTree,
+                             template<typename> class BinaryLCMerkleTree>
                     struct ProverAux {
                         BinaryMerkleTree<Hash> tree_d;
                         BinaryLCMerkleTree<Hash> tree_r;
@@ -58,11 +56,8 @@ namespace nil {
                         Tau<Domain> tau;
                     };
 
-                    template<typename Hash,
-                             template<typename>
-                             class BinaryMerkleTree,
-                             template<typename>
-                             class BinaryLCMerkleTree>
+                    template<typename Hash, template<typename> class BinaryMerkleTree,
+                             template<typename> class BinaryLCMerkleTree>
                     struct PrivateInputs {
                         BinaryMerkleTree<Hash> &tree_d;
                         BinaryLCMerkleTree<Hash> &tree_r;
@@ -137,18 +132,13 @@ namespace nil {
                     };
 
                     template<typename Hash, template<typename> class Graph>
-                    struct DrgPoRep : public proof_scheme<PublicParams<Hash, Graph>,
-                                                          SetupParams,
-                                                          PublicInputs<typename Hash::digest_type>,
-                                                          PrivateInputs<Hash, Graph, Graph>,
-                                                          Proof<Hash>,
-                                                          no_requirements> {
-                        typedef proof_scheme<PublicParams<Hash, Graph>,
-                                             SetupParams,
-                                             PublicInputs<typename Hash::digest_type>,
-                                             PrivateInputs<Hash, Graph, Graph>,
-                                             Proof<Hash>,
-                                             no_requirements>
+                    struct DrgPoRep
+                        : public PoRep<PublicParams<Hash, Graph>, SetupParams, PublicInputs<typename Hash::digest_type>,
+                                       PrivateInputs<Hash, Graph, Graph>, Proof<Hash>, no_requirements, Hash, Hash,
+                                       Tau<typename Hash::digest_type>, ProverAux<Hash, Graph, Graph>> {
+                        typedef PoRep<PublicParams<Hash, Graph>, SetupParams, PublicInputs<typename Hash::digest_type>,
+                                      PrivateInputs<Hash, Graph, Graph>, Proof<Hash>, no_requirements, Hash, Hash,
+                                      Tau<typename Hash::digest_type>, ProverAux<Hash, Graph, Graph>>
                             policy_type;
 
                         typedef typename policy_type::public_params_type public_params_type;
@@ -158,27 +148,27 @@ namespace nil {
                         typedef typename policy_type::proof_type proof_type;
                         typedef typename policy_type::requirements_type requirements_type;
 
+                        typedef typename policy_type::tau_type tau_type;
+                        typedef typename policy_type::aux_type aux_type;
+
                         virtual public_params_type setup(const setup_params_type &p) override {
                             return {{p.drg.nodes, p.drg.degree, p.drg.expansion_degree, p.drg.porep_id},
                                     p.priv,
                                     p.challenges_count};
                         }
+
                         virtual proof_type prove(const public_params_type &params,
                                                  const public_inputs_type &inputs,
                                                  const private_inputs_type &pinputs) override {
                             std::size_t len = inputs.challenges.size();
-                            ensure !(len <= pub_params.challenges_count,
-                                     "too many challenges {} > {}",
-                                     len,
-                                     pub_params.challenges_count);
+                            assert(len <= params.challenges_count);
 
-                            let mut replica_nodes = Vec::with_capacity(len);
-                            let mut replica_parents = Vec::with_capacity(len);
-                            let mut data_nodes : Vec<DataProof<H, typenum::U2>> = Vec::with_capacity(len);
+                            std::vector<typename Hash::digest_type> replica_nodes(len), replica_parents(len);
+                            std::vector<DataProof<Hash, typenum::U2>> data_nodes(len);
 
                             for (int i = 0; i < len; i++) {
-                                let challenge = pub_inputs.challenges[i] % pub_params.graph.size();
-                                ensure !(challenge != 0, "cannot prove the first node");
+                                std::size_t challenge = inputs.challenges[i] % params.graph.size();
+                                assert(("cannot prove the first node", challenge != 0));
 
                                 let tree_d = &priv_inputs.tree_d;
                                 let tree_r = &priv_inputs.tree_r;
@@ -188,10 +178,7 @@ namespace nil {
                                 let tree_proof =
                                     tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard)) ?
                                     ;
-                                replica_nodes.push(DataProof {
-                                    proof : tree_proof,
-                                    data,
-                                });
+                                replica_nodes.emplace_back(tree_proof, data);
 
                                 let mut parents = vec ![0; pub_params.graph.degree()];
                                 pub_params.graph.parents(challenge, &mut parents) ? ;
@@ -210,7 +197,7 @@ namespace nil {
 
                                 replica_parents.push(replica_parentsi);
 
-                                let node_proof = tree_d.gen_proof(challenge) ? ;
+                                let node_proof = tree_d.gen_proof(challenge);
 
                                 {
                                     // TODO: use this again, I can't make lifetimes work though atm and I do not know
@@ -227,11 +214,8 @@ namespace nil {
                                             challenge,
                                             tree_r.read_at(challenge)?,
                                             &parents,
-                                    )?;
-                                    data_nodes.push(DataProof {
-                                        data : extracted,
-                                        proof : node_proof,
-                                    });
+                                    );
+                                    data_nodes.emplace_back(extracted, node_proof);
                                 }
                             }
 
@@ -318,10 +302,158 @@ namespace nil {
 
                         return true;
                     }
+
+                    virtual std::tuple<Tau<Hash::digest_type>, ProverAux<Hash, Graph, Graph>>
+                        replicate(const public_params_type &pub_params,
+                                  const Hash::digest_type &replica_id,
+                                  const Data &data,
+                                  const BinaryMerkleTree<G> &data_tree,
+                                  const StoreConfig &config,
+                                  const boost::filesystem::path &replica_path) override {
+                        use storage_proofs_core::cache_key::CacheKey;
+
+                        let tree_d =
+                            match data_tree {Some(tree) = > tree,
+                                             None = > create_base_merkle_tree::<BinaryMerkleTree<H>>(
+                                                          Some(config.clone()), pp.graph.size(), data.as_ref(), ) ?
+                                             , };
+
+                        let graph = &pp.graph;
+                        // encode(&pp.graph, replica_id, data, None)?;
+                        // Because a node always follows all of its parents in the data,
+                        // the nodes are by definition already topologically sorted.
+                        // Therefore, if we simply traverse the data in order, encoding each node in place,
+                        // we can always get each parent's encodings with a simple lookup --
+                        // since we will already have encoded the parent earlier in the traversal.
+
+                        let mut parents = vec ![0; graph.degree()];
+                        for
+                            node in 0..graph.size() {
+                                graph.parents(node, &mut parents) ? ;
+                                let key = graph.create_key(replica_id, node, &parents, data.as_ref(), None) ? ;
+                                let start = data_at_node_offset(node);
+                                let end = start + NODE_SIZE;
+
+                                let node_data = <H as Hasher>::Domain::try_from_bytes(&data.as_ref()[start..end]) ? ;
+                                let encoded = H::sloth_encode(key.as_ref(), &node_data) ? ;
+
+                                encoded.write_bytes(&mut data.as_mut()[start..end]) ? ;
+                            }
+
+                        let replica_config = ReplicaConfig {
+                            path : replica_path,
+                            offsets : vec ![0],
+                        };
+                        let tree_r_last_config =
+                            StoreConfig::from_config(&config, CacheKey::CommRLastTree.to_string(), None);
+                        let tree_r = create_base_lcmerkle_tree::<H, <BinaryLCMerkleTree<H> as MerkleTreeTrait>::Arity>(
+                            tree_r_last_config, pp.graph.size(), &data.as_ref(), &replica_config, ) ?
+                            ;
+
+                        let comm_d = tree_d.root();
+                        let comm_r = tree_r.root();
+
+                        return std::make_tuple<tau_type, aux_type>({comm_d, comm_r}, {tree_d, tree_r});
+                    }
+                    virtual std::vector<uint8_t> extract_all(const public_params_type &pub_params,
+                                                             const typename Hash::digest_type &replica_id,
+                                                             const std::vector<uint8_t> &replica,
+                                                             const StoreConfig &config) override {
+                        return decode(pub_params.graph, replica_id, data, None);
+                    }
+                    virtual std::vector<uint8_t> extract(const public_params_type &pub_params,
+                                                         const typename Hash::digest_type &replica_id,
+                                                         const std::vector<uint8_t> &replica,
+                                                         std::size_t node,
+                                                         const StoreConfig &config) override {
+                        return decode_block(pub_params.graph, replica_id, data, None, node).into_bytes();
+                    }
                 };    // namespace vanilla
-            }         // namespace drg
-        }             // namespace porep
-    }                 // namespace filecoin
+
+                template<typename Hash, template<typename = Hash> class Graph>
+                std::vector<std::uint8_t>
+                    decode(Graph &graph, typename Hash::digest_type &replica_id, const std::vector<std::uint8_t> &data,
+                           const std::vector<std::uint8_t> &exp_parents_data = std::vector<std::uint8_t>()) {
+                    // TODO: proper error handling
+                    let result = (0..graph.size())
+                                     .into_par_iter()
+                                     .flat_map(| i |
+                                               {decode_block::<H, G>(graph, replica_id, data, exp_parents_data, i)
+                                                    .unwrap()
+                                                    .into_bytes()})
+                                     .collect();
+
+                    return result;
+                }
+
+                                pub fn decode_block <'a, H, G>( graph
+                            : &'a G, replica_id
+                            : &'a <H as Hasher>::Domain, data
+                            : &'a [u8], exp_parents_data
+                            : Option < &'a [u8]>, v
+                            : usize, )
+                            ->Result
+                        << H as Hasher
+                    > ::Domain > where H : Hasher,
+                    G::Key : AsRef<H::Domain>, G : Graph<H>, {
+                                    let mut parents = vec ![0; graph.degree()];
+                                    graph.parents(v, &mut parents) ? ;
+                                    let key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
+                let node_data = <H as Hasher>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
+
+                Ok(encode::decode(*key.as_ref(), node_data))
+                                }
+
+                                pub fn decode_domain_block<H : Hasher>(replica_id
+                                                                       : &H::Domain, tree
+                                                                       : &BinaryLCMerkleTree<H>, node
+                                                                       : usize, node_data
+                                                                       : H::Domain, parents
+                                                                       : &[u32], )
+                                    ->Result<H::Domain> where H : Hasher,
+                                {
+                                    let key = create_key_from_tree::<H, _>(replica_id, node, parents, tree) ? ;
+
+                                    Ok(encode::decode(key, node_data))
+                                }
+
+                                /// Creates the encoding key from a `MerkleTree`.
+                                /// The algorithm for that is `Blake2s(id | encodedParentNode1 | encodedParentNode1 |
+                                /// ...)`. It is only public so that it can be used for benchmarking
+        pub fn create_key_from_tree<H: Hasher, U: 'static + PoseidonArity>(
+        id: &H::Domain,
+        node: usize,
+        parents: &[u32],
+        tree: &LCMerkleTree<H, U>,
+        ) -> Result<H::Domain> {
+            let mut hasher = Sha256::new ();
+            hasher.input(AsRef::<[u8]>::as_ref(&id));
+
+            // The hash is about the parents, hence skip if a node doesn't have any parents
+            if node
+                != parents[0] as usize {
+                    let mut scratch : [u8; NODE_SIZE] = [0; NODE_SIZE];
+            for
+                parent in parents.iter() {
+                    tree.read_into(*parent as usize, &mut scratch) ? ;
+                    hasher.input(&scratch);
+                }
+                }
+
+            let hash = hasher.result();
+            Ok(bytes_into_fr_repr_safe(hash.as_ref()).into())
+        }
+
+        pub fn replica_id<H : Hasher>(prover_id : [u8; 32], sector_id : [u8; 32])->H::Domain {
+            let mut to_hash = [0; 64];
+            to_hash[..32].copy_from_slice(&prover_id);
+            to_hash[32..].copy_from_slice(&sector_id);
+
+            H::Function::hash_leaf(&to_hash)
+        }
+            }    // namespace drg
+        }        // namespace porep
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif
