@@ -28,37 +28,43 @@
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
 
+#include <nil/filecoin/storage/proofs/core/proof/proof.hpp>
+
 namespace nil {
     namespace filecoin {
-        template<typename H, typename G>
-        struct PoRep {
-            type Tau;
-            type ProverAux;
+        template<typename PublicParams, typename SetupParams, typename PublicInputs, typename PrivateInputs,
+                 typename Proof, typename Requirements, typename H, typename G, typename Tau, typename ProverAux>
+        struct PoRep
+            : public proof_scheme<PublicParams, SetupParams, PublicInputs, PrivateInputs, Proof, Requirements> {
+            typedef proof_scheme<PublicParams, SetupParams, PublicInputs, PrivateInputs, Proof, Requirements>
+                policy_type;
 
-            fn replicate(pub_params
-                         : &'a Self::PublicParams, replica_id
-                         : &H::Domain, data
-                         : Data <'a>, data_tree
-                         : Option<BinaryMerkleTree<G>>, config
-                         : StoreConfig, replica_path
-                         : PathBuf, )
-                ->Result<(Self::Tau, Self::ProverAux)>;
+            typedef typename policy_type::public_params_type public_params_type;
+            typedef typename policy_type::setup_params_type setup_params_type;
+            typedef typename policy_type::public_inputs_type public_inputs_type;
+            typedef typename policy_type::private_inputs private_inputs_type;
+            typedef typename policy_type::proof_type proof_type;
+            typedef typename policy_type::requirements_type requirements_type;
 
-            fn extract_all(pub_params
-                           : &'a Self::PublicParams, replica_id
-                           : &H::Domain, replica
-                           : &[u8], config
-                           : Option<StoreConfig>, )
-                ->Result<Vec<u8>>;
+            typedef Tau tau_type;
+            typedef ProverAux aux_type;
 
-            fn extract(pub_params
-                       : &'a Self::PublicParams, replica_id
-                       : &H::Domain, replica
-                       : &[u8], node
-                       : usize, config
-                       : Option<StoreConfig>, )
-                ->Result<Vec<u8>>;
-        }
+            virtual std::tuple<Tau, ProverAux> replicate(const public_params_type &pub_params,
+                                                         const typename Hash::digest_type &replica_id, const Data &data,
+                                                         const BinaryMerkleTree<G> &data_tree,
+                                                         const StoreConfig &config,
+                                                         const boost::filesystem::path &replica_path) = 0;
+
+            virtual std::vector<std::uint8_t> extract_all(const public_params_type &pub_params,
+                                                          const typename Hash::digest_type &replica_id,
+                                                          const std::vector<std::uint8_t> &replica,
+                                                          const StoreConfig &config) = 0;
+
+            virtual std::vector<std::uint8_t> extract(const public_params_type &pub_params,
+                                                      const typename Hash::digest_type &replica_id,
+                                                      const std::vector<std::uint8_t> &replica, std::size_t node,
+                                                      const StoreConfig &config) = 0;
+        };
     }    // namespace filecoin
 }    // namespace nil
 
