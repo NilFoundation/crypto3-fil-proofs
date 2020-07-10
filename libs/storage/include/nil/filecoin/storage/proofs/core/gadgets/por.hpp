@@ -195,11 +195,88 @@ namespace nil {
         };
 
         template<typename MerkleTreeType, typename Bls12>
-        struct PoRCircuit {
+        struct PoRCircuit : public cacheable_parameters<Circuit<Bls12>, ParameterSetMetadata>, public Circuit<Bls12> {
+            /// # Public Inputs
+            ///
+            /// This circuit expects the following public inputs.
+            ///
+            /// * [0] - packed version of the `is_right` components of the auth_path.
+            /// * [1] - the merkle root of the tree.
+            ///
+            /// This circuit derives the following private inputs from its fields:
+            /// * value_num - packed version of `value` as bits. (might be more than one Fr)
+            ///
+            /// Note: All public inputs must be provided as `E::Fr`.
+            template<template<typename> class ConstraintSystem>
+            void synthesize(ConstraintSystem<Bls12> &cs) {
+                root<Bls12> value = value;
+                AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
+                         MerkleTreeType::TopTreeArity>
+                    auth_path = auth_path;
+                root<Bls12> root = root;
+
+                std::size_t base_arity = MerkleTreeType::Arity;
+                std::size_t sub_arity = MerkleTreeType::SubTreeArity;
+                std::size_t top_arity = MerkleTreeType::TopTreeArity;
+
+                // All arities must be powers of two or circuits cannot be generated.
+                assert(("base arity must be power of two", 1 == base_arity.count_ones()));
+                if (sub_arity > 0) {
+                    assert(("subtree arity must be power of two", 1 == sub_arity.count_ones()));
+                }
+                if (top_arity > 0) {
+                    assert(("top tree arity must be power of two", 1 == top_arity.count_ones()));
+                }
+
+                {
+                    let value_num = value.allocated(cs.namespace(|| "value")) ? ;
+                    let cur = value_num;
+
+                    // Ascend the merkle tree authentication path
+
+                    // base tree
+                    let(cur, base_auth_path_bits) = auth_path.base.synthesize(cs.namespace(|| "base"), cur) ? ;
+
+                    // sub
+                    let(cur, sub_auth_path_bits) = auth_path.sub.synthesize(cs.namespace(|| "sub"), cur) ? ;
+
+                    // top
+                    let(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur) ? ;
+
+                    let mut auth_path_bits = Vec::new ();
+                    auth_path_bits.extend(base_auth_path_bits);
+                    auth_path_bits.extend(sub_auth_path_bits);
+                    auth_path_bits.extend(top_auth_path_bits);
+
+                    multipack::pack_into_inputs(cs.namespace(|| "path"), &auth_path_bits) ? ;
+                    {
+                        // Validate that the root of the merkle tree that we calculated is the same as the input.
+                        let rt = root.allocated(cs.namespace(|| "root_value")) ? ;
+                        constraint::equal(cs, || "enforce root is correct", &computed_root, &rt);
+
+                        if (!priv) {
+                            // Expose the root
+                            rt.inputize(cs.namespace(|| "root")) ? ;
+                        }
+                    }
+                }
+            }
+
+            template<template<typename> class ConstraintSystem>
+            void synthesize(ConstraintSystem<Bls12> &cs, const root<Bls12> &value,
+                            const AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
+                                           MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity> &auth_path,
+                            root<Bls12> root, bool priv) {
+                this->value = value;
+                this->auth_path = auth_path;
+                this->root = root;
+                this->priv = priv;
+
+                synthesize(cs);
+            }
+
             root<Bls12> value;
-            AuthPath<typename MerkleTreeType::hash_type,
-                     MerkleTreeType::Arity,
-                     MerkleTreeType::SubTreeArity,
+            AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
                      MerkleTreeType::TopTreeArity>
                 auth_path;
             root<Bls12> root;
