@@ -27,6 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_DRG_CIRCUIT_HPP
 
 #include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
+#include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
 
 #include <nil/crypto3/hash/hash_state.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
@@ -126,21 +127,21 @@ namespace nil {
                     // Inclusion checks
                     {
                         let mut cs = cs.namespace(|| "inclusion_checks");
-                        PoRCircuit::<BinaryMerkleTree<H>>::synthesize(
+                        PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
                             cs.namespace(|| "replica_inclusion"), Root::Val(*replica_node),
                             replica_node_path.clone().into(), replica_root_var.clone(), self.private, ) ?
                             ;
 
                         // validate each replica_parents merkle proof
                         for (int i = 0; i < replica_parents.size(); i++) {
-                            PoRCircuit::<BinaryMerkleTree<H>>::synthesize(
+                            PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
                                 cs.namespace(|| format !("parents_inclusion_{}", j)), Root::Val(replica_parents[j]),
                                 replica_parents_paths[j].clone().into(), replica_root_var.clone(), self.private, ) ?
                                 ;
                         }
 
                         // validate data node commitment
-                        PoRCircuit::<BinaryMerkleTree<H>>::synthesize(
+                        PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
                             cs.namespace(|| "data_inclusion"), Root::Val(*data_node), data_node_path.clone().into(),
                             data_root_var.clone(), self.private, ) ?
                             ;

@@ -42,11 +42,101 @@ namespace nil {
 
         template<typename Hash, std::size_t BaseArity>
         struct SubPath {
+            template<template<typename> class ConstraintSystem, typename Bls12>
+            std::pair<AllocatedNumber<Bls12>, std::vector<bool>> synthesize(ConstraintSystem<Bls12> &cs,
+                                                                            AllocatedNumber<Bls12> &cur) {
+                std::size_t arity = BaseArity;
+
+                if (arity == 0) {
+                    // Nothing to do here.
+                    assert(path.empty());
+                    return std::make_pair(cur, std::vector<bool>());
+                }
+
+                assert(("arity must be a power of two", 1 == arity.count_ones()));
+                std::size_t index_bit_count = arity.trailing_zeros();
+
+                let mut auth_path_bits = Vec::with_capacity(self.path.len());
+
+                for ((i, path_element) : self.path.into_iter().enumerate()) {
+                    let path_hashes = path_element.hashes;
+                    let optional_index =
+                        path_element.index;    // Optional because of Bellman blank-circuit construction mechanics.
+
+                    let cs = &mut cs.namespace(|| format !("merkle tree hash {}", i));
+
+                    let mut index_bits = Vec::with_capacity(index_bit_count);
+
+                    for (int i = 0; i < index_bit_count; i++) {
+                        let bit = AllocatedBit::alloc(cs.namespace(|| format !("index bit {}", i)),
+                                                      {optional_index.map(| index | ((index >> i) & 1) == 1)});
+
+                        index_bits.push(Boolean::from(bit));
+                    }
+
+                    auth_path_bits.extend_from_slice(&index_bits);
+
+                    // Witness the authentication path elements adjacent at this depth.
+                    let path_hash_nums =
+                        path_hashes.iter()
+                            .enumerate()
+                            .map(| (i, elt) |
+                                 {num::AllocatedNum::alloc(cs.namespace(|| format !("path element {}", i)),
+                                                           || {elt.ok_or_else(|| SynthesisError::AssignmentMissing)})})
+                            .collect::<Result<Vec<_>, _>>() ?
+                        ;
+
+                    let inserted = insert(cs, &cur, &index_bits, &path_hash_nums) ? ;
+
+                    // Compute the new subtree value
+                    cur = H::Function::hash_multi_leaf_circuit::<Arity, _>(
+                        cs.namespace(|| "computation of commitment hash"), &inserted, i, ) ?
+                        ;
+                }
+
+                return std::make_pair(cur, auth_path_bits);
+            }
+
             std::vector<PathElement<Hash, BaseArity>> path;
         };
 
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
         struct AuthPath {
+            AuthPath(std::size_t leaves) {
+                let has_sub = V::to_usize() > 0;
+                let has_top = W::to_usize() > 0;
+                let base_elements = base_path_length::<U, V, W>(leaves);
+
+                let base = vec ![PathElement::<H, U>{
+                    hashes:
+                        vec ![None; U::to_usize() - 1], index : None, _a : Default::default(), _h : Default::default(),
+                };
+                    base_elements];
+
+                let sub = if has_sub {
+                    vec ![PathElement::<H, V>{
+                        hashes:
+                            vec ![None; V::to_usize() - 1],
+                                index : None, _a : Default::default(), _h : Default::default(),
+                    }]
+                }
+                else {Vec::new ()};
+
+                let top = if has_top {
+                    vec ![PathElement::<H, W>{
+                        hashes:
+                            vec ![None; W::to_usize() - 1],
+                                index : None, _a : Default::default(), _h : Default::default(),
+                    }]
+                }
+                else {Vec::new ()};
+
+                AuthPath {
+                base:
+                    SubPath {path : base}, sub : SubPath {path : sub}, top : SubPath {path : top},
+                }
+            }
+
             AuthPath(const std::vector<std::pair<std::vector<Fr>, std::size_t>> &base_opts) {
                 bool has_top = TopTreeArity > 0;
                 bool has_sub = SubTreeArity > 0;
@@ -105,9 +195,11 @@ namespace nil {
         };
 
         template<typename MerkleTreeType, typename Bls12>
-        struct por_circuit {
+        struct PoRCircuit {
             root<Bls12> value;
-            AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
+            AuthPath<typename MerkleTreeType::hash_type,
+                     MerkleTreeType::Arity,
+                     MerkleTreeType::SubTreeArity,
                      MerkleTreeType::TopTreeArity>
                 auth_path;
             root<Bls12> root;

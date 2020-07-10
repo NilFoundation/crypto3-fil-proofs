@@ -34,7 +34,10 @@ namespace nil {
             namespace stacked {
                 namespace circuit {
                     template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
-                    struct ColumnProof { };
+                    struct ColumnProof {
+                        Column column;
+                        AuthPath<Hash, BaseArity, SubTreeArity, TopTreeArity> inclusion_path;
+                    };
                 }    // namespace circuit
             }        // namespace stacked
         }            // namespace porep
