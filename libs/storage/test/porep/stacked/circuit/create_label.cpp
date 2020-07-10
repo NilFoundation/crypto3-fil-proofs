@@ -25,7 +25,7 @@
 
 using namespace nil::filecoin;
 
-BOOST_AUTO_TEST_SUITE(drg_circuit_test_suite)
+BOOST_AUTO_TEST_SUITE(stacked_circuit_test_suite)
 
 BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
@@ -118,12 +118,12 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
         }
 
     assert !(cs.is_satisfied(), "constraints not satisfied");
-    assert_eq !(cs.num_inputs(), 18, "wrong number of inputs");
-    assert_eq !(cs.num_constraints(), 149_580, "wrong number of constraints");
+    BOOST_CHECK_EQUAL(cs.num_inputs(), 18, "wrong number of inputs");
+    BOOST_CHECK_EQUAL(cs.num_constraints(), 149_580, "wrong number of constraints");
 
-    assert_eq !(cs.get_input(0, "ONE"), Fr::one());
+    BOOST_CHECK_EQUAL(cs.get_input(0, "ONE"), Fr::one());
 
-    assert_eq !(cs.get_input(1, "drgporep/replica_id/input variable"), replica_id.unwrap());
+    BOOST_CHECK_EQUAL(cs.get_input(1, "drgporep/replica_id/input variable"), replica_id.unwrap());
 
     let generated_inputs = <DrgPoRepCompound<_, _> as compound_proof::CompoundProof<_, _>>::generate_public_inputs(
                                &pub_inputs, &pp, None, )
@@ -132,10 +132,10 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     for ((input, label), generated_input)
         in expected_inputs.iter().skip(1).zip(generated_inputs.iter()) {
-            assert_eq !(input, generated_input, "{}", label);
+            BOOST_CHECK_EQUAL(input, generated_input, "{}", label);
         }
 
-    assert_eq !(generated_inputs.len(), expected_inputs.len() - 1, "inputs are not the same length");
+    BOOST_CHECK_EQUAL(generated_inputs.len(), expected_inputs.len() - 1, "inputs are not the same length");
 
     cache_dir.close().expect("Failed to remove cache dir");
 }
@@ -146,10 +146,10 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_num_constraints) {
     // 1 GB
     let n = (1 << 30) / 32;
     let m = BASE_DEGREE;
-    let tree_depth = graph_height::<typenum::U2>(n);
+    let tree_depth = graph_height<typenum::U2>(n);
 
     let mut cs = TestConstraintSystem::<Bls12>::new ();
-    DrgPoRepCircuit::<PedersenHasher>::synthesize(
+    DrgPoRepCircuit<PedersenHasher>::synthesize(
         cs.namespace(|| "drgporep"), vec ![Some(Fr::random(rng)); 1],
         vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; 1], Root::Val(Some(Fr::random(rng))),
         vec ![vec ![Some(Fr::random(rng)); m]; 1],
@@ -158,8 +158,8 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_num_constraints) {
         Some(Fr::random(rng)), false, )
         .expect("failed to synthesize circuit");
 
-    assert_eq !(cs.num_inputs(), 18, "wrong number of inputs");
-    assert_eq !(cs.num_constraints(), 391_404, "wrong number of constraints");
+    BOOST_CHECK_EQUAL(cs.num_inputs(), 18, "wrong number of inputs");
+    BOOST_CHECK_EQUAL(cs.num_constraints(), 391_404, "wrong number of constraints");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
