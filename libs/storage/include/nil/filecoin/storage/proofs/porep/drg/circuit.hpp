@@ -217,7 +217,7 @@ namespace nil {
                 ciphertexts.extend_from_slice(parent);
             }
 
-            let alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]) ? ;
+            let alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]);
             let fr = if alloc_bits[0].get_value().is_some() {
                 let be_bits = alloc_bits.iter()
                                   .map(| v | v.get_value().ok_or(SynthesisError::AssignmentMissing))
@@ -234,7 +234,7 @@ namespace nil {
             }
             else {Err(SynthesisError::AssignmentMissing)};
 
-            return num::AllocatedNum::<E>::alloc(cs.namespace(|| "result_num"), || fr);
+            return num::AllocatedNum::<Engine>::alloc(cs.namespace(|| "result_num"), || fr);
         }
     }    // namespace filecoin
 }    // namespace nil

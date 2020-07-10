@@ -32,10 +32,15 @@ namespace nil {
     namespace filecoin {
         namespace porep {
             namespace stacked {
-                namespace circuit { }
-            }    // namespace stacked
-        }        // namespace porep
-    }            // namespace filecoin
+                namespace circuit {
+                    template<typename Hash, typename BaseArity, typename SubTreeArity, typename TopTreeArity>
+                    struct ColumnProof {
+
+                    };
+                }    // namespace circuit
+            }        // namespace stacked
+        }            // namespace porep
+    }                // namespace filecoin
 }    // namespace nil
 
 #endif
