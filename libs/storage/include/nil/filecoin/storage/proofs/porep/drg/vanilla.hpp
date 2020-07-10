@@ -30,6 +30,7 @@
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/porep.hpp>
+#include <nil/filecoin/storage/proofs/core/utilities.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -228,95 +229,91 @@ namespace nil {
                             let mut hasher = Sha256::new ();
 
                             for (int i = 0; i < pub_inputs.challenges.size(); i++) {
-                                {
-                                    // This was verify_proof_meta.
-                                    if (pub_inputs.challenges[i] >= pub_params.graph.size()) {
-                                        return false;
-                                    }
-
-                                    if (!(proof.nodes[i].proves_challenge(pub_inputs.challenges[i]))) {
-                                        return false;
-                                    }
-
-                                    if (!(proof.replica_nodes[i].proves_challenge(pub_inputs.challenges[i]))) {
-                                        return false;
-                                    }
-
-                                    let mut expected_parents = vec ![0; pub_params.graph.degree()];
-                                    pub_params.graph.parents(pub_inputs.challenges[i], &mut expected_parents);
-                                    if (proof.replica_parents[i].size() != expected_parents.size()) {
-                                        println !(
-                                            "proof parents were not the same length as in public parameters: "
-                                            "{} != {}",
-                                            proof.replica_parents[i].len(),
-                                            expected_parents.len());
-                                        return false;
-                                    }
-
-                                    let parents_as_expected = proof.replica_parents[i]
-                                                                  .iter()
-                                                                  .zip(&expected_parents)
-                                                                  .all(| (actual, expected) | actual .0 == *expected);
-
-                                    if (!parents_as_expected) {
-                                        println !("proof parents were not those provided in public parameters");
-                                        return false;
-                                    }
-                                }
-
-                                let challenge = pub_inputs.challenges[i] % pub_params.graph.size();
-                                ensure !(challenge != 0, "cannot prove the first node");
-
-                                if (!proof.replica_nodes[i].proof.validate(challenge)) {
+                                // This was verify_proof_meta.
+                                if (pub_inputs.challenges[i] >= pub_params.graph.size()) {
                                     return false;
                                 }
 
-                                for ((parent_node, p) : proof.replica_parents[i]) {
-                                    if (!p.proof.validate(*parent_node)) {
-                                        return false;
-                                    }
+                                if (!(proof.nodes[i].proves_challenge(pub_inputs.challenges[i]))) {
+                                    return false;
                                 }
 
-                                let key = { let prover_bytes = pub_inputs.replica_id.context("missing replica_id") ? ;
-                                hasher.input(AsRef::<[u8]>::as_ref(&prover_bytes));
-
-                                for (p : proof.replica_parents[i].iter()) {
-                                    hasher.input(AsRef::<[u8]>::as_ref(&p .1.data));
+                                if (!(proof.replica_nodes[i].proves_challenge(pub_inputs.challenges[i]))) {
+                                    return false;
                                 }
 
-                                let hash = hasher.result_reset();
-                                bytes_into_fr_repr_safe(hash.as_ref()).into()
-                            };
+                                let mut expected_parents = vec ![0; pub_params.graph.degree()];
+                                pub_params.graph.parents(pub_inputs.challenges[i], &mut expected_parents);
+                                if (proof.replica_parents[i].size() != expected_parents.size()) {
+                                    println !(
+                                        "proof parents were not the same length as in public parameters: "
+                                        "{} != {}",
+                                        proof.replica_parents[i].len(),
+                                        expected_parents.len());
+                                    return false;
+                                }
 
-                            let unsealed = encode::decode(key, proof.replica_nodes[i].data);
+                                let parents_as_expected = proof.replica_parents[i]
+                                                              .iter()
+                                                              .zip(&expected_parents)
+                                                              .all(| (actual, expected) | actual .0 == *expected);
 
-                            if (unsealed != proof.nodes[i].data) {
+                                if (!parents_as_expected) {
+                                    println !("proof parents were not those provided in public parameters");
+                                    return false;
+                                }
+                            }
+
+                            let challenge = pub_inputs.challenges[i] % pub_params.graph.size();
+                            ensure !(challenge != 0, "cannot prove the first node");
+
+                            if (!proof.replica_nodes[i].proof.validate(challenge)) {
                                 return false;
                             }
 
-                            if (!proof.nodes[i].proof.validate_data(unsealed)) {
-                                println !("invalid data for merkle path {:?}", unsealed);
-                                return false;
+                            for ((parent_node, p) : proof.replica_parents[i]) {
+                                if (!p.proof.validate(*parent_node)) {
+                                    return false;
+                                }
                             }
+
+                            let key = { let prover_bytes = pub_inputs.replica_id.context("missing replica_id") ? ;
+                            hasher.input(AsRef::<[u8]>::as_ref(&prover_bytes));
+
+                            for (p : proof.replica_parents[i].iter()) {
+                                hasher.input(AsRef::<[u8]>::as_ref(&p .1.data));
+                            }
+
+                            let hash = hasher.result_reset();
+                            bytes_into_fr_repr_safe(hash.as_ref()).into()
+                        }
+
+                        let unsealed = encode::decode(key, proof.replica_nodes[i].data);
+
+                        if (unsealed != proof.nodes[i].data) {
+                            return false;
+                        }
+
+                        if (!proof.nodes[i].proof.validate_data(unsealed)) {
+                            println !("invalid data for merkle path {:?}", unsealed);
+                            return false;
                         }
 
                         return true;
-                    }
+                    }    // namespace vanilla
 
                     virtual std::tuple<Tau<Hash::digest_type>, ProverAux<Hash, Graph, Graph>>
                         replicate(const public_params_type &pub_params,
                                   const Hash::digest_type &replica_id,
                                   const Data &data,
-                                  const BinaryMerkleTree<G> &data_tree,
                                   const StoreConfig &config,
-                                  const boost::filesystem::path &replica_path) override {
+                                  const boost::filesystem::path &replica_path,
+                                  const BinaryMerkleTree<G> &data_tree = BinaryMerkleTree<G>()) override {
                         use storage_proofs_core::cache_key::CacheKey;
 
-                        let tree_d =
-                            match data_tree {Some(tree) = > tree,
-                                             None = > create_base_merkle_tree::<BinaryMerkleTree<H>>(
-                                                          Some(config.clone()), pp.graph.size(), data.as_ref(), ) ?
-                                             , };
+                        let tree_d = match data_tree {
+                            Some(tree) = > tree, None = > create_base_merkle_tree<BinaryMerkleTree<Hash>>(
+                                                              Some(config.clone()), pp.graph.size(), data.as_ref())};
 
                         let graph = &pp.graph;
                         // encode(&pp.graph, replica_id, data, None)?;
@@ -371,6 +368,19 @@ namespace nil {
                 };    // namespace vanilla
 
                 template<typename Hash, template<typename> class Graph>
+                typename Hash::digest_type
+                    decode_block(Graph<Hash> &graph, typename Hash::digest_type &replica_id,
+                                 const std::vector<std::uint8_t> &data, std::size_t v,
+                                 const std::vector<std::uint8_t> &exp_parents_data = std::vector<std::uint8_t>()) {
+                    std::vector<std::uint8_t> parents(graph.degree());
+                    graph.parents(v, parents);
+                    let key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
+                        let node_data = <H as Hasher>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
+
+                        return encode::decode(*key.as_ref(), node_data));
+                }
+
+                template<typename Hash, template<typename> class Graph>
                 std::vector<std::uint8_t>
                     decode(Graph<Hash> &graph, typename Hash::digest_type &replica_id,
                            const std::vector<std::uint8_t> &data,
@@ -379,35 +389,12 @@ namespace nil {
                     let result = (0..graph.size())
                                      .into_par_iter()
                                      .flat_map(| i |
-                                               {decode_block::<H, G>(graph, replica_id, data, exp_parents_data, i)
+                                               {decode_block<Hash, Graph>(graph, replica_id, data, exp_parents_data, i)
                                                     .unwrap()
                                                     .into_bytes()})
                                      .collect();
 
                     return result;
-                }
-
-                template<typename Hash, template<typename> class Graph>
-                typename Hash::digest_type
-                    decode_block(Graph<Hash> &graph, typename Hash::digest_type &replica_id,
-                                 const std::vector<std::uint8_t> &data, std::size_t v,
-                                 const std::vector<std::uint8_t> &exp_parents_data = std::vector<std::uint8_t>()) {
-                    let mut parents = vec ![0; graph.degree()];
-                    graph.parents(v, &mut parents) ? ;
-                    let key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
-                    let node_data = <H as Hasher>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
-
-                    return encode::decode(*key.as_ref(), node_data));
-                }
-
-                template<typename Hash, template<typename> class BinaryLCMerkleTree>
-                typename Hash::digest_type decode_domain_block(const typename Hash::digest_type &replica_id,
-                                                               const BinaryLCMerkleTree<Hash> &tree, std::size_t node,
-                                                               const typename Hash::digest_type &node_data,
-                                                               const std::vector<std::uint32_t> &parents) {
-                    let key = create_key_from_tree::<H, _>(replica_id, node, parents, tree);
-
-                    return encode::decode(key, node_data);
                 }
 
                 /// Creates the encoding key from a `MerkleTree`.
@@ -418,16 +405,19 @@ namespace nil {
                 typename Hash::digest_type create_key_from_tree(const typename Hash::digest_type &id, std::size_t node,
                                                                 const std::vector<std::uint32_t> &parents,
                                                                 const LCMerkleTree<Hash, Arity> &tree) {
-                    let mut hasher = Sha256::new ();
-                    hasher.input(AsRef::<[u8]>::as_ref(&id));
+
+                    using namespace nil::crypto3;
+
+                    accumulator_set<IdHash> acc;
+                    hash<IdHash>(id, acc);
 
                     // The hash is about the parents, hence skip if a node doesn't have any parents
                     if (node != parents[0]) {
                         std::array<std::uint8_t, NODE_SIZE> scratch;
                         scratch.fill(0);
 
-                        for (parent : parents.iter()) {
-                            tree.read_into(*parent as usize, &mut scratch) ? ;
+                        for (std::uint32_t &parent : parents) {
+                            tree.read_into(*parent, &mut scratch);
                             hasher.input(&scratch);
                         }
                     }
@@ -436,14 +426,24 @@ namespace nil {
                     return bytes_into_fr_repr_safe(hash.as_ref()).into();
                 }
 
+                template<typename Hash, template<typename> class BinaryLCMerkleTree>
+                typename Hash::digest_type decode_domain_block(const typename Hash::digest_type &replica_id,
+                                                               const BinaryLCMerkleTree<Hash> &tree, std::size_t node,
+                                                               const typename Hash::digest_type &node_data,
+                                                               const std::vector<std::uint32_t> &parents) {
+                    return encode::decode(create_key_from_tree<Hash>(replica_id, node, parents, tree), node_data);
+                }
+
                 template<typename Hash>
                 typename Hash::digest_type replica_id(const std::array<std::uint8_t, 32> &prover_id,
                                                       const std::array<std::uint8_t, 32> &sector_id) {
-                    let mut to_hash = [0; 64];
-                    to_hash[..32].copy_from_slice(&prover_id);
-                    to_hash[32..].copy_from_slice(&sector_id);
+                    using namespace nil::crypto3;
 
-                    H::Function::hash_leaf(&to_hash)
+                    accumulator_set<Hash> acc;
+                    hash<Hash>(prover_id, acc);
+                    hash<Hash>(sector_id, acc);
+
+                    return accumulators::extract::hash<Hash>(acc);
                 }
             }    // namespace drg
         }        // namespace porep

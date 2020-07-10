@@ -34,11 +34,11 @@
 namespace nil {
     namespace filecoin {
         constexpr static const std::size_t VERSION = 27;
-        constexpr static const const char *PARAMETER_CACHE_ENV_VAR = "FIL_PROOFS_PARAMETER_CACHE";
-        constexpr static const const char *PARAMETER_CACHE_DIR = "/var/tmp/filecoin-proof-parameters/";
-        constexpr static const *GROTH_PARAMETER_EXT = "params";
-        constexpr static const *PARAMETER_METADATA_EXT = "meta";
-        constexpr static const *VERIFYING_KEY_EXT = "vk";
+        constexpr static const char *PARAMETER_CACHE_ENV_VAR = "FIL_PROOFS_PARAMETER_CACHE";
+        constexpr static const char *PARAMETER_CACHE_DIR = "/var/tmp/filecoin-proof-parameters/";
+        constexpr static const char *GROTH_PARAMETER_EXT = "params";
+        constexpr static const char *PARAMETER_METADATA_EXT = "meta";
+        constexpr static const char *VERIFYING_KEY_EXT = "vk";
 
         namespace detail {
             std::string parameter_cache_dir_name() {
@@ -217,8 +217,8 @@ namespace nil {
         }
 
         template<typename Bls12>
-        groth16::parameters<Bls12> write_cached_params(const boost::filesystem::path &cache_entry_path,
-                                                       groth16::parameters<Bls12> value) {
+        groth16::parameters<Bls12>
+            write_cached_params(const boost::filesystem::path &cache_entry_path, groth16::parameters<Bls12> value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);
                 return value;

@@ -49,19 +49,18 @@ namespace nil {
             typedef Tau tau_type;
             typedef ProverAux aux_type;
 
-            virtual std::tuple<Tau, ProverAux> replicate(const public_params_type &pub_params,
-                                                         const typename Hash::digest_type &replica_id, const Data &data,
-                                                         const BinaryMerkleTree<G> &data_tree,
-                                                         const StoreConfig &config,
-                                                         const boost::filesystem::path &replica_path) = 0;
+            virtual std::tuple<Tau, ProverAux>
+                replicate(const public_params_type &pub_params, const typename H::digest_type &replica_id,
+                          const Data &data, const StoreConfig &config, const boost::filesystem::path &replica_path,
+                          const BinaryMerkleTree<G> &data_tree = BinaryMerkleTree<G>()) = 0;
 
             virtual std::vector<std::uint8_t> extract_all(const public_params_type &pub_params,
-                                                          const typename Hash::digest_type &replica_id,
+                                                          const typename H::digest_type &replica_id,
                                                           const std::vector<std::uint8_t> &replica,
                                                           const StoreConfig &config) = 0;
 
             virtual std::vector<std::uint8_t> extract(const public_params_type &pub_params,
-                                                      const typename Hash::digest_type &replica_id,
+                                                      const typename H::digest_type &replica_id,
                                                       const std::vector<std::uint8_t> &replica, std::size_t node,
                                                       const StoreConfig &config) = 0;
         };

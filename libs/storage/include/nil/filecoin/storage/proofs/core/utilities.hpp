@@ -115,8 +115,7 @@ Ok(bits)
             }
         }
 
-/// Converts a slice of bools into their byte representation, in little endian.
-#[allow(dead_code)]
+        /// Converts a slice of bools into their byte representation, in little endian.
         std::vector<std::uint8_t> bits_to_bytes(bits : &[bool]) {
             return bits.chunks(8)
                 .map(| bits |
@@ -129,15 +128,14 @@ Ok(bits)
         /// Reverse the order of bits within each byte (bit numbering), but without altering the order of bytes
         /// within the array (endianness) — when bit array is viewed as a flattened sequence of octets.
         /// Before intra-byte bit reversal begins, zero-bit padding is added so every byte is full.
-        pub fn reverse_bit_numbering(bits : Vec<boolean::Boolean>)->Vec<boolean::Boolean> {
+        std::vector<bool> reverse_bit_numbering(const std::vector<bool> &bits) {
             let mut padded_bits = bits;
             // Pad partial bytes
-            while
-                padded_bits.len() % 8 != 0 {
-                    padded_bits.push(boolean::Boolean::Constant(false));
-                }
+            while (padded_bits.size() % CHAR_BIT != 0) {
+                padded_bits.push(boolean::Boolean::Constant(false));
+            }
 
-            padded_bits.chunks(8).map(| chunk | chunk.iter().rev()).flatten().cloned().collect()
+            return padded_bits.chunks(CHAR_BIT).map(| chunk | chunk.iter().rev()).flatten().cloned().collect();
         }
 
         // If the tree is large enough to use the default value (per-arity), use it.  If it's too small to cache

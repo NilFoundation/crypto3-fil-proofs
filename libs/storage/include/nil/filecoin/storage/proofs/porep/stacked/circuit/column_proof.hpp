@@ -29,7 +29,13 @@
 #include <nil/filecoin/storage/proofs/porep/stacked/circuit/column.hpp>
 
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace porep {
+            namespace stacked {
+                namespace circuit { }
+            }    // namespace stacked
+        }        // namespace porep
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif

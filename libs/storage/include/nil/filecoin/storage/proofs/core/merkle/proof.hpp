@@ -29,6 +29,7 @@
 #include <vector>
 
 #include <boost/variant.hpp>
+#include <nil/filecoin/storage/proofs/core/crypto/feistel.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -93,7 +94,7 @@ namespace nil {
 
             virtual typename Hash::digest_type leaf() = 0;
             virtual typename Hash::digest_type root() = 0;
-            virtual std::size_t typename Hash::digest_type size() = 0;
+            virtual std::size_t size() = 0;
             virtual std::vector<std::pair<std::vector<typename Hash::digest_type>, std::size_t>> path() = 0;
 
             std::size_t path_index() {
@@ -188,13 +189,15 @@ namespace nil {
                 return path.empty();
             }
 
-            pub fn iter(&self)
-                    ->std::slice::Iter<PathElement<H, Arity>> {self.path.iter()}
+            std::slice::Iter<PathElement<Hash, Arity>> iter() {
+                return path.iter();
+            }
 
-                pub fn path_index(&self)
-                    ->usize {self.path.iter().rev().fold(0, | acc, p | (acc * Arity::to_usize()) + p.index)}
+            std::size_t path_index() {
+                return path.iter().rev().fold(0, | acc, p | (acc * Arity) + p.index);
+            }
 
-                std::vector < PathElement<Hash, Arity> path;
+            std::vector < PathElement<Hash, Arity> path;
         };
 
         template<typename Hash, typename Arity>
@@ -211,26 +214,19 @@ namespace nil {
             }
 
             bool verify() {
-                let calculated_root = path.root(self.leaf);
-                return root == calculated_root;
+                return root == path.root(leaf);
             }
 
-            fn leaf(&self)
-                ->H::Domain {self.leaf}
+            std::size_t size() {
+                return path.size() * (Arity - 1) + 2;
+            }
 
-            fn root(&self)
-                ->H::Domain {self.root}
+            std::vector<std::pair<std::vector<typename Hash::digest_type>, std::size_t>> path() {
+                return path.iter().map(| x | (x.hashes.clone(), x.index)).collect::<Vec<_>>();
+            }
 
-            fn len(&self)
-                ->usize {self.path.len() * (Arity::to_usize() - 1) + 2}
-
-            fn path(&self)
-                ->Vec<(Vec<H::Domain>, usize)> {
-                    self.path.iter().map(| x | (x.hashes.clone(), x.index)).collect::<Vec<_>>()}
-
-            fn path_index(&self)
-                ->usize {
-                self.path.path_index()
+            std::size_t path_index() {
+                return path.path_index();
             }
 
             /// Root of the merkle tree.
@@ -243,7 +239,8 @@ namespace nil {
 
         template<typename Hash, typename BaseArity, typename SubTreeArity>
         struct SubProof {
-            fn try_from_proof(p : proof::Proof << H as Hasher > ::Domain, Arity >)->Result<Self> {
+            static SubProof<Hash, BaseArity, SubTreeArity>
+                try_from_proof(const proof::Proof<typename Hash::digest_type, BaseArity> &p) {
                 ensure !(p.sub_layer_nodes() == SubTreeArity::to_usize(), "sub arity mismatch");
                 ensure !(p.sub_tree_proof.is_some(), "Cannot generate sub proof without a base-proof");
                 let base_p = p.sub_tree_proof.as_ref().unwrap();
@@ -251,43 +248,38 @@ namespace nil {
                 // Generate SubProof
                 let root = p.root();
                 let leaf = base_p.item();
-                let base_proof = extract_path::<H, Arity>(base_p.lemma(), base_p.path(), 1);
-                let sub_proof = extract_path::<H, SubTreeArity>(p.lemma(), p.path(), 0);
+                InclusionPath<Hash, BaseArity> base_proof =
+                    extract_path<typename Hash::digest_type, BaseArity>(base_p.lemma(), base_p.path(), 1);
+                InclusionPath<Hash, SubTreeArity> sub_proof =
+                    extract_path<typename Hash::digest_type, SubTreeArity>(p.lemma(), p.path(), 0);
 
-                Ok(SubProof::new (base_proof, sub_proof, root, leaf))
+                return {base_proof, sub_proof, root, leaf};
             }
 
-            fn verify(&self)->bool {
-                let sub_leaf = self.base_proof.root(self.leaf);
-                let calculated_root = self.sub_proof.root(sub_leaf);
-
-                self.root == calculated_root
+            bool verify() {
+                root == sub_proof.root(base_proof.root(leaf));
             }
 
-            fn leaf(&self)
-                ->H::Domain {self.leaf}
+            std::size_t size() {
+                return SubTreeArity;
+            }
 
-            fn root(&self)
-                ->H::Domain {self.root}
+            std::vector<std::pair<std::vector<typename Hash::digest_type>, std::size_t>> path() {
+                return base_proof.iter()
+                    .map(| x | (x.hashes.clone(), x.index))
+                    .chain(self.sub_proof.iter().map(| x | (x.hashes.clone(), x.index)))
+                    .collect();
+            }
 
-            fn len(&self)
-                ->usize {SubTreeArity::to_usize()}
+            std::size_t path_index() {
+                std::size_t base_proof_leaves = 1;
+                for (int i = 0; i < base_proof.size(); i++) {
+                    base_proof_leaves *= BaseArity;
+                }
 
-            fn path(&self)
-                ->Vec<(Vec<H::Domain>, usize)> {self.base_proof.iter()
-                                                    .map(| x | (x.hashes.clone(), x.index))
-                                                    .chain(self.sub_proof.iter().map(| x | (x.hashes.clone(), x.index)))
-                                                    .collect()}
+                std::size_t sub_proof_index = sub_proof.path_index();
 
-            fn path_index(&self)
-                ->usize {
-                let mut base_proof_leaves = 1;
-                for
-                    _i in 0..self.base_proof.len() {base_proof_leaves *= Arity::to_usize()}
-
-                    let sub_proof_index = self.sub_proof.path_index();
-
-                (sub_proof_index * base_proof_leaves) + self.base_proof.path_index()
+                return (sub_proof_index * base_proof_leaves) + base_proof.path_index();
             }
 
             InclusionPath<Hash, BaseArity> base_proof;
@@ -302,11 +294,12 @@ namespace nil {
 
         template<typename Hash, typename BaseArity, typename SubTreeArity, typename TopTreeArity>
         struct TopProof {
-            fn try_from_proof(p : proof::Proof << H as Hasher > ::Domain, Arity >)->Result<Self> {
-                ensure !(p.top_layer_nodes() == TopTreeArity::to_usize(), "top arity mismatch");
-                ensure !(p.sub_layer_nodes() == SubTreeArity::to_usize(), "sub arity mismatch");
+            TopProof<Hash, BaseArity, SubTreeArity, TopTreeArity>
+                try_from_proof(const proof::Proof<typename Hash::digest_type, BaseArity> &p) {
+                assert(("top arity mismatch", p.top_layer_nodes() == TopTreeArity));
+                assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
 
-                ensure !(p.sub_tree_proof.is_some(), "Cannot generate top proof without a sub-proof");
+                assert(("Cannot generate top proof without a sub-proof", p.sub_tree_proof.is_some()));
                 let sub_p = p.sub_tree_proof.as_ref().unwrap();
 
                 ensure !(sub_p.sub_tree_proof.is_some(), "Cannot generate top proof without a base-proof");
@@ -315,50 +308,44 @@ namespace nil {
                 let root = p.root();
                 let leaf = base_p.item();
 
-                let base_proof = extract_path::<H, Arity>(base_p.lemma(), base_p.path(), 1);
-                let sub_proof = extract_path::<H, SubTreeArity>(sub_p.lemma(), sub_p.path(), 0);
-                let top_proof = extract_path::<H, TopTreeArity>(p.lemma(), p.path(), 0);
+                InclusionPath<Hash, BaseArity> base_proof =
+                    extract_path<Hash, BaseArity>(base_p.lemma(), base_p.path(), 1);
+                InclusionPath<Hash, SubTreeArity> sub_proof =
+                    extract_path<Hash, SubTreeArity>(sub_p.lemma(), sub_p.path(), 0);
+                InclusionPath<Hash, TopTreeArity> top_proof = extract_path<Hash, TopTreeArity>(p.lemma(), p.path(), 0);
 
-                Ok(TopProof::new (base_proof, sub_proof, top_proof, root, leaf))
+                return {base_proof, sub_proof, top_proof, root, leaf};
             }
 
-            fn verify(&self)->bool {
-                let sub_leaf = self.base_proof.root(self.leaf);
-                let top_leaf = self.sub_proof.root(sub_leaf);
-                let calculated_root = self.top_proof.root(top_leaf);
-
-                self.root == calculated_root
+            bool verify() {
+                root == top_proof.root(sub_proof.root(base_proof.root(leaf)));
             }
 
-            fn leaf(&self)
-                ->H::Domain {self.leaf}
+            std::size_t size() {
+                return TopTreeArity;
+            }
 
-            fn root(&self)
-                ->H::Domain {self.root}
+            std::vector<std::pair<std::vector<typename Hash::digest_type>, std::size_t>> path() {
+                return base_proof.iter()
+                    .map(| x | (x.hashes.clone(), x.index))
+                    .chain(self.sub_proof.iter().map(| x | (x.hashes.clone(), x.index)))
+                    .chain(self.top_proof.iter().map(| x | (x.hashes.clone(), x.index)))
+                    .collect();
+            }
 
-            fn len(&self)
-                ->usize {TopTreeArity::to_usize()}
+            std::size_t path_index() {
+                std::size_t base_proof_leaves = 1;
+                for (int i = 0; i < base_proof.size(); i++) {
+                    base_proof_leaves *= BaseArity;
+                }
 
-            fn path(&self)
-                ->Vec<(Vec<H::Domain>, usize)> {self.base_proof.iter()
-                                                    .map(| x | (x.hashes.clone(), x.index))
-                                                    .chain(self.sub_proof.iter().map(| x | (x.hashes.clone(), x.index)))
-                                                    .chain(self.top_proof.iter().map(| x | (x.hashes.clone(), x.index)))
-                                                    .collect()}
+                std::size_t sub_proof_leaves = base_proof_leaves * SubTreeArity;
 
-            fn path_index(&self)
-                ->usize {
-                let mut base_proof_leaves = 1;
-                for
-                    _i in 0..self.base_proof.len() {base_proof_leaves *= Arity::to_usize()}
+                std::size_t sub_proof_index = sub_proof.path_index();
+                std::size_t top_proof_index = top_proof.path_index();
 
-                    let sub_proof_leaves = base_proof_leaves * SubTreeArity::to_usize();
-
-                let sub_proof_index = self.sub_proof.path_index();
-                let top_proof_index = self.top_proof.path_index();
-
-                (sub_proof_index * base_proof_leaves) + (top_proof_index * sub_proof_leaves) +
-                    self.base_proof.path_index()
+                return (sub_proof_index * base_proof_leaves) + (top_proof_index * sub_proof_leaves) +
+                       base_proof.path_index();
             }
 
             InclusionPath<Hash, BaseArity> base_proof;
@@ -382,8 +369,6 @@ namespace nil {
         struct MerkleProof : public MerkleProofTrait<Hash, BaseArity, SubTreeArity, TopTreeArity> {
             typedef typename Hash::digest_type digest_type;
             MerkleProof(std::size_t n) {
-                let root = Default::default();
-                let leaf = Default::default();
                 let path_elem = PathElement {
                 hashes:
                     vec ![Default::default(); BaseArity::to_usize()], index : 0, _arity : Default::default(),
