@@ -400,7 +400,7 @@ namespace nil {
                 /// Creates the encoding key from a `MerkleTree`.
                 /// The algorithm for that is `Blake2s(id | encodedParentNode1 | encodedParentNode1 |
                 /// ...)`. It is only public so that it can be used for benchmarking
-                template<typename Hash, typename Arity, template<typename, typename> class LCMerkleTree,
+                template<typename Hash, std::size_t BaseArity, template<typename, typename> class LCMerkleTree,
                          typename IdHash = crypto3::hashes::sha2<256>>
                 typename Hash::digest_type create_key_from_tree(const typename Hash::digest_type &id, std::size_t node,
                                                                 const std::vector<std::uint32_t> &parents,

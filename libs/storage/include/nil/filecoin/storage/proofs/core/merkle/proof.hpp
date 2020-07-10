@@ -34,8 +34,8 @@
 namespace nil {
     namespace filecoin {
         /// Trait to abstract over the concept of Merkle Proof.
-        template<typename Hash, typename Arity = PoseidonArity, typename SubTreeArity = PoseidonArity,
-                 typename TopTreeArity = PoseidonArity>
+        template<typename Hash, std::size_t BaseArity = PoseidonArity, std::size_t SubTreeArity = PoseidonArity,
+                 std::size_t TopTreeArity = PoseidonArity>
         struct MerkleProofTrait {
             typedef Hash hash_type;
             typedef Arity arity_type;
@@ -43,7 +43,7 @@ namespace nil {
             typedef TopTreeArity top_tree_arity;
 
             /// Try to convert a merkletree proof into this structure.
-            static MerkleProofTrait<Hash, Arity, SubTreeArity, TopTreeArity>
+            static MerkleProofTrait<Hash, BaseArity, SubTreeArity, TopTreeArity>
                 try_from_proof(const Proof<typename Hash::digest_type, Arity> &p) {
             }
 
@@ -163,7 +163,7 @@ namespace nil {
             return a + b + c;
         }
 
-        template<typename Hash, typename Arity = PoseidonArity>
+        template<typename Hash, std::size_t BaseArity = PoseidonArity>
         struct InclusionPath {
             /// Calculate the root of this path, given the leaf as input.
             typename Hash::digest_type root(const typename Hash::digest_type &leaf) {
@@ -200,13 +200,13 @@ namespace nil {
             std::vector < PathElement<Hash, Arity> path;
         };
 
-        template<typename Hash, typename Arity>
+        template<typename Hash, std::size_t BaseArity>
         struct PathElement {
             std::vector<typename Hash::digest_type> &hashes;
             std::size_t index;
         };
 
-        template<typename Hash, typename Arity>
+        template<typename Hash, std::size_t BaseArity>
         struct SingleProof {
             template<template<typename, typename> class Proof>
             static SingleProof<Hash, Arity> try_from_proof(const Proof<typename Hash::digest_type, Arity> &p) {
@@ -237,7 +237,7 @@ namespace nil {
             InclusionPath<Hash, Arity> path;
         };
 
-        template<typename Hash, typename BaseArity, typename SubTreeArity>
+        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity>
         struct SubProof {
             static SubProof<Hash, BaseArity, SubTreeArity>
                 try_from_proof(const proof::Proof<typename Hash::digest_type, BaseArity> &p) {
@@ -292,7 +292,7 @@ namespace nil {
             typename Hash::digest_type leaf;
         };
 
-        template<typename Hash, typename BaseArity, typename SubTreeArity, typename TopTreeArity>
+        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
         struct TopProof {
             TopProof<Hash, BaseArity, SubTreeArity, TopTreeArity>
                 try_from_proof(const proof::Proof<typename Hash::digest_type, BaseArity> &p) {
@@ -360,12 +360,12 @@ namespace nil {
             typename Hash::digest_type leaf;
         };
 
-        template<typename Hash, typename BaseArity, typename SubTreeArity, typename TopTreeArity>
+        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
         using ProofData = boost::variant<SingleProof<Hash, BaseArity>, SubProof<Hash, BaseArity, SubTreeArity>,
                                          TopProof<Hash, BaseArity, SubTreeArity, TopTreeArity>>;
 
-        template<typename Hash, typename BaseArity = PoseidonArity, typename SubTreeArity = PoseidonArity,
-                 typename TopTreeArity = PoseidonArity>
+        template<typename Hash, std::size_t BaseArity = PoseidonArity, std::size_t SubTreeArity = PoseidonArity,
+                 std::size_t TopTreeArity = PoseidonArity>
         struct MerkleProof : public MerkleProofTrait<Hash, BaseArity, SubTreeArity, TopTreeArity> {
             typedef typename Hash::digest_type digest_type;
             MerkleProof(std::size_t n) {
@@ -402,7 +402,7 @@ namespace nil {
         /// 'lemma_start_index' is required because sub/top proofs start at
         /// index 0 and base proofs start at index 1 (skipping the leaf at the
         /// front)
-        template<typename Hash, typename Arity, typename LemmaIterator, typename PathIterator>
+        template<typename Hash, std::size_t BaseArity, typename LemmaIterator, typename PathIterator>
         InclusionPath<Hash, Arity> extract_path(LemmaIterator lemma_first, LemmaIterator lemma_last,
                                                 PathIterator path_first, PathIterator path_last,
                                                 std::size_t lemma_start_index) {
@@ -420,7 +420,7 @@ namespace nil {
         }
 
         /// Converts a merkle_light proof to a SingleProof
-        template<typename Hash, typename Arity, typename TargetArity, template<typename, typename> class Proof>
+        template<typename Hash, std::size_t BaseArity, typename TargetArity, template<typename, typename> class Proof>
         SingleProof<Hash, TargetArity>
             proof_to_single(const Proof<Hash, Arity> &proof, std::size_t lemma_start_index,
                             typename Hash::digest_type &sub_root = typename Hash::digest_type()) {
