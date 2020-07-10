@@ -65,7 +65,7 @@ namespace nil {
                         return format !("layered_drgporep::PublicParams{{ graph: {}, challenges: {:?}, tree: {} }}",
                                         graph.identifier(),
                                         layer_challenges,
-                                        Tree::display());
+                                        MerkleTreeType::display());
                     }
 
                     std::uint64_t sector_size() {
@@ -90,6 +90,8 @@ namespace nil {
                     D comm_c;
                     D comm_r_last;
                 };
+
+                typedef std::function<void(const StoreConfig &, std::size_t, std::size_t)> VerifyCallback;
 
                 template<typename MerkleTreeType>
                 struct Labels {
@@ -145,8 +147,8 @@ namespace nil {
 
                     /// Update all configs to the new passed in root cache path.
                     void update_root(const boost::filesystem::path &root) {
-                        for (config : &mut self.labels) {
-                            config.path = root.as_ref().into();
+                        for (StoreConfig &config : labels) {
+                            config.path = root;
                         }
                     }
 
@@ -188,55 +190,51 @@ namespace nil {
 
                         auto delete_tree_c_store = [&](const StoreConfig &config, std::size_t tree_c_size) {
                             let tree_c_store =
-                                DiskStore:: << Tree::Hasher as Hasher > ::Domain >
-                                ::new_from_disk(tree_c_size, Tree::Arity::to_usize(), &config, ).context("tree_c");
+                                DiskStore<typename MerkleTreeType::hash_type::digest_type>::new_from_disk(
+                                    tree_c_size, Tree::Arity::to_usize(), &config)
+                                    .context("tree_c");
                             // Note: from_data_store requires the base tree leaf count
-                    let tree_c = DiskTree::<
-                    Tree::Hasher,
-                    Tree::Arity,
-                    Tree::SubTreeArity,
-                    Tree::TopTreeArity,
-                    >::from_data_store(
-                    tree_c_store,
-                    get_merkle_tree_leafs(tree_c_size, Tree::Arity::to_usize())?,
-                    )
-                    .context("tree_c")?;
-                    tree_c.delete(config.clone()).context("tree_c") ? ;
+                            DiskTree::<MerkleTreeType::Hasher, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
+                                       MerkleTreeType::TopTreeArity>
+                                tree_c = DiskTree<MerkleTreeType::Hasher, MerkleTreeType::Arity,
+                                                  MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>::
+                                             from_data_store(
+                                                 tree_c_store,
+                                                 get_merkle_tree_leafs(tree_c_size, MerkleTreeType::Arity::to_usize()))
+                                                 .context("tree_c");
+                            tree_c.delete(config.clone()).context("tree_c");
                         };
 
                         if (cached(&t_aux.tree_d_config)) {
-                            let tree_d_size = t_aux.tree_d_config.size.context("tree_d config has no size") ? ;
-                            let tree_d_store
-                                : DiskStore<G::Domain> =
-                                      DiskStore::new_from_disk(tree_d_size, BINARY_ARITY, &t_aux.tree_d_config)
-                                          .context("tree_d") ?
-                                ;
+                            std::size_t tree_d_size = t_aux.tree_d_config.size.context("tree_d config has no size");
+                            DiskStore<typename Hash::digest_type> tree_d_store =
+                                DiskStore::new_from_disk(tree_d_size, BINARY_ARITY, &t_aux.tree_d_config)
+                                    .context("tree_d");
                             // Note: from_data_store requires the base tree leaf count
-                    let tree_d = BinaryMerkleTree::<G>::from_data_store(
-                        tree_d_store,
-                        get_merkle_tree_leafs(tree_d_size, BINARY_ARITY)?,
-                    )
-                        .context("tree_d")?;
+                            BinaryMerkleTree<Hash> tree_d =
+                                BinaryMerkleTree<Hash>::from_data_store(
+                                    tree_d_store, get_merkle_tree_leafs(tree_d_size, BINARY_ARITY))
+                                    .context("tree_d");
 
-                    tree_d.delete(t_aux.tree_d_config).context("tree_d") ? ;
-                    trace !("tree d deleted");
+                            tree_d.delete(t_aux.tree_d_config).context("tree_d") ? ;
+                            trace !("tree d deleted");
                         }
 
-                        let tree_count = get_base_tree_count::<Tree>();
-                        let tree_c_size = t_aux.tree_c_config.size.context("tree_c config has no size") ? ;
-                        let configs = split_config(t_aux.tree_c_config.clone(), tree_count) ? ;
+                        std::size_t tree_count = get_base_tree_count<MerkleTreeType>();
+                        let tree_c_size = t_aux.tree_c_config.size.context("tree_c config has no size");
+                        let configs = split_config(t_aux.tree_c_config.clone(), tree_count);
 
                         if (cached(&t_aux.tree_c_config)) {
-                            delete_tree_c_store(&t_aux.tree_c_config, tree_c_size) ? ;
+                            delete_tree_c_store(&t_aux.tree_c_config, tree_c_size);
                         } else if (cached(&configs[0])) {
                             for (config : configs) {
                                 // Trees with sub-trees cannot be instantiated and deleted via the existing tree
                                 // interface since knowledge of how the base trees are split exists outside of merkle
                                 // light.  For now, we manually remove each on disk tree file since we know where they
                                 // are here.
-                                let tree_c_path = StoreConfig::data_path(&config.path, &config.id);
+                                boost::filesystem::path tree_c_path = StoreConfig::data_path(&config.path, &config.id);
                                 remove_file(&tree_c_path)
-                                    .with_context(|| format !("Failed to delete {:?}", &tree_c_path)) ?
+                                    .with_context(|| format !("Failed to delete {:?}", &tree_c_path));
                             }
                         }
                         trace !("tree c deleted");
@@ -386,7 +384,7 @@ namespace nil {
                         let expected_comm_c = c_x.root();
 
                         trace !("  verify c_x");
-                        check !(self.c_x.verify(challenge as u32, &expected_comm_c));
+                        check !(c_x.verify(challenge, &expected_comm_c));
 
                         trace !("  verify drg_parents");
                         for ((proof, parent) : drg_parents.iter().zip(parents.iter())) {
@@ -417,8 +415,8 @@ namespace nil {
 
                     LabelsCache(const Labels<MerkleTreeType> &labels) {
                         std::vector<DiskStore<typename tree_hash_type::digest_type>> disk_store_labels(labels.size());
-                        for (i in 0..labels.len()) {
-                            disk_store_labels.push(labels.labels_for_layer(i + 1));
+                        for (int i = 0; i < labels.size(); i++) {
+                            disk_store_labels.emplace_back(labels.labels_for_layer(i + 1));
                         }
 
                         return {disk_store_labels};
@@ -492,55 +490,56 @@ namespace nil {
                                       const boost::filesystem::path &replica_path) {
                         // tree_d_size stored in the config is the base tree size
                         std::size_t tree_d_size = t_aux.tree_d_config.size();
-                        let tree_d_leafs = get_merkle_tree_leafs(tree_d_size, BINARY_ARITY) ? ;
+                        let tree_d_leafs = get_merkle_tree_leafs(tree_d_size, BINARY_ARITY);
                         trace !("Instantiating tree d with size {} and leafs {}", tree_d_size, tree_d_leafs, );
-                        let tree_d_store : DiskStore<G::Domain> =
-                                               DiskStore::new_from_disk(tree_d_size, BINARY_ARITY, &t_aux.tree_d_config)
-                                                   .context("tree_d_store") ?
-                            ;
-                        let tree_d =
-                            BinaryMerkleTree::<G>::from_data_store(tree_d_store, tree_d_leafs).context("tree_d") ?
-                            ;
+                        DiskStore<typename Hash::digest_type> tree_d_store =
+                            DiskStore::new_from_disk(tree_d_size, BINARY_ARITY, &t_aux.tree_d_config)
+                                .context("tree_d_store");
+                        BinaryMerkleTree<Hash> tree_d =
+                            BinaryMerkleTree<Hash>::from_data_store(tree_d_store, tree_d_leafs).context("tree_d");
 
-                        let tree_count = get_base_tree_count::<Tree>();
-                        let configs = split_config(t_aux.tree_c_config.clone(), tree_count) ? ;
+                        let tree_count = get_base_tree_count<MerkleTreeType>();
+                        let configs = split_config(t_aux.tree_c_config.clone(), tree_count);
 
                         // tree_c_size stored in the config is the base tree size
                         let tree_c_size = t_aux.tree_c_config.size.unwrap();
                         trace !("Instantiating tree c [count {}] with size {} and arity {}", tree_count, tree_c_size,
-                                Tree::Arity::to_usize(), );
-                        let tree_c = create_disk_tree::<
-                            DiskTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>, >(tree_c_size,
-                                                                                                           &configs) ?
-                            ;
+                                MerkleTreeType::Arity::to_usize(), );
+                        DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
+                                 MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>
+                            tree_c =
+                                create_disk_tree<DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
+                                                          MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>>(
+                                    tree_c_size, configs);
 
                         // tree_r_last_size stored in the config is the base tree size
                         let tree_r_last_size = t_aux.tree_r_last_config.size.unwrap();
                         let tree_r_last_config_rows_to_discard = t_aux.tree_r_last_config.rows_to_discard;
-        let (configs, replica_config) = split_config_and_replica(
-            t_aux.tree_r_last_config.clone(),
-            replica_path.clone(),
-            get_merkle_tree_leafs(tree_r_last_size, Tree::Arity::to_usize())?,
-            tree_count,
-        )?;
+                        let(configs, replica_config) =
+                            split_config_and_replica(t_aux.tree_r_last_config.clone(),
+                                                     replica_path.clone(),
+                                                     get_merkle_tree_leafs(tree_r_last_size, Tree::Arity::to_usize()),
+                                                     tree_count);
 
-        trace !("Instantiating tree r last [count {}] with size {} and arity {}, {}, {}", tree_count, tree_r_last_size,
-                Tree::Arity::to_usize(), Tree::SubTreeArity::to_usize(), Tree::TopTreeArity::to_usize(), );
-        let tree_r_last = create_lc_tree::<LCTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>, >(
-            tree_r_last_size, &configs, &replica_config) ?
-            ;
+                        trace !("Instantiating tree r last [count {}] with size {} and arity {}, {}, {}", tree_count,
+                                tree_r_last_size, Tree::Arity::to_usize(), Tree::SubTreeArity::to_usize(),
+                                Tree::TopTreeArity::to_usize(), );
+                        LCTree<MerkleTreeType::Hasher, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
+                               MerkleTreeType::TopTreeArity>
+                            tree_r_last =
+                                create_lc_tree<LCTree<MerkleTreeType::Hasher, MerkleTreeType::Arity,
+                                                      MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>>(
+                                    tree_r_last_size, &configs, &replica_config);
 
-        return {
-            labels : LabelsCache::new (&t_aux.labels).context("labels_cache") ?
-            ,
-            tree_d,
-            tree_r_last,
-            tree_r_last_config_rows_to_discard,
-            tree_c,
-            replica_path,
-            t_aux :
-            t_aux.clone(),
-        };
+                        return {
+                            {(&t_aux.labels).context("labels_cache")},
+                            tree_d,
+                            tree_r_last,
+                            tree_r_last_config_rows_to_discard,
+                            tree_c,
+                            replica_path,
+                            t_aux : t_aux.clone(),
+                        };
                     }
 
                     DiskStore<typename MerkleTreeType::hash_type::digest_type> &labels_for_layer(std::size_t layer) {
@@ -557,15 +556,13 @@ namespace nil {
                     }
                 };
 
-                typedef std::function<void(const StoreConfig &, std::size_t, std::size_t)> VerifyCallback;
-
                 template<typename Hash, typename InputDataRange>
                 typename Hash::digest_type get_node(const InputDataRange &data, std::size_t index) {
                     return Hash::digest_type::try_from_bytes(data_at_node(data, index).expect("invalid node math"));
                 }
 
                 /// Generate the replica id as expected for Stacked DRG.
-                template<typename InputDataRange, typename Hash = hashes::sha2<256>>
+                template<typename InputDataRange, typename Hash = crypto3::hashes::sha2<256>>
                 typename Hash::digest_type
                     generate_replica_id(const std::array<std::uint8_t, 32> &prover_id, std::uint64_t sector_id,
                                         const std::array<std::uint8_t, 32> &ticket, const InputDataRange &comm_d,
@@ -573,6 +570,7 @@ namespace nil {
                     using namespace nil::crypto3;
 
                     accumulator_set<Hash> acc;
+
                     hash<Hash>(prover_id, acc);
                     hash<Hash>(sector_id, acc);
                     hash<Hash>(ticket, acc);

@@ -25,17 +25,8 @@
 
 using namespace nil::filecoin;
 
-BOOST_AUTO_TEST_SUITE(drg_compound_test_suite)
-
-BOOST_AUTO_TEST_CASE(test_drgporep_compound_pedersen) {
-    drgporep_test_compound::<BinaryMerkleTree<PedersenHasher>>();
-}
-
-BOOST_AUTO_TEST_CASE(test_drgporep_compound_poseidon) {
-    drgporep_test_compound::<BinaryMerkleTree<PoseidonHasher>>();
-}
-
-BOOST_AUTO_TEST_CASE(drgporep_test_compound<Tree : static + MerkleTreeTrait>) {
+template<typename MerkleTreeType>
+void drgporep_test_compound() {
     // femme::pretty::Logger::new()
     //     .start(log::LevelFilter::Trace)
     //     .ok();
@@ -47,7 +38,7 @@ BOOST_AUTO_TEST_CASE(drgporep_test_compound<Tree : static + MerkleTreeTrait>) {
     let challenges = vec ![ 1, 3 ];
 
     let replica_id : Fr = Fr::random(rng);
-    let data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
@@ -75,7 +66,7 @@ BOOST_AUTO_TEST_CASE(drgporep_test_compound<Tree : static + MerkleTreeTrait>) {
     };
 
     let public_params =
-        DrgPoRepCompound::<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
+        DrgPoRepCompound<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
 
     let data_tree : Option<BinaryMerkleTree<Tree::Hasher>> = None;
     let(tau, aux) = drg::DrgPoRep::<Tree::Hasher, BucketGraph<_>>::replicate(
@@ -111,18 +102,18 @@ BOOST_AUTO_TEST_CASE(drgporep_test_compound<Tree : static + MerkleTreeTrait>) {
     };
 
     let public_params =
-        DrgPoRepCompound::<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
+        DrgPoRepCompound<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
 
     {
         let(circuit, inputs) =
-            DrgPoRepCompound::<Tree::Hasher, _>::circuit_for_test(&public_params, &public_inputs, &private_inputs, )
+            DrgPoRepCompound<Tree::Hasher, _>::circuit_for_test(&public_params, &public_inputs, &private_inputs, )
                 .unwrap();
 
         let mut cs = TestConstraintSystem::new ();
 
         circuit.synthesize(&mut cs).expect("failed to synthesize test circuit");
-        assert !(cs.is_satisfied());
-        assert !(cs.verify(&inputs));
+        assert(cs.is_satisfied());
+        assert(cs.verify(&inputs));
 
         let blank_circuit =
             <DrgPoRepCompound<_, _> as CompoundProof<_, _>>::blank_circuit(&public_params.vanilla_params, );
@@ -140,21 +131,29 @@ BOOST_AUTO_TEST_CASE(drgporep_test_compound<Tree : static + MerkleTreeTrait>) {
     }
 
     {
-        let gparams = DrgPoRepCompound::<Tree::Hasher, _>::groth_params(Some(rng), &public_params.vanilla_params, )
+        let gparams = DrgPoRepCompound<Tree::Hasher>::groth_params(Some(rng), &public_params.vanilla_params, )
                           .expect("failed to get groth params");
 
-        let proof =
-            DrgPoRepCompound::<Tree::Hasher, _>::prove(&public_params, &public_inputs, &private_inputs, &gparams, )
-                .expect("failed while proving");
+        let proof = DrgPoRepCompound<Tree::Hasher>::prove(&public_params, &public_inputs, &private_inputs, &gparams, )
+                        .expect("failed while proving");
 
-        let verified =
-            DrgPoRepCompound::<Tree::Hasher, _>::verify(&public_params, &public_inputs, &proof, &NoRequirements, )
-                .expect("failed while verifying");
+        let verified = DrgPoRepCompound<Tree::Hasher>::verify(&public_params, &public_inputs, &proof, &NoRequirements, )
+                           .expect("failed while verifying");
 
-        assert !(verified);
+        assert(verified);
     }
 
     cache_dir.close().expect("Failed to remove cache dir");
+}
+
+BOOST_AUTO_TEST_SUITE(drg_compound_test_suite)
+
+BOOST_AUTO_TEST_CASE(test_drgporep_compound_pedersen) {
+    drgporep_test_compound<BinaryMerkleTree<PedersenHasher>>();
+}
+
+BOOST_AUTO_TEST_CASE(test_drgporep_compound_poseidon) {
+    drgporep_test_compound<BinaryMerkleTree<PoseidonHasher>>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

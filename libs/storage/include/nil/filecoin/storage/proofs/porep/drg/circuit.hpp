@@ -192,6 +192,50 @@ namespace nil {
                 }
             }
         };
+
+        /// Key derivation function.
+        template<typename ScalarEngine, template<typename> class ConstraintSystem, typename InputIdIterator>
+        AllocatedNum<ScalarEngine> kdf(ConstraintSystem<ScalarEngine> &cs, InputIdIterator id_first,
+                                       InputIdIterator id_last, const std::vector<std::vector<bool>> &parents,
+                                       std::uint64_t window_index = 0, std::uint64_t node = 0)
+
+        {
+            // ciphertexts will become a buffer of the layout
+            // id | node | encodedParentNode1 | encodedParentNode1 | ...
+
+            let mut ciphertexts = id.to_vec();
+
+            if (window_index) {
+                ciphertexts.extend_from_slice(&window_index.to_bits_be());
+            }
+
+            if (node) {
+                ciphertexts.extend_from_slice(&node.to_bits_be());
+            }
+
+            for (parent : parents) {
+                ciphertexts.extend_from_slice(parent);
+            }
+
+            let alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]) ? ;
+            let fr = if alloc_bits[0].get_value().is_some() {
+                let be_bits = alloc_bits.iter()
+                                  .map(| v | v.get_value().ok_or(SynthesisError::AssignmentMissing))
+                                  .collect::<Result<Vec<bool>, SynthesisError>>() ?
+                    ;
+
+                let le_bits = be_bits.chunks(8)
+                                  .flat_map(| chunk | chunk.iter().rev())
+                                  .copied()
+                                  .take(E::Fr::CAPACITY as usize)
+                                  .collect::<Vec<bool>>();
+
+                return multipack::compute_multipacking::<E>(&le_bits)[0];
+            }
+            else {Err(SynthesisError::AssignmentMissing)};
+
+            return num::AllocatedNum::<E>::alloc(cs.namespace(|| "result_num"), || fr);
+        }
     }    // namespace filecoin
 }    // namespace nil
 

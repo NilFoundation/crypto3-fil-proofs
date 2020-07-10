@@ -64,8 +64,7 @@ namespace nil {
         /// See documentation at proof::ProofScheme for details.
         /// Implementations should generally only need to supply circuit and generate_public_inputs.
         /// The remaining trait methods are used internally and implement the necessary plumbing.
-        template<typename ProofScheme, template<typename> class Circuit, typename Bls12,
-                 typename ComponentsPrivateInputs>
+        template<typename ProofScheme, template<typename> class Circuit, typename Bls12>
         struct compound_proof {
             typedef ProofScheme proof_scheme_type;
             typedef typename proof_scheme_type::public_inputs_type public_inputs_type;
@@ -75,40 +74,40 @@ namespace nil {
             typedef typename proof_scheme_type::requirements_type requirements_type;
             typedef typename proof_scheme_type::proof_type proof_type;
 
-            public_params_type setup(const setup_inputs_type &sp) {
+            virtual public_params_type setup(const setup_inputs_type &sp) {
                 return {proof_scheme_type::setup(sp.vanilla_params), sp.partitions, sp.priority};
             }
 
-            std::size_t partition_count(const public_params_type &pp) const {
+            virtual std::size_t partition_count(const public_params_type &pp) const {
                 return pp.partitions == -1 ? 1 : (!pp.partitions ? -1 : pp.partitions);
             }
 
-            multi_proof<groth16::mapped_parameters<Bls12>>
+            virtual multi_proof<groth16::mapped_parameters<Bls12>>
                 prove(const public_params_type &pp, const public_inputs_type &pub_in,
                       const private_inputs_type &priv_in, const groth16::mapped_parameters<Bls12> &groth_parameters) {
                 std::size_t pc = partition_count(pp);
 
-                assert(pc > 0, "There must be partitions");
+                assert(("There must be partitions", pc > 0));
             }
 
-            template<typename Bls12>
-            bool verify(const public_params_type &pp, const public_inputs_type &pi,
-                        const groth16::mapped_parameters<Bls12> &mproof, const requirements_type &requirements) {
-                assert(mproof.circuit_proofs.size() == partition_count(pp), "Inconsistent inputs");
+            virtual bool verify(const public_params_type &pp, const public_inputs_type &pi,
+                                const groth16::mapped_parameters<Bls12> &mproof,
+                                const requirements_type &requirements) {
+                assert(("Inconsistent inputs", mproof.circuit_proofs.size() == partition_count(pp)));
             }
 
             template<typename PublicInputsIterator, typename MultiProofIterator>
             bool verify(const public_params_type &pp, PublicInputsIterator pifirst, PublicInputsIterator pilast,
                         MultiProofIterator mpfirst, MultiProofIterator mplast, const requirements_type &requirements) {
-                assert(std::distance(pifirst, pilast) == std::distance(mpfirst, mplast), "Inconsistent inputs");
-                assert(std::accumulate(
-                           mpfirst, mplast, true,
-                           [&](typename std::iterator_traits<MultiProofIterator>::value_type c,
-                               const typename std::iterator_traits<MultiProofIterator>::value_type &v) -> bool {
-                               return std::move(c) * (v.circuit_proofs.size() == partition_count(pp));
-                           }),
-                       "Inconsistent inputs");
-                assert(std::distance(pifirst, pilast), "Cannot verify empty proofs");
+                assert(("Inconsistent inputs", std::distance(pifirst, pilast) == std::distance(mpfirst, mplast)));
+                assert(("Inconsistent inputs",
+                        std::accumulate(
+                            mpfirst, mplast, true,
+                            [&](typename std::iterator_traits<MultiProofIterator>::value_type c,
+                                const typename std::iterator_traits<MultiProofIterator>::value_type &v) -> bool {
+                                return std::move(c) * (v.circuit_proofs.size() == partition_count(pp));
+                            })));
+                assert(("Cannot verify empty proofs", std::distance(pifirst, pilast)));
             }
 
             /*!
@@ -125,8 +124,8 @@ namespace nil {
                 circuit_proofs(const public_inputs_type &pub_in, ProofIterator vanilla_proof_first,
                                ProofIterator vanilla_proof_last, const public_params_type &pp,
                                const groth16::mapped_params<Bls12> &groth_params, bool priority) {
-                assert(std::distance(vanilla_proof_first, vanilla_proof_last),
-                       "Cannot create a circuit proof over missing vanilla proofs");
+                assert(("Cannot create a circuit proof over missing vanilla proofs",
+                        std::distance(vanilla_proof_first, vanilla_proof_last)));
             }
 
             /*!
