@@ -33,10 +33,8 @@ namespace nil {
         namespace porep {
             namespace stacked {
                 namespace circuit {
-                    template<typename Hash, typename BaseArity, typename SubTreeArity, typename TopTreeArity>
-                    struct ColumnProof {
-
-                    };
+                    template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
+                    struct ColumnProof { };
                 }    // namespace circuit
             }        // namespace stacked
         }            // namespace porep
