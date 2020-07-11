@@ -89,11 +89,9 @@ namespace nil {
 
                         /// Circuit synthesis.
                         template<template<typename> class ConstraintSystem, typename Bls12>
-                        void synthesize<CS : ConstraintSystem<Bls12>>(ConstraintSystem<Bls12> &cs, std::size_t layers,
-                                                                      AllocatedNumber<Bls12> &comm_d,
-                                                                      AllocatedNumber<Bls12> &comm_c,
-                                                                      AllocatedNumber<Bls12> &comm_r_last,
-                                                                      const std::vector<bool> &replica_id) {
+                        void synthesize(ConstraintSystem<Bls12> &cs, std::size_t layers, AllocatedNumber<Bls12> &comm_d,
+                                        AllocatedNumber<Bls12> &comm_c, AllocatedNumber<Bls12> &comm_r_last,
+                                        const std::vector<bool> &replica_id) {
                             let Proof {comm_d_path, data_leaf,          challenge,          comm_r_last_path,
                                        comm_c_path, drg_parents_proofs, exp_parents_proofs, ..} = self;
 
