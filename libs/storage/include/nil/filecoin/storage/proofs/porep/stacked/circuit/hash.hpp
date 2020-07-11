@@ -26,8 +26,31 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_HASH_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_HASH_HPP
 
+#include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
+
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace porep {
+            namespace stacked {
+                namespace circuit {
+                    /// Hash a list of bits.
+                    template<template<typename> class ConstraintSystem, typename Bls12>
+                    AllocatedNumber<Bls12> hash_single_column<CS>(ConstraintSystem<Bls12> &cs,
+                                                                  std::vector<AllocatedNumber<Bls12>> &column) {
+                        if (column.size() == 2) {
+                            poseidon_hash::<CS, Bls12, typenum::U2>(
+                                cs, column.to_vec(), &*storage_proofs_core::hasher::types::POSEIDON_CONSTANTS_2);
+                        } else if (column.size() == 11) {
+                            poseidon_hash::<CS, Bls12, typenum::U11>(
+                                cs, column.to_vec(), &*storage_proofs_core::hasher::types::POSEIDON_CONSTANTS_11);
+                        } else {
+                            throw "unsupported column size: " + column.size();
+                        }
+                    }
+                }    // namespace circuit
+            }        // namespace stacked
+        }            // namespace porep
+    }                // namespace filecoin
 }    // namespace nil
 
 #endif

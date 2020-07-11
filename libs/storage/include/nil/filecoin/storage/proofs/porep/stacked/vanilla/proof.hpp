@@ -59,6 +59,7 @@ namespace nil {
                         std::size_t layers,
                         std::size_t _total_layers,
                         std::size_t partition_count) {
+
                         assert(layers > 0);
                         assert(t_aux.labels.size() == layers);
 
@@ -69,18 +70,18 @@ namespace nil {
                         assert(pub_inputs.tau.as_ref().unwrap().comm_d == t_aux.tree_d.root());
 
                         auto get_drg_parents_columns = [&](std::size_t x) -> std::vector<Column<tree_hash_type>> {
-                            let base_degree = graph.base_graph().degree();
+                            std::size_t base_degree = graph.base_graph().degree();
 
-                            let mut columns = Vec::with_capacity(base_degree);
+                            std::vector<Column<tree_hash_type>> columns(base_degree);
 
-                            let mut parents = vec ![0; base_degree];
-                            graph.base_parents(x, &mut parents) ? ;
+                            std::vector<std::uint64_t> parents(0, base_degree);
+                            graph.base_parents(x, parents);
 
-                            for (parent : &parents) {
-                            columns.push(t_aux.column(*parent)?);
+                            for (std::uint64_t parent : parents) {
+                                columns.push_back(t_aux.column(*parent));
                             }
 
-                            debug_assert !(columns.len() == base_degree);
+                            assert(columns.size() == base_degree);
 
                             return columns;
                         };
