@@ -41,7 +41,7 @@ void test_fallback_post() {
     let randomness = <Tree::Hasher as Hasher>::Domain::random(rng);
     let prover_id = <Tree::Hasher as Hasher>::Domain::random(rng);
 
-    let mut sectors : Vec<SectorId> = Vec::new ();
+    std::vector<sector_id_type> sectors;
     let mut trees = BTreeMap::new ();
 
     // Construct and store an MT using a named store.
@@ -49,8 +49,7 @@ void test_fallback_post() {
     let temp_path = temp_dir.path();
 
     for (int i = 0; i < 5; i++) {
-
-        sectors.push(i.into());
+        sectors.push_back(i.into());
         let(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
         trees.insert(i.into(), tree);
     }
