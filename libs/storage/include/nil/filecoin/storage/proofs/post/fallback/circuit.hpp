@@ -26,8 +26,31 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POST_FALLBACK_CIRCUIT_HPP
 #define FILECOIN_STORAGE_PROOFS_POST_FALLBACK_CIRCUIT_HPP
 
+#include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
+
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace post {
+            namespace fallback {
+                template<typename MerkleTreeType>
+                struct Sector {
+                    Fr comm_r;
+                    Fr comm_c;
+                    Fr comm_r_last std::vector<Fr> leafs;
+                    std::vector<AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
+                                         MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>>
+                        paths;
+                    Fr id;
+                }
+
+                template<typename MerkleTreeType>
+                struct FallbackPoStCircuit {
+                    Fr prover_id;
+                    std::vector < Sector<MerkleTreeType> sectors;
+                };
+            }    // namespace fallback
+        }        // namespace post
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif

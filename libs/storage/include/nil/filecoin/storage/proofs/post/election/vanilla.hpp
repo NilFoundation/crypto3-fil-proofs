@@ -50,11 +50,11 @@ namespace nil {
                                ", count: " + challenge_count + ", nodes: " + challenged_nodes + "}}";
                     }
                     virtual size_t sector_size() const override {
-                        return sector_size;
+                        return ssize;
                     }
 
                     /// Size of the sector in bytes.
-                    std::uint64_t sector_size;
+                    std::uint64_t ssize;
                     std::size_t challenge_count;
                     std::size_t challenged_nodes;
                 };

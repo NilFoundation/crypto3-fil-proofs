@@ -88,7 +88,16 @@ set(TESTS_NAMES
     "porep/stacked/circuit/hash"
 
     "post/election/circuit"
-    "post/election/compound")
+    "post/election/compound"
+    "post/election/vanilla"
+
+    "post/fallback/circuit"
+    "post/fallback/compound"
+    "post/fallback/vanilla"
+
+    "post/rational/circuit"
+    "post/rational/compound"
+    "post/rational/vanilla")
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_storage_test(${TEST_NAME})
