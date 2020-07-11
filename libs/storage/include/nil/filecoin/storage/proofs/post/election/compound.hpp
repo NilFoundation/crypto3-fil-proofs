@@ -26,8 +26,26 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POST_ELECTION_COMPOUND_HPP
 #define FILECOIN_STORAGE_PROOFS_POST_ELECTION_COMPOUND_HPP
 
+#include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
+#include <nil/filecoin/storage/proofs/core/proof/compound_proof.hpp>
+
+#include <nil/filecoin/storage/proofs/post/election/vanilla.hpp>
+
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace post {
+            namespace election {
+                template<typename MerkleTreeType, template<typename> class Circuit, typename Bls12,
+                         typename ParameterSetMetadata, typename ProofScheme>
+                struct ElectionPoStCompound
+                    : public cacheable_parameters<Circuit<Bls12>, ParameterSetMetadata, MerkleTreeType> {
+                    virtual std::string cache_prefix() const override {
+                        return "proof-of-spacetime-election-" + Tree::display();
+                    }
+                };
+            }    // namespace election
+        }        // namespace post
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif

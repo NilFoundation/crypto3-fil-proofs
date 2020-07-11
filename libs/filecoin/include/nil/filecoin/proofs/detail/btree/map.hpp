@@ -23,7 +23,7 @@
 #ifndef BTREE_MAP_H__
 #define BTREE_MAP_H__
 
-#include <nil/filecoin/storage/proofs/core/detail/btree/map.hpp>
+#include <nil/filecoin/storage/proofs/core/btree/map.hpp>
 
 #include <stdexcept>
 
