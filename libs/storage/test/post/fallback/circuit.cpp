@@ -31,8 +31,8 @@ template<typename MerkleTreeType>
 void test_fallback_post_circuit(std::size_t expected_constraints) {
     let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let leaves = 64 * get_base_tree_count::<Tree>();
-    let sector_size = leaves * NODE_SIZE;
+    std::size_t leaves = 64 * get_base_tree_count<Tree>();
+    std::size_t sector_size = leaves * NODE_SIZE;
 
     let randomness = <Tree::Hasher as Hasher>::Domain::random(rng);
     let prover_id = <Tree::Hasher as Hasher>::Domain::random(rng);

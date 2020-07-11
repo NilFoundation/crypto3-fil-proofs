@@ -33,19 +33,19 @@ template<typename MerkleTreeType>
 void fallback_post_test_compound() {
     let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let leaves = 64 * get_base_tree_count::<Tree>();
-    let sector_size = (leaves * NODE_SIZE) as u64;
+    std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
+    std::uint64_t sector_size = (leaves * NODE_SIZE);
     let randomness = <Tree::Hasher as Hasher>::Domain::random(rng);
     let prover_id = <Tree::Hasher as Hasher>::Domain::random(rng);
 
-    let setup_params = compound_proof::SetupParams {
-        vanilla_params : fallback::SetupParams {
+    compound_proof::SetupParams setup_params = {
+        fallback::SetupParams {
             sector_size,
             challenge_count : 20,
             challenged_nodes : 1,
         },
         partitions : None,
-        priority : true,
+        priority : true
     };
 
     std::vector<sector_id_type> sectors;
@@ -57,15 +57,15 @@ void fallback_post_test_compound() {
 
     for (int i = 0; i < 5; i++) {
         sectors.push_back(i.into());
-        let(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+        let(_data, tree) = generate_tree<MerkleTreeType>(rng, leaves, Some(temp_path.to_path_buf()));
         trees.insert(i.into(), tree);
     }
 
-    let pub_params = ElectionPoStCompound::<Tree>::setup(&setup_params).expect("setup failed");
+    let pub_params = ElectionPoStCompound<MerkleTreeType>::setup(&setup_params).expect("setup failed");
 
-    let candidates =
-        fallback::generate_candidates::<Tree>(&pub_params.vanilla_params, &sectors, &trees, prover_id, randomness, )
-            .unwrap();
+    let candidates = fallback::generate_candidates<MerkleTreeType>(&pub_params.vanilla_params, &sectors, &trees,
+                                                                   prover_id, randomness)
+                         .unwrap();
 
     let candidate = &candidates[0];
     let tree = trees.remove(&candidate.sector_id).unwrap();
@@ -73,20 +73,10 @@ void fallback_post_test_compound() {
     let comm_c = <Tree::Hasher as Hasher>::Domain::random(rng);
     let comm_r = <Tree::Hasher as Hasher>::Function::hash2(&comm_c, &comm_r_last);
 
-    let pub_inputs = fallback::PublicInputs {
-        randomness,
-        sector_id : candidate.sector_id,
-        prover_id,
-        comm_r,
-        partial_ticket : candidate.partial_ticket,
-        sector_challenge_index : 0,
-    };
+    fallback::PublicInputs pub_inputs = {randomness, candidate.sector_id,      prover_id,
+                                         comm_r,     candidate.partial_ticket, 0};
 
-    let priv_inputs = fallback::PrivateInputs::<Tree> {
-        tree,
-        comm_c,
-        comm_r_last,
-    };
+    fallback::PrivateInputs<MerkleTreeType> priv_inputs = {tree, comm_c, comm_r_last};
 
     {
         let(circuit, inputs) = ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs).unwrap();
@@ -95,11 +85,10 @@ void fallback_post_test_compound() {
 
         circuit.synthesize(&mut cs).expect("failed to synthesize");
 
-        if
-            !cs.is_satisfied() {
-                panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied().unwrap());
-            }
-        assert !(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
+        if (!cs.is_satisfied()) {
+            panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied().unwrap());
+        }
+        BOOST_CHECK(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
     }
 
     // Use this to debug differences between blank and regular circuit generation.
@@ -117,12 +106,11 @@ void fallback_post_test_compound() {
         circuit1.synthesize(&mut cs1).expect("failed to synthesize");
         let b = cs1.pretty_print_list();
 
-        for (i, (a, b))
-            in a.chunks(100).zip(b.chunks(100)).enumerate() {
-                assert_eq !(a, b, "failed at chunk {}", i);
-            }
+        for ((i, (a, b)) : a.chunks(100).zip(b.chunks(100)).enumerate()) {
+            BOOST_CHECK_EQUAL(a, b, "failed at chunk {}", i);
+        }
     }
-    let blank_groth_params = ElectionPoStCompound::<Tree>::groth_params(Some(rng), &pub_params.vanilla_params)
+    let blank_groth_params = ElectionPoStCompound<MerkleTreeType>::groth_params(Some(rng), &pub_params.vanilla_params)
                                  .expect("failed to generate groth params");
 
     let proof = ElectionPoStCompound::prove(&pub_params, &pub_inputs, &priv_inputs, &blank_groth_params, )
@@ -131,15 +119,15 @@ void fallback_post_test_compound() {
     let verified = ElectionPoStCompound::verify(&pub_params, &pub_inputs, &proof, &NoRequirements)
                        .expect("failed while verifying");
 
-    assert !(verified);
+    BOOST_CHECK(verified);
 }
 
 BOOST_AUTO_TEST_CASE(fallback_post_test_compound_pedersen) {
-    fallback_post_test_compound::<LCTree<PedersenHasher, U8, U0, U0>>();
+    fallback_post_test_compound<LCTree<PedersenHasher, U8, U0, U0>>();
 }
 
 BOOST_AUTO_TEST_CASE(fallback_post_test_compound_poseidon) {
-    fallback_post_test_compound::<LCTree<PoseidonHasher, U8, U0, U0>>();
+    fallback_post_test_compound<LCTree<PoseidonHasher, U8, U0, U0>>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -69,10 +69,10 @@ void test_election_post() {
 
     let proof = ElectionPoSt<MerkleTreeType>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    let is_valid = ElectionPoSt<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof)
-                       .expect(
-                           "verification "
-                           "failed");
+    bool is_valid = ElectionPoSt<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof)
+                        .expect(
+                            "verification "
+                            "failed");
 
     BOOST_CHECK(is_valid);
 }
