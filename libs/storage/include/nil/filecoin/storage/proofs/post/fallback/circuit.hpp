@@ -34,19 +34,52 @@ namespace nil {
             namespace fallback {
                 template<typename MerkleTreeType>
                 struct Sector {
+                    Sector(const PublicSector<typename MerkleTreeType::hash_type::digest_type> &sector,
+                           const SectorProof<typename MerkleTreeType::proof_type> &vanilla_proof) {
+                        let leafs = vanilla_proof.leafs().iter().map(| l | Some((*l).into())).collect();
+
+                        let paths = vanilla_proof.as_options().into_iter().map(Into::into).collect();
+
+                        Ok(Sector {
+                            leafs,
+                            id : Some(sector.id.into()),
+                            comm_r : Some(sector.comm_r.into()),
+                            comm_c : Some(vanilla_proof.comm_c.into()),
+                            comm_r_last : Some(vanilla_proof.comm_r_last.into()),
+                            paths,
+                        })
+                    }
+
+                    Sector(const PublicParams &pub_params) {
+                        std::size_t challenges_count = pub_params.challenge_count;
+                        std::size_t leaves = pub_params.sector_size / NODE_SIZE;
+
+                        por::PublicParams por_params = {leaves, true};
+                        let leafs = vec ![None; challenges_count];
+                        let paths = vec ![AuthPath::blank(por_params.leaves); challenges_count];
+
+                        Sector {
+                        id:
+                            None, comm_r : None, comm_c : None, comm_r_last : None, leafs, paths,
+                        }
+                    }
+
                     Fr comm_r;
                     Fr comm_c;
-                    Fr comm_r_last std::vector<Fr> leafs;
-                    std::vector<AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
-                                         MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>>
+                    Fr comm_r_last;
+                    std::vector<Fr> leafs;
+                    std::vector<AuthPath<typename MerkleTreeType::hash_type,
+                                         MerkleTreeType::Arity,
+                                         MerkleTreeType::SubTreeArity,
+                                         MerkleTreeType::TopTreeArity>>
                         paths;
                     Fr id;
-                }
+                };
 
                 template<typename MerkleTreeType>
                 struct FallbackPoStCircuit {
                     Fr prover_id;
-                    std::vector < Sector<MerkleTreeType> sectors;
+                    std::vector<Sector<MerkleTreeType>> sectors;
                 };
             }    // namespace fallback
         }        // namespace post

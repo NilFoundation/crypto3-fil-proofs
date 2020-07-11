@@ -50,7 +50,7 @@ void test_fallback_post() {
 
     for (int i = 0; i < 5; i++) {
         sectors.push_back(i.into());
-        let(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+        let(_data, tree) = generate_tree<MerkleTreeType>(rng, leaves, Some(temp_path.to_path_buf()));
         trees.insert(i.into(), tree);
     }
 

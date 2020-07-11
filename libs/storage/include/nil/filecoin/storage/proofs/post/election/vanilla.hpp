@@ -253,21 +253,20 @@ namespace nil {
 
                         Fr val = measure_op(Operation::PostReadChallengedRange, || {tree.read_at(challenge as usize)})
                                      .into();
-                        data.push(val.into());
+                        data.push_back(val.into());
                     }
 
                     // pad for md
-                    let arity = PoseidonMDArity::to_usize();
+                    std::size_t arity = PoseidonMDArity;
                     while (data.size() % arity) {
                         data.push(PoseidonDomain::default());
                     }
 
-                    let partial_ticket
-                        : Fr = measure_op(Operation::PostPartialTicketHash, || {PoseidonFunction::hash_md(&data)})
-                                   .into();
+                    Fr partial_ticket =
+                        measure_op(Operation::PostPartialTicketHash, || {PoseidonFunction::hash_md(&data)}).into();
 
                     // ticket = sha256(partial_ticket)
-                    let ticket = finalize_ticket(&partial_ticket);
+                    std::array<std::uint8_t, 32> ticket = finalize_ticket(&partial_ticket);
 
                     return {sector_challenge_index, sector_id, partial_ticket, ticket};
                 }
