@@ -120,7 +120,7 @@ namespace nil {
                                 let(parent_col, inclusion_path) =
                                     parent.alloc(cs.namespace(|| format !("drg_parent_{}_num", i))) ?
                                     ;
-                                assert_eq !(layers, parent_col.len());
+                                assert(layers == parent_col.size());
 
                                 // calculate column hash
                                 let val = parent_col.hash(cs.namespace(|| format !("drg_parent_{}_constraint", i))) ? ;
@@ -138,7 +138,7 @@ namespace nil {
                                 let(parent_col, inclusion_path) =
                                     parent.alloc(cs.namespace(|| format !("exp_parent_{}_num", i))) ?
                                     ;
-                                assert(layers == parent_col.len());
+                                assert(layers == parent_col.size());
 
                                 // calculate column hash
                                 let val = parent_col.hash(cs.namespace(|| format !("exp_parent_{}_constraint", i))) ? ;
@@ -146,7 +146,7 @@ namespace nil {
                                 enforce_inclusion(cs.namespace(|| format !("exp_parent_{}_inclusion", i)),
                                                   inclusion_path, comm_c, &val, ) ?
                                     ;
-                                exp_parents.push(parent_col);
+                                exp_parents.push_back(parent_col);
                             }
 
                             // -- Verify labeling and encoding

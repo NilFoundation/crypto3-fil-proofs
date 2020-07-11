@@ -186,12 +186,11 @@ namespace nil {
                                 let mut replica_parentsi = Vec::with_capacity(parents.len());
 
                                 for (p : parents) {
-                                    replica_parentsi.push((*p, {
+                                    replica_parentsi.push_back((*p, {
                                         let proof =
-                                            tree_r.gen_cached_proof(*p as usize, Some(tree_r_config_rows_to_discard)) ?
-                                            ;
+                                            tree_r.gen_cached_proof(*p as usize, Some(tree_r_config_rows_to_discard));
                                         DataProof {
-                                            proof, data : tree_r.read_at(*p as usize) ?,
+                                            proof, data : tree_r.read_at(*p as usize)
                                         }
                                     }));
                                 }

@@ -84,7 +84,11 @@ set(TESTS_NAMES
     "porep/stacked/vanilla/proof"
 
     "porep/stacked/circuit/create_label"
-    "porep/stacked/circuit/proof")
+    "porep/stacked/circuit/proof"
+    "porep/stacked/circuit/hash"
+
+    "post/election/circuit"
+    "post/election/compound")
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_storage_test(${TEST_NAME})
