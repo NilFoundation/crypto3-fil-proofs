@@ -30,6 +30,7 @@
 #include <nil/filecoin/storage/proofs/core/proof/compound_proof.hpp>
 
 #include <nil/filecoin/storage/proofs/post/election/vanilla.hpp>
+#include <nil/filecoin/storage/proofs/post/election/circuit.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -38,7 +39,9 @@ namespace nil {
                 template<typename MerkleTreeType, template<typename> class Circuit, typename Bls12,
                          typename ParameterSetMetadata, typename ProofScheme>
                 struct ElectionPoStCompound
-                    : public cacheable_parameters<Circuit<Bls12>, ParameterSetMetadata, MerkleTreeType> {
+                    : public cacheable_parameters<Circuit, ParameterSetMetadata, MerkleTreeType>,
+                      public compound_proof<ElectionPoSt<MerkleTreeType>,
+                                            ElectionPoStCircuit<MerkleTreeType, Bls12, Circuit>> {
                     virtual std::string cache_prefix() const override {
                         return "proof-of-spacetime-election-" + Tree::display();
                     }
