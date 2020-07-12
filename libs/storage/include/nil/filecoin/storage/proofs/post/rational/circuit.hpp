@@ -27,7 +27,11 @@
 #define FILECOIN_STORAGE_PROOFS_POST_RATIONAL_CIRCUIT_HPP
 
 namespace nil {
-    namespace filecoin { }    // namespace filecoin
+    namespace filecoin {
+        namespace post {
+            namespace rational { }
+        }    // namespace post
+    }        // namespace filecoin
 }    // namespace nil
 
 #endif
