@@ -28,6 +28,8 @@
 
 #include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
 
+#include <nil/filecoin/storage/proofs/post/fallback/vanilla.hpp>
+
 namespace nil {
     namespace filecoin {
         namespace post {
@@ -58,7 +60,7 @@ namespace nil {
                         let leafs = vec ![None; challenges_count];
                         let paths = vec ![AuthPath::blank(por_params.leaves); challenges_count];
 
-                        Sector {
+                        return Sector {
                         id:
                             None, comm_r : None, comm_c : None, comm_r_last : None, leafs, paths,
                         }
