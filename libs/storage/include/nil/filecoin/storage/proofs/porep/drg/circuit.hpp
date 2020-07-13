@@ -42,67 +42,71 @@ namespace nil {
         }    // namespace zk
     }        // namespace crypto3
     namespace filecoin {
-        /*!
-         * @brief DRG based Proof of Replication.
+        namespace porep {
+            namespace drg {
 
-         # Fields
+                /*!
+                 * @brief DRG based Proof of Replication.
 
-         * `params` - parameters for the curve
+                 # Fields
 
-         ----> Private `replica_node` - The replica node being proven.
+                 * `params` - parameters for the curve
 
-         * `replica_node` - The replica node being proven.
-         * `replica_node_path` - The path of the replica node being proven.
-         * `replica_root` - The merkle root of the replica.
+                 ----> Private `replica_node` - The replica node being proven.
 
-         * `replica_parents` - A list of all parents in the replica, with their value.
-         * `replica_parents_paths` - A list of all parents paths in the replica.
+                 * `replica_node` - The replica node being proven.
+                 * `replica_node_path` - The path of the replica node being proven.
+                 * `replica_root` - The merkle root of the replica.
 
-         ----> Private `data_node` - The data node being proven.
+                 * `replica_parents` - A list of all parents in the replica, with their value.
+                 * `replica_parents_paths` - A list of all parents paths in the replica.
 
-         * `data_node_path` - The path of the data node being proven.
-         * `data_root` - The merkle root of the data.
-         * `replica_id` - The id of the replica.
+                 ----> Private `data_node` - The data node being proven.
 
-         * @tparam Hash
-         * @tparam Bls12
-         */
-        template<typename Hash, template<typename> class ConstraintSystem, typename Bls12, typename Fr>
-        struct DrgPoRepCircuit : public crypto3::zk::snark::circuit<Bls12> {
-            typedef Hash hash_type;
+                 * `data_node_path` - The path of the data node being proven.
+                 * `data_root` - The merkle root of the data.
+                 * `replica_id` - The id of the replica.
 
-            std::vector<Fr> replica_nodes;
-            std::vector<std::vector<std::pair<Fr, std::size_t>>> replica_nodes_paths;
-            root<Bls12> replica_root;
-            std::vector<std::vector<Fr>> replica_parents;
-            std::vector<std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>>> replica_parents_paths;
-            std::vector<Fr> data_nodes;
-            std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> data_nodes_paths;
-            root<Bls12> data_root;
-            Fr replica_id;
-            bool priv;
+                 * @tparam Hash
+                 * @tparam Bls12
+                 */
+                template<typename Hash, template<typename> class ConstraintSystem, typename Bls12, typename Fr>
+                struct DrgPoRepCircuit : public crypto3::zk::snark::circuit<Bls12> {
+                    typedef Hash hash_type;
 
-            void synthesize(ConstraintSystem<Bls12> &cs) {
-                Fr replica_id = replica_id;
-                root<Bls12> replica_root = replica_root;
-                root<Bls12> data_root = data_root;
+                    std::vector<Fr> replica_nodes;
+                    std::vector<std::vector<std::pair<Fr, std::size_t>>> replica_nodes_paths;
+                    root<Bls12> replica_root;
+                    std::vector<std::vector<Fr>> replica_parents;
+                    std::vector<std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>>>
+                        replica_parents_paths;
+                    std::vector<Fr> data_nodes;
+                    std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> data_nodes_paths;
+                    root<Bls12> data_root;
+                    Fr replica_id;
+                    bool priv;
 
-                std::size_t nodes = data_nodes.size();
+                    void synthesize(ConstraintSystem<Bls12> &cs) {
+                        Fr replica_id = replica_id;
+                        root<Bls12> replica_root = replica_root;
+                        root<Bls12> data_root = data_root;
 
-                assert(replica_nodes.size() == nodes);
-                assert(replica_nodes_paths.size() == nodes);
-                assert(replica_parents.size() == nodes);
-                assert(replica_parents_paths.size() == nodes);
-                assert(data_nodes_paths.size() == nodes);
+                        std::size_t nodes = data_nodes.size();
 
-                std::size_t replica_node_num =
-                    num::AllocatedNum::alloc(cs.namespace(|| "replica_id_num"),
-                                             || {replica_id.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
-                    ;
+                        assert(replica_nodes.size() == nodes);
+                        assert(replica_nodes_paths.size() == nodes);
+                        assert(replica_parents.size() == nodes);
+                        assert(replica_parents_paths.size() == nodes);
+                        assert(data_nodes_paths.size() == nodes);
 
-                replica_node_num.inputize(cs.namespace(|| "replica_id")) ? ;
+                        std::size_t replica_node_num =
+                            num::AllocatedNum::alloc(cs.namespace(|| "replica_id_num"),
+                                                     || {replica_id.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
+                            ;
 
-                // get the replica_id in bits
+                        replica_node_num.inputize(cs.namespace(|| "replica_id")) ? ;
+
+                        // get the replica_id in bits
                 let replica_id_bits =
                 reverse_bit_numbering(replica_node_num.to_bits_le(cs.namespace(|| "replica_id_bits"))?);
 
@@ -191,53 +195,55 @@ namespace nil {
                         constraint::equal(&mut cs, || "equality", &expected, &decoded);
                     }
                 }
-            }
-        };
+                    }
+                };
 
-        /// Key derivation function.
-        template<typename ScalarEngine, template<typename> class ConstraintSystem, typename InputIdIterator>
-        AllocatedNum<ScalarEngine> kdf(ConstraintSystem<ScalarEngine> &cs, InputIdIterator id_first,
-                                       InputIdIterator id_last, const std::vector<std::vector<bool>> &parents,
-                                       std::uint64_t window_index = 0, std::uint64_t node = 0)
+                /// Key derivation function.
+                template<typename ScalarEngine, template<typename> class ConstraintSystem, typename InputIdIterator>
+                AllocatedNum<ScalarEngine> kdf(ConstraintSystem<ScalarEngine> &cs, InputIdIterator id_first,
+                                               InputIdIterator id_last, const std::vector<std::vector<bool>> &parents,
+                                               std::uint64_t window_index = 0, std::uint64_t node = 0)
 
-        {
-            // ciphertexts will become a buffer of the layout
-            // id | node | encodedParentNode1 | encodedParentNode1 | ...
+                {
+                    // ciphertexts will become a buffer of the layout
+                    // id | node | encodedParentNode1 | encodedParentNode1 | ...
 
-            let mut ciphertexts = id.to_vec();
+                    let mut ciphertexts = id.to_vec();
 
-            if (window_index) {
-                ciphertexts.extend_from_slice(&window_index.to_bits_be());
-            }
+                    if (window_index) {
+                        ciphertexts.extend_from_slice(&window_index.to_bits_be());
+                    }
 
-            if (node) {
-                ciphertexts.extend_from_slice(&node.to_bits_be());
-            }
+                    if (node) {
+                        ciphertexts.extend_from_slice(&node.to_bits_be());
+                    }
 
-            for (parent : parents) {
-                ciphertexts.extend_from_slice(parent);
-            }
+                    for (parent : parents) {
+                        ciphertexts.extend_from_slice(parent);
+                    }
 
-            let alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]);
-            let fr = if alloc_bits[0].get_value().is_some() {
-                let be_bits = alloc_bits.iter()
-                                  .map(| v | v.get_value().ok_or(SynthesisError::AssignmentMissing))
-                                  .collect::<Result<Vec<bool>, SynthesisError>>() ?
-                    ;
+                    let alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]);
+                    let fr = if alloc_bits[0].get_value().is_some() {
+                        let be_bits = alloc_bits.iter()
+                                          .map(| v | v.get_value().ok_or(SynthesisError::AssignmentMissing))
+                                          .collect::<Result<Vec<bool>, SynthesisError>>() ?
+                            ;
 
-                let le_bits = be_bits.chunks(8)
-                                  .flat_map(| chunk | chunk.iter().rev())
-                                  .copied()
-                                  .take(E::Fr::CAPACITY as usize)
-                                  .collect::<Vec<bool>>();
+                        let le_bits = be_bits.chunks(8)
+                                          .flat_map(| chunk | chunk.iter().rev())
+                                          .copied()
+                                          .take(E::Fr::CAPACITY as usize)
+                                          .collect::<Vec<bool>>();
 
-                return multipack::compute_multipacking::<E>(&le_bits)[0];
-            }
-            else {Err(SynthesisError::AssignmentMissing)};
+                        return multipack::compute_multipacking::<E>(&le_bits)[0];
+                    }
+                    else {Err(SynthesisError::AssignmentMissing)};
 
-            return num::AllocatedNum::<Engine>::alloc(cs.namespace(|| "result_num"), || fr);
-        }
-    }    // namespace filecoin
+                    return num::AllocatedNum::<Engine>::alloc(cs.namespace(|| "result_num"), || fr);
+                }
+            }    // namespace drg
+        }        // namespace porep
+    }            // namespace filecoin
 }    // namespace nil
 
 #endif
