@@ -36,177 +36,174 @@ namespace nil {
     namespace filecoin {
         namespace porep {
             namespace drg {
-                namespace vanilla {
-                    template<typename T>
-                    struct Tau {
-                        T comm_r;
-                        T comm_d;
-                    };
+                template<typename T>
+                struct Tau {
+                    T comm_r;
+                    T comm_d;
+                };
 
-                    template<typename Hash, template<typename> class BinaryMerkleTree,
-                             template<typename> class BinaryLCMerkleTree>
-                    struct ProverAux {
-                        BinaryMerkleTree<Hash> tree_d;
-                        BinaryLCMerkleTree<Hash> tree_r;
-                    };
+                template<typename Hash, template<typename> class BinaryMerkleTree,
+                         template<typename> class BinaryLCMerkleTree>
+                struct ProverAux {
+                    BinaryMerkleTree<Hash> tree_d;
+                    BinaryLCMerkleTree<Hash> tree_r;
+                };
 
-                    template<typename Domain>
-                    struct PublicInputs {
-                        Domain replica_id;
-                        std::vector<std::size_t> challenges;
-                        Tau<Domain> tau;
-                    };
+                template<typename Domain>
+                struct PublicInputs {
+                    Domain replica_id;
+                    std::vector<std::size_t> challenges;
+                    Tau<Domain> tau;
+                };
 
-                    template<typename Hash, template<typename> class BinaryMerkleTree,
-                             template<typename> class BinaryLCMerkleTree>
-                    struct PrivateInputs {
-                        BinaryMerkleTree<Hash> &tree_d;
-                        BinaryLCMerkleTree<Hash> &tree_r;
-                        std::size_t tree_r_config_rows_to_discard;
-                    };
+                template<typename Hash, template<typename> class BinaryMerkleTree,
+                         template<typename> class BinaryLCMerkleTree>
+                struct PrivateInputs {
+                    BinaryMerkleTree<Hash> &tree_d;
+                    BinaryLCMerkleTree<Hash> &tree_r;
+                    std::size_t tree_r_config_rows_to_discard;
+                };
 
-                    struct DrgParams {
-                        // Number of nodes
-                        std::size_t nodes;
-                        // Base degree of DRG
-                        std::size_t degree;
-                        std::size_t expansion_degree;
-                        std::array<std::uint8_t, 32> porep_id;
-                    };
+                struct DrgParams {
+                    // Number of nodes
+                    std::size_t nodes;
+                    // Base degree of DRG
+                    std::size_t degree;
+                    std::size_t expansion_degree;
+                    std::array<std::uint8_t, 32> porep_id;
+                };
 
-                    struct SetupParams {
-                        DrgParams drg;
-                        bool priv;
-                        std::size_t challenges_count;
-                    };
+                struct SetupParams {
+                    DrgParams drg;
+                    bool priv;
+                    std::size_t challenges_count;
+                };
 
-                    template<typename Hash, template<typename> class Graph>
-                    struct PublicParams : public parameter_set_metadata {
-                        virtual std::string identifier() const override {
-                            return "drgporep::PublicParams{{graph: {}}}" + graph.identifier();
-                        }
-                        virtual size_t sector_size() const override {
-                            return graph.sector_size();
-                        }
+                template<typename Hash, template<typename> class Graph>
+                struct PublicParams : public parameter_set_metadata {
+                    virtual std::string identifier() const override {
+                        return "drgporep::PublicParams{{graph: {}}}" + graph.identifier();
+                    }
+                    virtual size_t sector_size() const override {
+                        return graph.sector_size();
+                    }
 
-                        Graph<Hash> graph;
-                        bool priv;
-                        std::size_t challenges_count;
-                    };
+                    Graph<Hash> graph;
+                    bool priv;
+                    std::size_t challenges_count;
+                };
 
-                    template<typename Hash, typename PoseidonArity, template<typename, typename> class MerkleProof>
-                    struct DataProof {
-                        /// proves_challenge returns true if this self.proof corresponds to challenge.
-                        /// This is useful for verifying that a supplied proof is actually relevant to a given
-                        /// challenge.
-                        bool proves_challenge(std::size_t challenge) {
-                            return proof.proves_challenge(challenge);
-                        }
+                template<typename Hash, typename PoseidonArity, template<typename, typename> class MerkleProof>
+                struct DataProof {
+                    /// proves_challenge returns true if this self.proof corresponds to challenge.
+                    /// This is useful for verifying that a supplied proof is actually relevant to a given
+                    /// challenge.
+                    bool proves_challenge(std::size_t challenge) {
+                        return proof.proves_challenge(challenge);
+                    }
 
-                        MerkleProof<Hash, PoseidonArity> proof;
-                        typename Hash::digest_type data;
-                    };
+                    MerkleProof<Hash, PoseidonArity> proof;
+                    typename Hash::digest_type data;
+                };
 
-                    template<typename Hash>
-                    using ReplicaParents = std::vector<std::tuple<std::uint32_t, DataProof<Hash, typenum::U2>>>;
+                template<typename Hash>
+                using ReplicaParents = std::vector<std::tuple<std::uint32_t, DataProof<Hash, typenum::U2>>>;
 
-                    template<typename Hash>
-                    struct Proof {
-                        Proof(std::size_t height, std::size_t degree, std::size_t challenges) :
-                            replica_nodes({height}, challenges), replica_parents({{{0, height}, degree}, challenges}),
-                            nodes({{height}, challenges}) {
-                        }
+                template<typename Hash>
+                struct Proof {
+                    Proof(std::size_t height, std::size_t degree, std::size_t challenges) :
+                        replica_nodes({height}, challenges), replica_parents({{{0, height}, degree}, challenges}),
+                        nodes({{height}, challenges}) {
+                    }
 
-                        Proof(const std::vector<DataProof<Hash, typenum::U2>> &replica_nodes,
-                              const std::vector<ReplicaParents<Hash>> &replica_parents,
-                              const std::vector<DataProof<Hash, typenum::U2>> &nodes) :
-                            replica_nodes(replica_nodes),
-                            replica_parents(replica_parents), nodes(nodes), data_root(nodes[0].proof.root()),
-                            replica_root(replica_nodes[0].proof.root()) {
-                        }
+                    Proof(const std::vector<DataProof<Hash, typenum::U2>> &replica_nodes,
+                          const std::vector<ReplicaParents<Hash>> &replica_parents,
+                          const std::vector<DataProof<Hash, typenum::U2>> &nodes) :
+                        replica_nodes(replica_nodes),
+                        replica_parents(replica_parents), nodes(nodes), data_root(nodes[0].proof.root()),
+                        replica_root(replica_nodes[0].proof.root()) {
+                    }
 
-                        typename Hash::digest_type data_root;
-                        typename Hash::digest_type replica_root;
-                        std::vector<DataProof<Hash, typenum::U2>> replica_nodes;
-                        std::vector<ReplicaParents<Hash>> replica_parents;
-                        std::vector<DataProof<Hash, typenum::U2>> nodes;
-                    };
+                    typename Hash::digest_type data_root;
+                    typename Hash::digest_type replica_root;
+                    std::vector<DataProof<Hash, typenum::U2>> replica_nodes;
+                    std::vector<ReplicaParents<Hash>> replica_parents;
+                    std::vector<DataProof<Hash, typenum::U2>> nodes;
+                };
 
-                    template<typename Hash, template<typename> class Graph>
-                    struct DrgPoRep
-                        : public PoRep<PublicParams<Hash, Graph>, SetupParams, PublicInputs<typename Hash::digest_type>,
-                                       PrivateInputs<Hash, Graph, Graph>, Proof<Hash>, no_requirements, Hash, Hash,
-                                       Tau<typename Hash::digest_type>, ProverAux<Hash, Graph, Graph>> {
-                        typedef PoRep<PublicParams<Hash, Graph>, SetupParams, PublicInputs<typename Hash::digest_type>,
-                                      PrivateInputs<Hash, Graph, Graph>, Proof<Hash>, no_requirements, Hash, Hash,
-                                      Tau<typename Hash::digest_type>, ProverAux<Hash, Graph, Graph>>
-                            policy_type;
+                template<typename Hash, template<typename> class Graph>
+                struct DrgPoRep
+                    : public PoRep<PublicParams<Hash, Graph>, SetupParams, PublicInputs<typename Hash::digest_type>,
+                                   PrivateInputs<Hash, Graph, Graph>, Proof<Hash>, no_requirements, Hash, Hash,
+                                   Tau<typename Hash::digest_type>, ProverAux<Hash, Graph, Graph>> {
+                    typedef PoRep<PublicParams<Hash, Graph>, SetupParams, PublicInputs<typename Hash::digest_type>,
+                                  PrivateInputs<Hash, Graph, Graph>, Proof<Hash>, no_requirements, Hash, Hash,
+                                  Tau<typename Hash::digest_type>, ProverAux<Hash, Graph, Graph>>
+                        policy_type;
 
-                        typedef typename policy_type::public_params_type public_params_type;
-                        typedef typename policy_type::setup_params setup_params_type;
-                        typedef typename policy_type::public_inputs public_inputs_type;
-                        typedef typename policy_type::private_inputs private_inputs_type;
-                        typedef typename policy_type::proof_type proof_type;
-                        typedef typename policy_type::requirements_type requirements_type;
+                    typedef typename policy_type::public_params_type public_params_type;
+                    typedef typename policy_type::setup_params setup_params_type;
+                    typedef typename policy_type::public_inputs public_inputs_type;
+                    typedef typename policy_type::private_inputs private_inputs_type;
+                    typedef typename policy_type::proof_type proof_type;
+                    typedef typename policy_type::requirements_type requirements_type;
 
-                        typedef typename policy_type::tau_type tau_type;
-                        typedef typename policy_type::aux_type aux_type;
+                    typedef typename policy_type::tau_type tau_type;
+                    typedef typename policy_type::aux_type aux_type;
 
-                        virtual public_params_type setup(const setup_params_type &p) override {
-                            return {{p.drg.nodes, p.drg.degree, p.drg.expansion_degree, p.drg.porep_id},
-                                    p.priv,
-                                    p.challenges_count};
-                        }
+                    virtual public_params_type setup(const setup_params_type &p) override {
+                        return {{p.drg.nodes, p.drg.degree, p.drg.expansion_degree, p.drg.porep_id},
+                                p.priv,
+                                p.challenges_count};
+                    }
 
-                        virtual proof_type prove(const public_params_type &params,
-                                                 const public_inputs_type &inputs,
-                                                 const private_inputs_type &pinputs) override {
-                            std::size_t len = inputs.challenges.size();
-                            assert(len <= params.challenges_count);
+                    virtual proof_type prove(const public_params_type &params,
+                                             const public_inputs_type &inputs,
+                                             const private_inputs_type &pinputs) override {
+                        std::size_t len = inputs.challenges.size();
+                        assert(len <= params.challenges_count);
 
-                            std::vector<typename Hash::digest_type> replica_nodes(len), replica_parents(len);
-                            std::vector<DataProof<Hash, typenum::U2>> data_nodes(len);
+                        std::vector<typename Hash::digest_type> replica_nodes(len), replica_parents(len);
+                        std::vector<DataProof<Hash, typenum::U2>> data_nodes(len);
 
-                            for (int i = 0; i < len; i++) {
-                                std::size_t challenge = inputs.challenges[i] % params.graph.size();
-                                assert(("cannot prove the first node", challenge != 0));
+                        for (int i = 0; i < len; i++) {
+                            std::size_t challenge = inputs.challenges[i] % params.graph.size();
+                            assert(("cannot prove the first node", challenge != 0));
 
-                                let tree_d = &priv_inputs.tree_d;
-                                let tree_r = &priv_inputs.tree_r;
-                                let tree_r_config_rows_to_discard = priv_inputs.tree_r_config_rows_to_discard;
+                            let tree_d = &priv_inputs.tree_d;
+                            let tree_r = &priv_inputs.tree_r;
+                            let tree_r_config_rows_to_discard = priv_inputs.tree_r_config_rows_to_discard;
 
-                                let data = tree_r.read_at(challenge) ? ;
-                                let tree_proof =
-                                    tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard)) ?
-                                    ;
-                                replica_nodes.emplace_back(tree_proof, data);
+                            let data = tree_r.read_at(challenge) ? ;
+                            let tree_proof = tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard)) ? ;
+                            replica_nodes.emplace_back(tree_proof, data);
 
-                                let mut parents = vec ![0; pub_params.graph.degree()];
-                                pub_params.graph.parents(challenge, &mut parents) ? ;
-                                let mut replica_parentsi = Vec::with_capacity(parents.len());
+                            let mut parents = vec ![0; pub_params.graph.degree()];
+                            pub_params.graph.parents(challenge, &mut parents) ? ;
+                            let mut replica_parentsi = Vec::with_capacity(parents.len());
 
-                                for (p : parents) {
-                                    replica_parentsi.push_back((*p, {
-                                        let proof =
-                                            tree_r.gen_cached_proof(*p as usize, Some(tree_r_config_rows_to_discard));
-                                        DataProof {
-                                            proof, data : tree_r.read_at(*p as usize)
-                                        }
-                                    }));
-                                }
+                            for (p : parents) {
+                                replica_parentsi.push_back((*p, {
+                                    let proof =
+                                        tree_r.gen_cached_proof(*p as usize, Some(tree_r_config_rows_to_discard));
+                                    DataProof {
+                                        proof, data : tree_r.read_at(*p as usize)
+                                    }
+                                }));
+                            }
 
-                                replica_parents.push(replica_parentsi);
+                            replica_parents.push(replica_parentsi);
 
-                                let node_proof = tree_d.gen_proof(challenge);
+                            let node_proof = tree_d.gen_proof(challenge);
 
-                                {
-                                    // TODO: use this again, I can't make lifetimes work though atm and I do not know
-                                    // why let extracted = Self::extract(
-                                    //     pub_params,
-                                    //     &pub_inputs.replica_id.into_bytes(),
-                                    //     &replica,
-                                    //     challenge,
-                                    // )?;
+                            {
+                                // TODO: use this again, I can't make lifetimes work though atm and I do not know
+                                // why let extracted = Self::extract(
+                                //     pub_params,
+                                //     &pub_inputs.replica_id.into_bytes(),
+                                //     &replica,
+                                //     challenge,
+                                // )?;
 
                                     let extracted = decode_domain_block::<H>(
                                         &pub_inputs.replica_id.context("missing replica_id")?,
@@ -216,76 +213,75 @@ namespace nil {
                                             &parents,
                                     );
                                     data_nodes.emplace_back(extracted, node_proof);
-                                }
                             }
-
-                            return {replica_nodes, replica_parents, data_nodes};
                         }
 
-                        virtual bool verify(const public_params_type &pub_params,
-                                            const public_inputs_type &pub_inputs,
-                                            const proof_type &pr) override {
-                            let mut hasher = Sha256::new ();
+                        return {replica_nodes, replica_parents, data_nodes};
+                    }
 
-                            for (int i = 0; i < pub_inputs.challenges.size(); i++) {
-                                // This was verify_proof_meta.
-                                if (pub_inputs.challenges[i] >= pub_params.graph.size()) {
-                                    return false;
-                                }
+                    virtual bool verify(const public_params_type &pub_params,
+                                        const public_inputs_type &pub_inputs,
+                                        const proof_type &pr) override {
+                        let mut hasher = Sha256::new ();
 
-                                if (!(proof.nodes[i].proves_challenge(pub_inputs.challenges[i]))) {
-                                    return false;
-                                }
-
-                                if (!(proof.replica_nodes[i].proves_challenge(pub_inputs.challenges[i]))) {
-                                    return false;
-                                }
-
-                                let mut expected_parents = vec ![0; pub_params.graph.degree()];
-                                pub_params.graph.parents(pub_inputs.challenges[i], &mut expected_parents);
-                                if (proof.replica_parents[i].size() != expected_parents.size()) {
-                                    println !(
-                                        "proof parents were not the same length as in public parameters: "
-                                        "{} != {}",
-                                        proof.replica_parents[i].len(),
-                                        expected_parents.len());
-                                    return false;
-                                }
-
-                                let parents_as_expected = proof.replica_parents[i]
-                                                              .iter()
-                                                              .zip(&expected_parents)
-                                                              .all(| (actual, expected) | actual .0 == *expected);
-
-                                if (!parents_as_expected) {
-                                    println !("proof parents were not those provided in public parameters");
-                                    return false;
-                                }
-                            }
-
-                            let challenge = pub_inputs.challenges[i] % pub_params.graph.size();
-                            ensure !(challenge != 0, "cannot prove the first node");
-
-                            if (!proof.replica_nodes[i].proof.validate(challenge)) {
+                        for (int i = 0; i < pub_inputs.challenges.size(); i++) {
+                            // This was verify_proof_meta.
+                            if (pub_inputs.challenges[i] >= pub_params.graph.size()) {
                                 return false;
                             }
 
-                            for ((parent_node, p) : proof.replica_parents[i]) {
-                                if (!p.proof.validate(*parent_node)) {
-                                    return false;
-                                }
+                            if (!(proof.nodes[i].proves_challenge(pub_inputs.challenges[i]))) {
+                                return false;
                             }
 
-                            let key = { let prover_bytes = pub_inputs.replica_id.context("missing replica_id") ? ;
-                            hasher.input(AsRef::<[u8]>::as_ref(&prover_bytes));
-
-                            for (p : proof.replica_parents[i].iter()) {
-                                hasher.input(AsRef::<[u8]>::as_ref(&p .1.data));
+                            if (!(proof.replica_nodes[i].proves_challenge(pub_inputs.challenges[i]))) {
+                                return false;
                             }
 
-                            let hash = hasher.result_reset();
-                            bytes_into_fr_repr_safe(hash.as_ref()).into()
+                            let mut expected_parents = vec ![0; pub_params.graph.degree()];
+                            pub_params.graph.parents(pub_inputs.challenges[i], &mut expected_parents);
+                            if (proof.replica_parents[i].size() != expected_parents.size()) {
+                                println !(
+                                    "proof parents were not the same length as in public parameters: "
+                                    "{} != {}",
+                                    proof.replica_parents[i].size(),
+                                    expected_parents.size());
+                                return false;
+                            }
+
+                            let parents_as_expected = proof.replica_parents[i]
+                                                          .iter()
+                                                          .zip(&expected_parents)
+                                                          .all(| (actual, expected) | actual .0 == *expected);
+
+                            if (!parents_as_expected) {
+                                println !("proof parents were not those provided in public parameters");
+                                return false;
+                            }
                         }
+
+                        let challenge = pub_inputs.challenges[i] % pub_params.graph.size();
+                        ensure !(challenge != 0, "cannot prove the first node");
+
+                        if (!proof.replica_nodes[i].proof.validate(challenge)) {
+                            return false;
+                        }
+
+                        for ((parent_node, p) : proof.replica_parents[i]) {
+                            if (!p.proof.validate(*parent_node)) {
+                                return false;
+                            }
+                        }
+
+                        let prover_bytes = pub_inputs.replica_id.context("missing replica_id");
+                        hasher.input(AsRef::<[u8]>::as_ref(&prover_bytes));
+
+                        for (p : proof.replica_parents[i].iter()) {
+                            hasher.input(AsRef::<[u8]>::as_ref(&p .1.data));
+                        }
+
+                        let hash = hasher.result_reset();
+                        auto key = bytes_into_fr_repr_safe(hash.as_ref()).into();
 
                         let unsealed = encode::decode(key, proof.replica_nodes[i].data);
 
@@ -323,18 +319,17 @@ namespace nil {
                         // since we will already have encoded the parent earlier in the traversal.
 
                         let mut parents = vec ![0; graph.degree()];
-                        for
-                            node in 0..graph.size() {
-                                graph.parents(node, &mut parents) ? ;
-                                let key = graph.create_key(replica_id, node, &parents, data.as_ref(), None) ? ;
-                                let start = data_at_node_offset(node);
-                                let end = start + NODE_SIZE;
+                        for (int node = 0; node < graph.size(); node++) {
+                            graph.parents(node, &mut parents);
+                            let key = graph.create_key(replica_id, node, &parents, data.as_ref(), None);
+                            let start = data_at_node_offset(node);
+                            let end = start + NODE_SIZE;
 
-                                let node_data = <H as Hasher>::Domain::try_from_bytes(&data.as_ref()[start..end]) ? ;
-                                let encoded = H::sloth_encode(key.as_ref(), &node_data) ? ;
+                            let node_data = <H as Hasher>::Domain::try_from_bytes(&data.as_ref()[start..end]);
+                            let encoded = H::sloth_encode(key.as_ref(), &node_data);
 
-                                encoded.write_bytes(&mut data.as_mut()[start..end]) ? ;
-                            }
+                            encoded.write_bytes(&mut data.as_mut()[start..end]);
+                        }
 
                         let replica_config = ReplicaConfig {
                             path : replica_path,
@@ -343,8 +338,7 @@ namespace nil {
                         let tree_r_last_config =
                             StoreConfig::from_config(&config, CacheKey::CommRLastTree.to_string(), None);
                         let tree_r = create_base_lcmerkle_tree::<H, <BinaryLCMerkleTree<H> as MerkleTreeTrait>::Arity>(
-                            tree_r_last_config, pp.graph.size(), &data.as_ref(), &replica_config, ) ?
-                            ;
+                            tree_r_last_config, pp.graph.size(), &data.as_ref(), &replica_config);
 
                         let comm_d = tree_d.root();
                         let comm_r = tree_r.root();
@@ -364,7 +358,7 @@ namespace nil {
                                                          const StoreConfig &config) override {
                         return decode_block(pub_params.graph, replica_id, data, None, node).into_bytes();
                     }
-                };    // namespace vanilla
+                };
 
                 template<typename Hash, template<typename> class Graph>
                 typename Hash::digest_type
