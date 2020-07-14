@@ -69,6 +69,9 @@ endmacro()
 set(TESTS_NAMES
     types/bytes_amount
 
+    commitment_reader
+    fr32
+    fr32_reader
     pieces
     parameters)
 
