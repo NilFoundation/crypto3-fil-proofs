@@ -239,10 +239,14 @@ namespace nil {
             // the inverse transformation.
             std::size_t transform_bit_offset(std::size_t pos, bool padding) {
                 // Set the sizes we're converting to and from.
-                let(from_size, to_size) = if padding {
-                    (self.data_bits, self.element_bits)
+                std::size_t from_size, to_size;
+                if (padding) {
+                    from_size = data_bits;
+                    to_size = element_bits;
+                } else {
+                    from_size = element_bits;
+                    to_size = data_bits;
                 }
-                else {(self.element_bits, self.data_bits)};
 
                 // For both the padding and unpadding cases the operation is the same.
                 // The quotient is the number of full, either elements, in the padded layout,
@@ -264,9 +268,9 @@ namespace nil {
             // it seems the two could be merged, or at least restructured to better expose
             // their differences.
             std::size_t transform_byte_offset(std::size_t pos, bool padding) {
-                let transformed_bit_pos = transform_bit_offset(pos * 8, padding);
+                std::size_t transformed_bit_pos = transform_bit_offset(pos * 8, padding);
 
-                let transformed_byte_pos = transformed_bit_pos as f64 / 8.;
+                std::size_t transformed_byte_pos = transformed_bit_pos/ 8.;
                 // TODO: Optimization: It might end up being cheaper to avoid this
                 // float conversion and use / and %.
 
@@ -276,7 +280,7 @@ namespace nil {
                 // how many valid bits are in the last byte, we have to choose the number
                 // that fits in a byte-aligned raw data stream, so round the number down
                 // to that (`floor`).
-                return padding ? transformed_byte_pos.ceil() : transformed_byte_pos.floor();
+                return padding ? std::ceil(transformed_byte_pos) : std::floor(transformed_byte_pos);
             }
 
             // From the `position` specified, it returns:

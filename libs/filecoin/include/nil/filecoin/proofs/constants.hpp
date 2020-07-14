@@ -99,11 +99,11 @@ namespace nil {
 
         /// The hasher used for creating comm_d.
         typedef crypto3::hash::sha2<256> DefaultPieceHasher;
-        typedef typename crypto3::hash::sha2<256>::domain DefaultPieceDomain;
+        typedef typename crypto3::hash::sha2<256>::digest_type DefaultPieceDomain;
 
         /// The default hasher for merkle trees currently in use.
         typedef crypto3::hash::poseidon DefaultTreeHasher;
-        typedef typename crypto3::hash::poseidon::domain DefaultTreeDomain;
+        typedef typename crypto3::hash::poseidon::digest_type DefaultTreeDomain;
 
         pub type DefaultBinaryTree = storage_proofs::merkle::BinaryMerkleTree<DefaultTreeHasher>;
         pub type DefaultOctTree = storage_proofs::merkle::OctMerkleTree<DefaultTreeHasher>;

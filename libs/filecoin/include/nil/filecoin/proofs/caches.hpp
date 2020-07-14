@@ -67,10 +67,9 @@ namespace nil {
 
         template<typename MerkleTreeType>
         Bls12GrothParams &stacked_params(porep_config &config) {
-            let public_params = public_params::<MerkleTreeType>(PaddedBytesAmount::from(config),
-                                                                usize::from(PoRepProofPartitions::from(config)),
-                                                                porep_config.porep_id, ) ?
-                ;
+            let public_params = public_params<MerkleTreeType>(PaddedBytesAmount::from(config),
+                                                              usize::from(PoRepProofPartitions::from(config)),
+                                                              porep_config.porep_id);
 
             let parameters_generator = || {<StackedCompound<MerkleTreeType, DefaultPieceHasher>
                                                 as CompoundProof<StackedDrg<MerkleTreeType, DefaultPieceHasher>, _, >>::
@@ -108,7 +107,7 @@ namespace nil {
                     )?)
                 }
                 PoStType::Window = > {
-                    let post_public_params = window_post_public_params::<MerkleTreeType>(config) ? ;
+                    let post_public_params = window_post_public_params<MerkleTreeType>(config);
 
                     let parameters_generator =
                         ||

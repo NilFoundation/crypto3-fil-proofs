@@ -29,7 +29,7 @@
 #include <nil/crypto3/hash/blake2b.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
-#include <nil/filecoin/proofs/detail/btree.hpp>
+#include <nil/filecoin/proofs/detail/btree/btree.hpp>
 
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
 
