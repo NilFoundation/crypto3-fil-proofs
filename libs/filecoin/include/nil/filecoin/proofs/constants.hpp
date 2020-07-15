@@ -26,6 +26,8 @@
 #ifndef FILECOIN_CONSTANTS_HPP
 #define FILECOIN_CONSTANTS_HPP
 
+#include <unordered_map>
+
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/poseidon.hpp>
 
@@ -34,18 +36,20 @@
 #include <nil/filecoin/proofs/types/bytes_amount.hpp>
 #include <nil/filecoin/proofs/types/sector_size.hpp>
 
+#include <nil/filecoin/storage/proofs/core/utilities.hpp>
+
 namespace nil {
     namespace filecoin {
-        constexpr static const sector_size_t sector_size_2kb = 1ULL << 11;
-        constexpr static const sector_size_t sector_size_4kb = 1ULL << 12;
-        constexpr static const sector_size_t sector_size_16kb = 1ULL << 14;
-        constexpr static const sector_size_t sector_size_32kb = 1ULL << 15;
-        constexpr static const sector_size_t sector_size_8mb = 1ULL << 23;
-        constexpr static const sector_size_t sector_size_16mb = 1ULL << 24;
-        constexpr static const sector_size_t sector_size_512mb = 1ULL << 29;
-        constexpr static const sector_size_t sector_size_1gb = 1ULL << 30;
-        constexpr static const sector_size_t sector_size_32gb = 1ULL << 35;
-        constexpr static const sector_size_t sector_size_64gb = 1ULL << 36;
+        constexpr static const sector_size_type sector_size_2kb = 1ULL << 11;
+        constexpr static const sector_size_type sector_size_4kb = 1ULL << 12;
+        constexpr static const sector_size_type sector_size_16kb = 1ULL << 14;
+        constexpr static const sector_size_type sector_size_32kb = 1ULL << 15;
+        constexpr static const sector_size_type sector_size_8mb = 1ULL << 23;
+        constexpr static const sector_size_type sector_size_16mb = 1ULL << 24;
+        constexpr static const sector_size_type sector_size_512mb = 1ULL << 29;
+        constexpr static const sector_size_type sector_size_1gb = 1ULL << 30;
+        constexpr static const sector_size_type sector_size_32gb = 1ULL << 35;
+        constexpr static const sector_size_type sector_size_64gb = 1ULL << 36;
 
         constexpr static const std::size_t winning_post_challenge_count = 66;
         constexpr static const std::size_t winning_post_sector_count = 1;
@@ -58,17 +62,17 @@ namespace nil {
         static parameter_map PARAMETERS =
             serde_json::from_str(include_str !("../parameters.json")).expect("Invalid parameters.json");
 
-        static std::unordered_map<sector_size_t, std::uint64_t> POREP_MINIMUM_CHALLENGES = {
+        static std::unordered_map<sector_size_type, std::uint64_t> POREP_MINIMUM_CHALLENGES = {
             {sector_size_2kb, 2},    {sector_size_4kb, 2},   {sector_size_16kb, 2},  {sector_size_32kb, 2},
             {sector_size_8mb, 2},    {sector_size_16mb, 2},  {sector_size_512mb, 2}, {sector_size_1gb, 2},
             {sector_size_32gb, 176}, {sector_size_64gb, 176}};
 
-        static std::unordered_map<sector_size_t, std::uint64_t> POREP_PARTITIONS = {
+        static std::unordered_map<sector_size_type, std::uint64_t> POREP_PARTITIONS = {
             {sector_size_2kb, 1},   {sector_size_4kb, 1},  {sector_size_16kb, 1},  {sector_size_32kb, 1},
             {sector_size_8mb, 1},   {sector_size_16mb, 1}, {sector_size_512mb, 1}, {sector_size_1gb, 1},
             {sector_size_32gb, 10}, {sector_size_64gb, 10}};
 
-        static std::unordered_map<sector_size_t, std::uint64_t> LAYERS = {
+        static std::unordered_map<sector_size_type, std::uint64_t> LAYERS = {
             {sector_size_2kb, 2},   {sector_size_4kb, 2},  {sector_size_16kb, 2},  {sector_size_32kb, 2},
             {sector_size_8mb, 2},   {sector_size_16mb, 2}, {sector_size_512mb, 2}, {sector_size_1gb, 2},
             {sector_size_32gb, 11}, {sector_size_64gb, 11}};
@@ -78,7 +82,7 @@ namespace nil {
          * Please coordinate changes with actor code.
          * https://github.com/filecoin-project/specs-actors/blob/master/actors/abi/sector.go
          */
-        static std::unordered_map<sector_size_t, std::uint64_t> WINDOW_POST_SECTOR_COUNT = {
+        static std::unordered_map<sector_size_type, std::uint64_t> WINDOW_POST_SECTOR_COUNT = {
             {sector_size_2kb, 2},     {sector_size_4kb, 2},  {sector_size_16kb, 2},  {sector_size_32kb, 2},
             {sector_size_8mb, 2},     {sector_size_16mb, 2}, {sector_size_512mb, 2}, {sector_size_1gb, 2},
             {sector_size_32gb, 2349},    // this gives 125,279,217 constraints, fitting in a single partition
@@ -98,16 +102,16 @@ namespace nil {
         constexpr static const unpadded_bytes_amount MIN_PIECE_SIZE = unpadded_bytes_amount(127);
 
         /// The hasher used for creating comm_d.
-        typedef crypto3::hash::sha2<256> DefaultPieceHasher;
-        typedef typename crypto3::hash::sha2<256>::digest_type DefaultPieceDomain;
+        typedef crypto3::hashes::sha2<256> DefaultPieceHasher;
+        typedef typename crypto3::hashes::sha2<256>::digest_type DefaultPieceDomain;
 
         /// The default hasher for merkle trees currently in use.
-        typedef crypto3::hash::poseidon DefaultTreeHasher;
-        typedef typename crypto3::hash::poseidon::digest_type DefaultTreeDomain;
+        typedef crypto3::hashes::poseidon DefaultTreeHasher;
+        typedef typename crypto3::hashes::poseidon::digest_type DefaultTreeDomain;
 
-        pub type DefaultBinaryTree = storage_proofs::merkle::BinaryMerkleTree<DefaultTreeHasher>;
-        pub type DefaultOctTree = storage_proofs::merkle::OctMerkleTree<DefaultTreeHasher>;
-        pub type DefaultOctLCTree = storage_proofs::merkle::OctLCMerkleTree<DefaultTreeHasher>;
+        typedef storage_proofs::merkle::BinaryMerkleTree<DefaultTreeHasher> DefaultBinaryTree;
+        typedef storage_proofs::merkle::OctMerkleTree<DefaultTreeHasher> DefaultOctTree;
+        typedef storage_proofs::merkle::OctLCMerkleTree<DefaultTreeHasher> DefaultOctLCTree;
 
         pub type SectorShape2KiB = LCTree<DefaultTreeHasher, U8, U0, U0>;
         pub type SectorShape4KiB = LCTree<DefaultTreeHasher, U8, U2, U0>;
@@ -120,19 +124,19 @@ namespace nil {
         pub type SectorShape32GiB = LCTree<DefaultTreeHasher, U8, U8, U0>;
         pub type SectorShape64GiB = LCTree<DefaultTreeHasher, U8, U8, U2>;
 
-        bool is_sector_shape_base(sector_size_t sector_size) {
+        bool is_sector_shape_base(sector_size_type sector_size) {
             return sector_size == sector_size_2kb || sector_size == sector_size_8mb || sector_size == sector_size_512mb;
         }
 
-        bool is_sector_shape_sub2(sector_size_t sector_size) {
+        bool is_sector_shape_sub2(sector_size_type sector_size) {
             return sector_size == sector_size_4kb || sector_size == sector_size_16mb || sector_size == sector_size_1gb;
         }
 
-        bool is_sector_shape_sub8(sector_size_t sector_size) {
+        bool is_sector_shape_sub8(sector_size_type sector_size) {
             return sector_size == sector_size_16kb || sector_size == sector_size_32gb;
         }
 
-        bool is_sector_shape_top2(sector_size_t sector_size) {
+        bool is_sector_shape_top2(sector_size_type sector_size) {
             return sector_size == sector_size_32kb || sector_size == sector_size_64gb;
         }
 
@@ -142,7 +146,7 @@ namespace nil {
         }
 
         std::string parameter_id(const std::string &cache_id) {
-            return "v" + VERSION + "-" + cache_id + ".params";
+            return std::string("v") + VERSION + "-" + cache_id + ".params";
         }
     }    // namespace filecoin
 }    // namespace nil

@@ -29,7 +29,7 @@
 #include <nil/crypto3/hash/blake2b.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
-#include <nil/filecoin/proofs/detail/btree/btree.hpp>
+#include <nil/filecoin/proofs/detail/btree/map.hpp>
 
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
 
@@ -41,7 +41,7 @@ namespace nil {
             std::uint64_t sector_size;
         };
 
-        typedef btree<std::string, parameter_data> parameter_map;
+        typedef btree::map<std::string, parameter_data> parameter_map;
 
         // Produces an absolute path to a file within the cache
         boost::filesystem::path get_full_path_for_file_within_cache(const std::string &filename) {
@@ -49,28 +49,33 @@ namespace nil {
         }
 
         // Produces a BLAKE2b checksum for a file within the cache
+        template<typename FileHash>
         std::string get_digest_for_file_within_cache(const std::string &filename) {
-            let path = get_full_path_for_file_within_cache(filename);
-            let mut file = File::open(&path).with_context(|| format !("could not open path={:?}", path)) ? ;
+            boost::filesystem::path path = get_full_path_for_file_within_cache(filename);
+            let mut file = File::open(&path).with_context(|| format !("could not open path={:?}", path));
             let mut hasher = Blake2b::new ();
 
-            std::io::copy(&mut file, &mut hasher) ? ;
+            std::io::copy(&mut file, &mut hasher);
 
-            Ok(hasher.finalize().to_hex()[..32].into())
+            return hasher.finalize().to_hex()[..32].into();
         }
 
         // Prompts the user to approve/reject the message
         bool choose(const std::string &message) {
-            loop {
+            bool chosen = false, choice = false;
+            while (!chosen) {
                 print !("[y/n] {}: ", message);
 
                 let _ = stdout().flush();
                 let mut s = String::new ();
                 stdin().read_line(&mut s).expect(ERROR_STRING);
 
-                match s.trim().to_uppercase().as_str() {
-                    "Y" = > return true, "N" = > return false, _ = > {
-                    }
+                if (match s.trim().to_uppercase().as_str() == "Y") {
+                    chosen = true;
+                    choice = true;
+                } else if (match s.trim().to_uppercase().as_str() == "N") {
+                    chosen = true;
+                    choice = false;
                 }
             }
         }
@@ -106,9 +111,9 @@ namespace nil {
             while (first != last) {
                 std::string filename = add_extension(*first, PARAMETER_METADATA_EXT);
                 boost::filesystem::path file_path = get_full_path_for_file_within_cache(filename);
-                let file = File::open(&file_path).with_context(|| format !("could not open path={:?}", file_path)) ? ;
+                let file = File::open(&file_path).with_context(|| format !("could not open path={:?}", file_path));
 
-                let meta = serde_json::from_reader(file) ? ;
+                let meta = serde_json::from_reader(file);
 
                 map.insert(parameter_id.to_string(), meta);
                 ++first;
@@ -134,8 +139,7 @@ namespace nil {
 
             while (first != last) {
                 std::size_t sector_size =
-                    lookup(*first).with_context(|| format !("no sector size found for filename {}", *first)) ?
-                    ;
+                    lookup(*first).with_context(|| format !("no sector size found for filename {}", *first));
 
                 std::string msg = format !("(sector size: {}B) {}", sector_size, *first);
 

@@ -109,8 +109,7 @@ namespace nil {
 
                     DiskStore<typename MerkleTreeType::hash_type::digest_type> labels_for_layer(std::size_t layer) {
                         assert(("Layer cannot be 0", layer != 0));
-                        assert(layer <= layers(), "Layer {} is not available (only {} layers available)", layer,
-                               layers());
+                        assert(("Layer {} is not available (only {} layers available)", layer <= layers()));
 
                         std::size_t row_index = layer - 1;
                         let config = labels[row_index].clone();
@@ -126,7 +125,7 @@ namespace nil {
 
                     /// How many layers are available.
                     std::size_t layers() {
-                        return self.labels.size();
+                        return labels.size();
                     }
 
                     /// Build the column for the given node.
@@ -194,8 +193,8 @@ namespace nil {
                                     tree_c_size, Tree::Arity::to_usize(), &config)
                                     .context("tree_c");
                             // Note: from_data_store requires the base tree leaf count
-                            DiskTree::<MerkleTreeType::Hasher, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                                       MerkleTreeType::TopTreeArity>
+                            DiskTree<MerkleTreeType::Hasher, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
+                                     MerkleTreeType::TopTreeArity>
                                 tree_c = DiskTree<MerkleTreeType::Hasher, MerkleTreeType::Arity,
                                                   MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>::
                                              from_data_store(
@@ -227,7 +226,7 @@ namespace nil {
                         if (cached(&t_aux.tree_c_config)) {
                             delete_tree_c_store(&t_aux.tree_c_config, tree_c_size);
                         } else if (cached(&configs[0])) {
-                            for (config : configs) {
+                            for (const StoreConfig &config : configs) {
                                 // Trees with sub-trees cannot be instantiated and deleted via the existing tree
                                 // interface since knowledge of how the base trees are split exists outside of merkle
                                 // light.  For now, we manually remove each on disk tree file since we know where they
@@ -240,11 +239,10 @@ namespace nil {
                         trace !("tree c deleted");
 
                         for (int i = 0; i < t_aux.labels.labels.size(); i++) {
-                            let cur_config = t_aux.labels.labels[i].clone();
-                            if cached (&cur_config) {
+                            StoreConfig cur_config = t_aux.labels.labels[i].clone();
+                            if (cached(cur_config)) {
                                 DiskStore:: << Tree::Hasher as Hasher > ::Domain >
-                                    ::delete (cur_config).with_context(|| format !("labels {}", i)) ?
-                                    ;
+                                    ::delete (cur_config).with_context(|| format !("labels {}", i));
                                 trace !("layer {} deleted", i);
                             }
                         }
@@ -254,7 +252,6 @@ namespace nil {
                     StoreConfig tree_d_config;
                     StoreConfig tree_r_last_config;
                     StoreConfig tree_c_config;
-                    Hash &_g;
                 };
 
                 template<typename T, typename S>
@@ -275,138 +272,6 @@ namespace nil {
                     /// Partition index
                     std::size_t k;
                 };
-
-                template<typename MerkleTreeType, typename Hash>
-                struct PrivateInputs {
-                    PersistentAux<typename MerkleTreeType::hash_type::digest_type> p_aux;
-                    TemporaryAuxCache<MerkleTreeType, Hash> t_aux;
-                };
-
-                template<typename MerkleTreeType, typename Hash>
-                struct Proof {
-                    typedef Hash hash_type;
-                    typedef MerkleTreeType tree_type;
-                    typedef typename tree_type::hash_type tree_hash_type;
-
-                    MerkleProof<hash_type, typenum::U2> comm_d_proofs;
-                    MerkleProof<tree_hash_type, typename MerkleTreeType::Arity, typename MerkleTreeType::SubTreeArity,
-                                typename MerkleTreeType::TopTreeArity>
-                        comm_r_last_proof;
-                    ReplicaColumnProof<
-                        MerkleProof<tree_hash_type, typename MerkleTreeType::Arity,
-                                    typename MerkleTreeType::SubTreeArity, typename MerkleTreeType::TopTreeArity>>
-                        replica_column_proofs;
-
-                    typename tree_hash_type::digest_type comm_r_last() {
-                        return comm_r_last_proof.root();
-                    }
-
-                    typename tree_hash_type::digest_type comm_c() {
-                        return replica_column_proofs.c_x.root();
-                    }
-
-                    /// Verify the full proof.
-                    bool verify(const PublicParams<MerkleTreeType> &pub_params,
-                                const PublicInputs<typename tree_hash_type::digest_type,
-                                                   typename hash_type::digest_type> &pub_inputs,
-                                std::size_t challenge, const StackedBucketGraph<tree_hash_type> &graph) {
-                        let replica_id = &pub_inputs.replica_id;
-
-                        bool result = challenge < graph.size() && pub_inputs.tau.is_some();
-
-                        // Verify initial data layer
-                        trace !("verify initial data layer");
-
-                        result |= comm_d_proofs.proves_challenge(challenge);
-
-                        if let
-                            Some(ref tau) = pub_inputs.tau {
-                                check_eq !(&self.comm_d_proofs.root(), &tau.comm_d);
-                            }
-                        else {
-                            return false;
-                        }
-
-                        // Verify replica column openings
-                        trace !("verify replica column openings");
-                        let mut parents = vec ![0; graph.degree()];
-                        graph.parents(challenge, &mut parents).unwrap();    // FIXME: error handling
-                        check !(self.replica_column_proofs.verify(challenge, &parents));
-
-                        check !(self.verify_final_replica_layer(challenge));
-
-                        check !(self.verify_labels(replica_id, &pub_params.layer_challenges));
-
-                        trace !("verify encoding");
-
-                        check !(self.encoding_proof.verify::<G>(replica_id, &self.comm_r_last_proof.leaf(),
-                                                                &self.comm_d_proofs.leaf()));
-
-                        return result;
-                    }
-
-                    /// Verify all labels.
-                    bool verify_labels(const typename tree_hash_type::digest_type &replica_id,
-                                       const LayerChallenges &layer_challenges) {
-                        // Verify Labels Layer 1..layers
-                        for (layer : layer_challenges.layers()) {
-                            trace !("verify labeling (layer: {})", layer, );
-
-                            check !(self.labeling_proofs.get(layer - 1).is_some());
-                            let labeling_proof = &self.labeling_proofs.get(layer - 1).unwrap();
-                            let labeled_node = self.replica_column_proofs.c_x.get_node_at_layer(layer)
-                                                   .unwrap();    // FIXME: error handling
-                            check !(labeling_proof.verify(replica_id, labeled_node));
-                        }
-
-                        return true;
-                    }
-
-                    /// Verify final replica layer openings
-                    bool verify_final_replica_layer(std::size_t challenge) {
-                        trace !("verify final replica layer openings");
-                        check !(self.comm_r_last_proof.proves_challenge(challenge));
-
-                        return true;
-                    }
-                };
-
-                template<typename MerkleProofType>
-                struct ReplicaColumnProof {
-                    typedef MerkleProofType proof_type;
-
-                    template<typename InputParentsRange>
-                    typename std::enable_if<
-                        std::is_same<typename std::iterator_traits<typename InputParentsRange::iterator>::value_type,
-                                     std::uint32_t>::value,
-                        bool>::type
-                        verify(std::size_t challenge, const InputParentsRange &parents) {
-                        let expected_comm_c = c_x.root();
-
-                        trace !("  verify c_x");
-                        check !(c_x.verify(challenge, &expected_comm_c));
-
-                        trace !("  verify drg_parents");
-                        for ((proof, parent) : drg_parents.iter().zip(parents.iter())) {
-                            check !(proof.verify(*parent, &expected_comm_c));
-                        }
-
-                        trace !("  verify exp_parents");
-                        for ((proof, parent) : exp_parents.iter().zip(parents.iter().skip(drg_parents.size()))) {
-                            check !(proof.verify(*parent, &expected_comm_c));
-                        }
-                    }
-
-                    ColumnProof<proof_type> c_x;
-                    std::vector<ColumnProof<proof_type>> drg_parents;
-                    std::vector<ColumnProof<proof_type>> exp_parents;
-                };
-
-                template<typename MerkleTreeType, typename Hash>
-                using TransformedLayers =
-                    std::tuple<Tau<typename MerkleTreeType::hash_type::digest_type, typename Hash::digest_type>,
-                               PersistentAux<typename MerkleTreeType::hash_type::digest_type>,
-                               TemporaryAux<MerkleTreeType, Hash>>;
 
                 template<typename MerkleTreeType>
                 struct LabelsCache {
@@ -555,6 +420,137 @@ namespace nil {
                         return labels.column(column_index);
                     }
                 };
+
+                template<typename MerkleTreeType, typename Hash>
+                struct PrivateInputs {
+                    PersistentAux<typename MerkleTreeType::hash_type::digest_type> p_aux;
+                    TemporaryAuxCache<MerkleTreeType, Hash> t_aux;
+                };
+
+                template<typename MerkleTreeType, typename Hash>
+                struct Proof {
+                    typedef Hash hash_type;
+                    typedef MerkleTreeType tree_type;
+                    typedef typename tree_type::hash_type tree_hash_type;
+
+                    MerkleProof<hash_type, typenum::U2> comm_d_proofs;
+                    MerkleProof<tree_hash_type, typename MerkleTreeType::Arity, typename MerkleTreeType::SubTreeArity,
+                                typename MerkleTreeType::TopTreeArity>
+                        comm_r_last_proof;
+                    ReplicaColumnProof<
+                        MerkleProof<tree_hash_type, typename MerkleTreeType::Arity,
+                                    typename MerkleTreeType::SubTreeArity, typename MerkleTreeType::TopTreeArity>>
+                        replica_column_proofs;
+
+                    typename tree_hash_type::digest_type comm_r_last() {
+                        return comm_r_last_proof.root();
+                    }
+
+                    typename tree_hash_type::digest_type comm_c() {
+                        return replica_column_proofs.c_x.root();
+                    }
+
+                    /// Verify the full proof.
+                    bool verify(const PublicParams<MerkleTreeType> &pub_params,
+                                const PublicInputs<typename tree_hash_type::digest_type,
+                                                   typename hash_type::digest_type> &pub_inputs,
+                                std::size_t challenge, const StackedBucketGraph<tree_hash_type> &graph) {
+                        let replica_id = &pub_inputs.replica_id;
+
+                        bool result = challenge < graph.size() && pub_inputs.tau.is_some();
+
+                        // Verify initial data layer
+                        trace !("verify initial data layer");
+
+                        result |= comm_d_proofs.proves_challenge(challenge);
+
+                        if let
+                            Some(ref tau) = pub_inputs.tau {
+                                check_eq !(&self.comm_d_proofs.root(), &tau.comm_d);
+                            }
+                        else {
+                            return false;
+                        }
+
+                        // Verify replica column openings
+                        trace !("verify replica column openings");
+                        let mut parents = vec ![0; graph.degree()];
+                        graph.parents(challenge, &mut parents).unwrap();    // FIXME: error handling
+                        check !(self.replica_column_proofs.verify(challenge, &parents));
+
+                        check !(self.verify_final_replica_layer(challenge));
+
+                        check !(self.verify_labels(replica_id, &pub_params.layer_challenges));
+
+                        trace !("verify encoding");
+
+                        check !(self.encoding_proof.verify::<G>(replica_id, &self.comm_r_last_proof.leaf(),
+                                                                &self.comm_d_proofs.leaf()));
+
+                        return result;
+                    }
+
+                    /// Verify all labels.
+                    bool verify_labels(const typename tree_hash_type::digest_type &replica_id,
+                                       const LayerChallenges &layer_challenges) {
+                        // Verify Labels Layer 1..layers
+                        for (std::size_t layer = 1; layer < layer_challenges.layers(); layer++) {
+                            trace !("verify labeling (layer: {})", layer, );
+
+                            check !(labeling_proofs.get(layer - 1).is_some());
+                            let labeling_proof = labeling_proofs.get(layer - 1).unwrap();
+                            let labeled_node = replica_column_proofs.c_x.get_node_at_layer(layer).unwrap();
+                            check !(labeling_proof.verify(replica_id, labeled_node));
+                        }
+
+                        return true;
+                    }
+
+                    /// Verify final replica layer openings
+                    bool verify_final_replica_layer(std::size_t challenge) {
+                        trace !("verify final replica layer openings");
+                        check !(self.comm_r_last_proof.proves_challenge(challenge));
+
+                        return true;
+                    }
+                };
+
+                template<typename MerkleProofType>
+                struct ReplicaColumnProof {
+                    typedef MerkleProofType proof_type;
+
+                    template<typename InputParentsRange>
+                    typename std::enable_if<
+                        std::is_same<typename std::iterator_traits<typename InputParentsRange::iterator>::value_type,
+                                     std::uint32_t>::value,
+                        bool>::type
+                        verify(std::size_t challenge, const InputParentsRange &parents) {
+                        let expected_comm_c = c_x.root();
+
+                        trace !("  verify c_x");
+                        check !(c_x.verify(challenge, &expected_comm_c));
+
+                        trace !("  verify drg_parents");
+                        for ((proof, parent) : drg_parents.iter().zip(parents.iter())) {
+                            check !(proof.verify(*parent, &expected_comm_c));
+                        }
+
+                        trace !("  verify exp_parents");
+                        for ((proof, parent) : exp_parents.iter().zip(parents.iter().skip(drg_parents.size()))) {
+                            check !(proof.verify(*parent, &expected_comm_c));
+                        }
+                    }
+
+                    ColumnProof<proof_type> c_x;
+                    std::vector<ColumnProof<proof_type>> drg_parents;
+                    std::vector<ColumnProof<proof_type>> exp_parents;
+                };
+
+                template<typename MerkleTreeType, typename Hash>
+                using TransformedLayers =
+                    std::tuple<Tau<typename MerkleTreeType::hash_type::digest_type, typename Hash::digest_type>,
+                               PersistentAux<typename MerkleTreeType::hash_type::digest_type>,
+                               TemporaryAux<MerkleTreeType, Hash>>;
 
                 template<typename Hash, typename InputDataRange>
                 typename Hash::digest_type get_node(const InputDataRange &data, std::size_t index) {

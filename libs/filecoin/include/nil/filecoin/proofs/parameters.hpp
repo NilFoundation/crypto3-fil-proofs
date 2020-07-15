@@ -28,28 +28,32 @@
 
 #include <nil/filecoin/storage/proofs/post/fallback/vanilla.hpp>
 
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
+
 #include <nil/filecoin/proofs/types/bytes_amount.hpp>
+#include <nil/filecoin/proofs/types/post_config.hpp>
 
 #include <nil/filecoin/proofs/constants.hpp>
 
 namespace nil {
     namespace filecoin {
-        typedef fallback::SetupParams WinningPostSetupParams;
-        typedef fallback::PublicParams WinningPostPublicParams;
+        typedef post::fallback::SetupParams WinningPostSetupParams;
+        typedef post::fallback::PublicParams WinningPostPublicParams;
 
-        typedef fallback::SetupParams WindowPostSetupParams;
-        typedef fallback::PublicParams WindowPostPublicParams;
+        typedef post::fallback::SetupParams WindowPostSetupParams;
+        typedef post::fallback::PublicParams WindowPostPublicParams;
 
         template<typename MerkleTreeType>
-        stacked::public_params<MerkleTreeType> public_params(padded_bytes_amount sector_bytes, std::size_t partitions,
-                                                             const std::array<std::uint8_t, 32> &porep_id) {
-            return StackedDrg::<MerkleTreeType, DefaultPieceHasher>::setup(
-                setup_params(sector_bytes, partitions, porep_id));
+        stacked::vanilla::PublicParams<MerkleTreeType> public_params(padded_bytes_amount sector_bytes,
+                                                                     std::size_t partitions,
+                                                                     const std::array<std::uint8_t, 32> &porep_id) {
+            return StackedDrg<MerkleTreeType, DefaultPieceHasher>::setup(
+                stacked::vanilla::SetupParams(sector_bytes, partitions, porep_id));
         }
 
         template<typename MerkleTreeType>
         WinningPostPublicParams winning_post_public_params(const post_config &config) {
-            return fallback::FallbackPoSt::<MerkleTreeType>::setup(&winning_post_setup_params(&post_config));
+            return post::fallback::FallbackPoSt<MerkleTreeType>::setup(WinningPostSetupParams(config));
         }
 
         WinningPostSetupParams winning_post_setup_params(const post_config &config) {
@@ -58,60 +62,44 @@ namespace nil {
             std::size_t param_sector_count = config.challenge_count / config.sector_count;
             std::size_t param_challenge_count = config.challenge_count / param_sector_count;
 
-            assert(("invalid parameters calculated " param_sector_count " * " param_challenge_count
-                    " != " config.challenge_count,
-                    param_sector_count * param_challenge_count == post_config.challenge_count));
+            assert(("invalid parameters calculated",
+                    param_sector_count * param_challenge_count == config.challenge_count));
 
-            return fallback::SetupParams {
-                sector_size : post_config.padded_sector_size().into(),
-                challenge_count : param_challenge_count,
-                sector_count : param_sector_count,
-            };
+            return post::fallback::SetupParams {config.padded_sector_size(), param_challenge_count, param_sector_count};
         }
 
         template<typename MerkleTreeType>
         WindowPostPublicParams window_post_public_params(post_config &config) {
-            return fallback::FallbackPoSt::<Tree>::setup(window_post_setup_params(config));
+            return post::fallback::FallbackPoSt<MerkleTreeType>::setup(WindowPostSetupParams(config));
         }
 
         WindowPostSetupParams window_post_setup_params(post_config &config) {
-            return fallback::SetupParams {
-                sector_size : config.padded_sector_size().into(),
-                challenge_count : config.challenge_count,
-                sector_count : config.sector_count
-            };
+            return post::fallback::SetupParams {config.padded_sector_size(), config.challenge_count,
+                                                config.sector_count};
         }
 
-        stacked::SetupParams setup_params(padded_bytes_amount sector_bytes, std::size_t partitions,
-                                          const std::array<std::uint8_t, 32> &porep_id) {
-            let layer_challenges = select_challenges(
-                partitions,
-                *POREP_MINIMUM_CHALLENGES.read()
-                     .unwrap()
-                     .get(&u64::from(sector_bytes))
-                     .expect("unknown sector size") as usize,
-                *LAYERS.read().unwrap().get(&u64::from(sector_bytes)).expect("unknown sector size"), ) ?
-                ;
-            let sector_bytes = u64::from(sector_bytes);
+        stacked::vanilla::SetupParams setup_params(padded_bytes_amount sector_bytes, std::size_t partitions,
+                                                   const std::array<std::uint8_t, 32> &porep_id) {
+            let layer_challenges =
+                select_challenges(partitions,
+                                  *POREP_MINIMUM_CHALLENGES.read()
+                                       .unwrap()
+                                       .get(&u64::from(sector_bytes))
+                                       .expect("unknown sector size") as usize,
+                                  *LAYERS.read().unwrap().get(&u64::from(sector_bytes)).expect("unknown sector size"));
+            assert(("sector_bytes must be a multiple of 32", !sector_bytes % 32));
 
-            assert(("sector_bytes (" sector_bytes ") must be a multiple of 32", sector_bytes % 32 == 0));
-
-            let nodes = (sector_bytes / 32) as usize;
-            let degree = DRG_DEGREE;
-            let expansion_degree = EXP_DEGREE;
-
-            return stacked::SetupParams {
-                nodes, degree, expansion_degree, porep_id, layer_challenges,
-            };
+            return stacked::vanilla::SetupParams {(sector_bytes / 32), DRG_DEGREE, EXP_DEGREE, porep_id,
+                                                  layer_challenges};
         }
 
-        LayerChallenges select_challenges(std::size_t partitions, std::size_t minimum_total_challenges,
-                                          std::size_t layers) {
+        stacked::vanilla::LayerChallenges select_challenges(std::size_t partitions,
+                                                            std::size_t minimum_total_challenges, std::size_t layers) {
             std::size_t count = 1;
-            let mut guess = LayerChallenges::new (layers, count);
+            stacked::vanilla::LayerChallenges guess(layers, count);
             while (partitions * guess.challenges_count_all() < minimum_total_challenges) {
                 count += 1;
-                guess = LayerChallenges::new (layers, count);
+                guess = stacked::vanilla::LayerChallenges(layers, count);
             }
             return guess;
         }

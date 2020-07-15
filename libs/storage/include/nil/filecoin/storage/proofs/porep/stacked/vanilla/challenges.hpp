@@ -50,7 +50,7 @@ namespace nil {
                     std::vector<std::size_t> derive_internal(std::size_t challenges_count, std::size_t leaves,
                                                              Domain &replica_id,
                                                              const std::array<std::uint8_t, 32> &seed, std::uint8_t k) {
-                        assert(("Too few leaves: " std::to_string(leaves).c_str(), leaves > 2));
+                        assert(("Too few leaves", leaves > 2));
 
                         (0..challenges_count)
                             .map(| i |
