@@ -37,6 +37,7 @@
 #include <nil/filecoin/proofs/types/sector_size.hpp>
 
 #include <nil/filecoin/storage/proofs/core/utilities.hpp>
+#include <nil/filecoin/storage/proofs/core/drgraph.hpp>
 
 namespace nil {
     namespace filecoin {
