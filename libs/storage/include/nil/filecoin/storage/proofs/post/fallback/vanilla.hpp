@@ -199,13 +199,11 @@ namespace nil {
                                                          as u64;
                                                  let challenged_leaf_start =
                                                      generate_leaf_challenge(pub_params, pub_inputs.randomness,
-                                                                             sector_id.into(), challenge_index, ) ?
-                                                     ;
+                                                                             sector_id.into(), challenge_index);
 
                                                  tree.gen_cached_proof(challenged_leaf_start as usize, None)
                                              })
-                                        .collect::<Result<Vec<_>>>() ?
-                                    ;
+                                        .collect::<Result<Vec<_>>>();
 
                                 proofs.push_back({inclusion_proofs, priv_sector.comm_c, priv_sector.comm_r_last});
                             }
@@ -252,21 +250,21 @@ namespace nil {
                                 // comm_r_last is the root of the proof
                                 let comm_r_last = inclusion_proofs[0].root();
 
-                                if AsRef
-                                    ::<[u8]>::as_ref(&<Tree::Hasher as Hasher>::Function::hash2(
-                                        &comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(comm_r) { return Ok(false); }
+                                if (AsRef ::<[u8]>::as_ref(&<Tree::Hasher as Hasher>::Function::hash2(
+                                        &comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(comm_r)) {
+                                    return false;
+                                }
 
-                                        ensure !(challenge_count == inclusion_proofs.len(),
-                                                 "unexpected umber of inclusion proofs: {} != {}",
-                                                 challenge_count,
-                                                 inclusion_proofs.len());
+                                ensure !(challenge_count == inclusion_proofs.len(),
+                                         "unexpected umber of inclusion proofs: {} != {}",
+                                         challenge_count,
+                                         inclusion_proofs.len());
 
                                 for ((n, inclusion_proof) : inclusion_proofs.iter().enumerate()) {
                                     let challenge_index =
                                         ((j * num_sectors_per_chunk + i) * pub_params.challenge_count + n) as u64;
                                     let challenged_leaf_start = generate_leaf_challenge(
-                                        pub_params, pub_inputs.randomness, sector_id.into(), challenge_index, ) ?
-                                        ;
+                                        pub_params, pub_inputs.randomness, sector_id.into(), challenge_index);
 
                                     // validate all comm_r_lasts match
                                     if (inclusion_proof.root() != comm_r_last) {

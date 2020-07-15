@@ -40,51 +40,49 @@ namespace nil {
         constexpr static const char *PARAMETER_METADATA_EXT = "meta";
         constexpr static const char *VERIFYING_KEY_EXT = "vk";
 
-        namespace detail {
-            std::string parameter_cache_dir_name() {
-                return std::getenv(PARAMETER_CACHE_ENV_VAR);
-            }
+        std::string parameter_cache_dir_name() {
+            return std::getenv(PARAMETER_CACHE_ENV_VAR);
+        }
 
-            boost::filesystem::path parameter_cache_dir() {
-                return parameter_cache_dir_name();
-            }
+        boost::filesystem::path parameter_cache_dir() {
+            return parameter_cache_dir_name();
+        }
 
-            boost::filesystem::path parameter_cache_params_path(const std::string &parameter_set_identifier) {
-                let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
-                dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, GROTH_PARAMETER_EXT))
-            }
+        boost::filesystem::path parameter_cache_params_path(const std::string &parameter_set_identifier) {
+            let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
+            dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, GROTH_PARAMETER_EXT))
+        }
 
-            boost::filesystem::path parameter_cache_metadata_path(const std::string &parameter_set_identifier) {
-                let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
-                dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, PARAMETER_METADATA_EXT))
-            }
+        boost::filesystem::path parameter_cache_metadata_path(const std::string &parameter_set_identifier) {
+            let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
+            dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, PARAMETER_METADATA_EXT))
+        }
 
-            boost::filesystem::path parameter_cache_verifying_key_path(const std::string &parameter_set_identifier) {
-                let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
-                dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, VERIFYING_KEY_EXT))
-            }
+        boost::filesystem::path parameter_cache_verifying_key_path(const std::string &parameter_set_identifier) {
+            let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
+            dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, VERIFYING_KEY_EXT))
+        }
 
-            boost::filesystem::path ensure_ancestor_dirs_exist(const boost::filesystem::path &cache_entry_path) {
-                info !("ensuring that all ancestor directories for: {:?} exist", cache_entry_path);
+        boost::filesystem::path ensure_ancestor_dirs_exist(const boost::filesystem::path &cache_entry_path) {
+            info !("ensuring that all ancestor directories for: {:?} exist", cache_entry_path);
 
-                if let
-                    Some(parent_dir) = cache_entry_path.parent() {
-                        if let
-                            Err(err) = create_dir_all(&parent_dir) {
-                                match err.kind() {
-                                    io::ErrorKind::AlreadyExists = > {
-                                    }
-                                    _ = > return Err(From::from(err)),
+            if let
+                Some(parent_dir) = cache_entry_path.parent() {
+                    if let
+                        Err(err) = create_dir_all(&parent_dir) {
+                            match err.kind() {
+                                io::ErrorKind::AlreadyExists = > {
                                 }
+                                _ = > return Err(From::from(err)),
                             }
-                    }
-                else {
-                    bail !("{:?} has no parent directory", cache_entry_path);
+                        }
                 }
-
-                Ok(cache_entry_path)
+            else {
+                bail !("{:?} has no parent directory", cache_entry_path);
             }
-        }    // namespace detail
+
+            Ok(cache_entry_path)
+        }
 
         struct parameter_set_metadata {
             virtual std::string identifier() const = 0;
@@ -118,8 +116,7 @@ namespace nil {
                 let id = cache_identifier(pub_params);
 
                 // generate (or load) metadata
-                boost::filesystem::path meta_path =
-                    detail::ensure_ancestor_dirs_exist(parameter_cache_metadata_path(&id));
+                boost::filesystem::path meta_path = ensure_ancestor_dirs_exist(parameter_cache_metadata_path(&id));
                 read_cached_metadata(&meta_path)
                     .or_else(| _ | write_cached_metadata(&meta_path, cache_meta(pub_params)))
             }
@@ -217,8 +214,8 @@ namespace nil {
         }
 
         template<typename Bls12>
-        groth16::parameters<Bls12>
-            write_cached_params(const boost::filesystem::path &cache_entry_path, groth16::parameters<Bls12> value) {
+        groth16::parameters<Bls12> write_cached_params(const boost::filesystem::path &cache_entry_path,
+                                                       groth16::parameters<Bls12> value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);
                 return value;

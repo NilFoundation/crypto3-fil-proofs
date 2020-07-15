@@ -165,7 +165,7 @@ namespace nil {
 
             /// Read up to 8 bytes into the targets first element.
             /// Assumes that target is not empty.
-            std::size_t read_bytes(const std::vector<std::uint8_t> &target) {
+            std::size_t read_bytes(std::vector<std::uint8_t> &target) {
                 std::size_t bit_pos = target_offset % TARGET_BITS;
                 std::size_t bits_to_padding;
                 if (bit_pos < DATA_BITS) {
@@ -180,7 +180,7 @@ namespace nil {
 
                 std::int32_t available = buffer.available();
                 if (available > 0) {
-                    let target_len = target.len();
+                    std::size_t target_len = target.size();
                     // Try to avoid padding, and copy as much as possible over at once.
 
                     if (bits_to_padding >= 64 && available >= 64 && target_len >= 8) {

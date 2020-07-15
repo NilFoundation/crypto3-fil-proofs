@@ -26,6 +26,8 @@
 #ifndef FILECOIN_PROOFS_TYPES_POST_CONFIG_HPP
 #define FILECOIN_PROOFS_TYPES_POST_CONFIG_HPP
 
+#include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
+
 #include <nil/filecoin/proofs/types/sector_size.hpp>
 
 namespace nil {
@@ -33,54 +35,50 @@ namespace nil {
         enum class post_type { Winning, Window };
 
         struct post_config {
-            sector_size ss;
+            sector_size_type ss;
             std::size_t challenge_count;
             std::size_t sector_count;
             post_type typ;
             /// High priority (always runs on GPU) == true
             bool priority;
 
-            padded_bytes_amount padded_sector_size() {PaddedBytesAmount::from(self.sector_size)}
+            padded_bytes_amount padded_sector_size() {
+                return ss;
+            }
 
             unpadded_bytes_amount unpadded_sector_size() {
-                PaddedBytesAmount::from(self.sector_size).into()
+                return ss;
             }
 
             /// Returns the cache identifier as used by `storage-proofs::paramater_cache`.
             template<typename MerkleTreeType>
             std::string get_cache_identifier() {
-                match self.typ {
-                    PoStType::Winning = > {
-                        let params = crate::parameters::winning_post_public_params::<Tree>(self) ? ;
+                if (typ == post_type::Winning) {
+                    let params = crate::parameters::winning_post_public_params<MerkleTreeType>(*this);
 
-                        Ok(<fallback::FallbackPoStCompound<Tree> as CacheableParameters<
-                               fallback::FallbackPoStCircuit<Tree>, _, >>::cache_identifier(&params), )
-                    }
-                    PoStType::Window = > {
-                        let params = crate::parameters::window_post_public_params::<Tree>(self) ? ;
+                    return <fallback::FallbackPoStCompound<MerkleTreeType> as CacheableParameters<
+                        fallback::FallbackPoStCircuit<MerkleTreeType>, _, >>::cache_identifier(&params);
+                } else if (typ == post_type::Window) {
+                    let params = crate::parameters::window_post_public_params<MerkleTreeType>(*this);
 
-                        Ok(<fallback::FallbackPoStCompound<Tree> as CacheableParameters<
-                               fallback::FallbackPoStCircuit<Tree>, _, >>::cache_identifier(&params), )
-                    }
-                }    // namespace filecoin
-            }        // namespace nil
+                    return <fallback::FallbackPoStCompound<MerkleTreeType> as CacheableParameters<
+                        fallback::FallbackPoStCircuit<MerkleTreeType>, _, >>::cache_identifier(&params);
+                }
+            }    // namespace nil
 
             template<typename MerkleTreeType>
             boost::filesystem::path get_cache_metadata_path() {
-                let id = self.get_cache_identifier::<Tree>() ? ;
-                Ok(parameter_cache::parameter_cache_metadata_path(&id))
+                return parameter_cache_metadata_path(get_cache_identifier<MerkleTreeType>());
             }    // namespace nil
 
             template<typename MerkleTreeType>
             boost::filesystem::path get_cache_verifying_key_path() {
-                let id = self.get_cache_identifier::<Tree>() ? ;
-                Ok(parameter_cache::parameter_cache_verifying_key_path(&id))
+                return parameter_cache_verifying_key_path(get_cache_identifier<MerkleTreeType>());
             }    // namespace filecoin
 
             template<typename MerkleTreeType>
             boost::filesystem::path get_cache_params_path() {
-                let id = self.get_cache_identifier::<Tree>() ? ;
-                Ok(parameter_cache::parameter_cache_params_path(&id))
+                return parameter_cache_params_path(get_cache_identifier<MerkleTreeType>());
             }    // namespace filecoin
         };       // namespace filecoin
     }            // namespace filecoin

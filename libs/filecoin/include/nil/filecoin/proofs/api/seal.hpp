@@ -23,15 +23,7 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_PROOFS_TYPES_SECTOR_SIZE_HPP
-#define FILECOIN_PROOFS_TYPES_SECTOR_SIZE_HPP
+#ifndef FILECOIN_SEAL_API_HPP
+#define FILECOIN_SEAL_API_HPP
 
-#include <cstdint>
-
-namespace nil {
-    namespace filecoin {
-        typedef std::uint64_t sector_size_type;
-    }
-}    // namespace nil
-
-#endif
+#endif    // FILECOIN_SEAL_HPP
