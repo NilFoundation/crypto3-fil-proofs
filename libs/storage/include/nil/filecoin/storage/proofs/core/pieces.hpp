@@ -30,6 +30,7 @@
 #include <cmath>
 
 #include <nil/filecoin/storage/proofs/core/fr32.hpp>
+#include <nil/filecoin/storage/proofs/core/utilities.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -39,44 +40,26 @@ namespace nil {
 
                 std::size_t capacity = 1;
                 // If tree is not 'full', then pos 0 will have subtree_capacity greater than size of tree.
-                std::size_t cursor = pos + next_pow2(total);
+                std::size_t cursor = pos + std::ceil(std::log2(total));
 
-                while (!(cursor & 1)) {
+                while (cursor & 1 == 0) {
                     capacity *= 2;
                     cursor >>= 1;
                 }
                 return capacity;
             }
 
-            std::size_t height_for_length(std::size_t n) {
-                if (n == 0) {
-                    return 0;
-                } else {
-                    return std::ceil(std::log2(n));
-                }
-            }
-
             bool piece_is_aligned(std::size_t position, std::size_t length, std::size_t tree_len) {
                 std::size_t capacity_at_pos = subtree_capacity(position, tree_len);
 
-                return capacity_at_pos.is_power_of_two() && capacity_at_pos >= length;
+                return (capacity_at_pos & (capacity_at_pos - 1)) == 0 && capacity_at_pos >= length;
+            }
+
+            std::size_t height_for_length(std::size_t n) {
+                return n == 0 ? 0 : std::ceil(std::log2(n));
             }
         }    // namespace detail
-
-        struct piece_spec {
-            /// `compute_packing` returns a packing list and a proof size.
-            /// A packing list is a pair of (start, length) pairs, relative to the beginning of the piece,
-            /// in leaf units.
-            /// Proof size is a number of elements (size same as one leaf) provided in the variable part of a
-            /// PieceInclusionProof.
-            std::tuple<std::vector<std::tuple<std::size_t, std::size_t>>, std::size_t>
-                compute_packing(std::size_t tree_len) {
-            }
-
-            bool is_aligned(std::size_t tree_len) {
-                return detail::piece_is_aligned(position, leaves_amount, tree_len);
-            }
-
+        struct PieceSpec {
             std::size_t height() {
                 return detail::height_for_length(number_of_leaves);
             }
@@ -87,9 +70,26 @@ namespace nil {
                 return detail::height_for_length(tree_len) - height();
             }
 
+            /// `compute_packing` returns a packing list and a proof size.
+            /// A packing list is a pair of (start, length) pairs, relative to the beginning of the piece,
+            /// in leaf units.
+            /// Proof size is a number of elements (size same as one leaf) provided in the variable part of a
+            /// PieceInclusionProof.
+            std::tuple<std::vector<std::tuple<std::size_t, std::size_t>>, std::size_t>
+                compute_packing(std::size_t tree_len) {
+                assert(is_aligned(tree_len));
+
+                std::vector<std::tuple<std::size_t, std::size_t>> packing_list {{0, number_of_leaves}};
+                return std::make_tuple(packing_list, proof_length(tree_len));
+            }
+
+            bool is_aligned(std::size_t tree_len) const {
+                return detail::piece_is_aligned(position, number_of_leaves, tree_len);
+            }
+
             fr32_array comm_p;
             std::size_t position;
-            std::size_t leaves_amount;
+            std::size_t number_of_leaves;
         };
 
         /// Generate `comm_p` from a source and return it as bytes.
@@ -101,21 +101,19 @@ namespace nil {
             std::array<std::uint32_t, NODE_SIZE> buf;
             buf.fill(0);
 
-            std::size_t parts = std::ceil(static_cast<double>(padded_piece_size) / static_case<double>(NODE_SIZE));
+            std::size_t parts = std::ceil(static_cast<double>(padded_piece_size) / static_cast<double>(NODE_SIZE));
 
-            let tree = BinaryMerkleTree::<H>::try_from_iter(
-                           (0..parts).map(| _ |
-                                          {
+            BinaryMerkleTree<Hash> tree = BinaryMerkleTree<Hash>::try_from_iter((0..parts).map(| _ | {
                                               source.read_exact(&mut buf) ? ;
                                               <H::Domain as Domain>::try_from_bytes(&buf).context("invalid Fr element")
-                                          }))
-                           .context("failed to build tree") ?
-                ;
+                                          })).context("failed to build tree");
 
             std::array<std::uint32_t, NODE_SIZE> comm_p_bytes;
             comm_p_bytes.fill(0);
             auto comm_p = tree.root();
             comm_p.write_bytes(comm_p_bytes);
+
+            return comm_p_bytes;
         }
     }    // namespace filecoin
 }    // namespace nil

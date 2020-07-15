@@ -50,9 +50,9 @@ BOOST_AUTO_TEST_CASE(test_generate_piece_commitment_bytes_from_source) {
     generate_piece_commitment_bytes_from_source<PedersenHasher>(&mut some_bytes_slice, 64);
 
     std::vector<std::uint8_t> not_enough_bytes(0, 7);
-    let mut not_enough_bytes_slice : &[u8] = &not_enough_bytes;
+    std::vector<std::uint8_t> not_enough_bytes_slice = not_enough_bytes;
     BOOST_CHECK(
-        !generate_piece_commitment_bytes_from_source::<PedersenHasher>(&mut not_enough_bytes_slice, 7).is_err());
+        !generate_piece_commitment_bytes_from_source<PedersenHasher>(&mut not_enough_bytes_slice, 7).is_err());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

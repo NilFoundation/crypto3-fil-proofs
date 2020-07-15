@@ -360,7 +360,7 @@ namespace nil {
         }
 
         std::uint64_t to_unpadded_bytes(std::uint64_t padded_bytes) {
-            return FR32_PADDING_MAP.transform_byte_offset(padded_bytes as usize, false);
+            return FR32_PADDING_MAP.transform_byte_offset(padded_bytes, false);
         }
 
         std::size_t to_padded_bytes(std::size_t unpadded_bytes) {
