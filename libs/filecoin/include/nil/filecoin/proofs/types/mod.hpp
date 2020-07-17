@@ -41,8 +41,8 @@ namespace nil {
         constexpr static const std::size_t binary_arity = 2;
 
         typedef std::array<std::uint8_t, 32> commitment_type;
-        typedef std::array<std::uint8_t, 32> challenge_seed;
-        typedef std::array<std::uint8_t, 32> proved_id;
+        typedef std::array<std::uint8_t, 32> challenge_seed_type;
+        typedef std::array<std::uint8_t, 32> prover_id_type;
         typedef std::array<std::uint8_t, 32> ticket_type;
 
         struct seal_pre_commit_output {
@@ -50,15 +50,17 @@ namespace nil {
             commitment_type comm_d;
         };
 
-        template<typename MerkleTreeType, typename PieceHasherType = default_piece_hasher_type>
-        using vanilla_seal_proof = proof<MerkleTreeType, PieceHasherType>;
+        template<typename MerkleTreeType, typename PieceHasherType = DefaultPieceHasher>
+        using vanilla_seal_proof = stacked::vanilla::Proof<MerkleTreeType, PieceHasherType>;
 
         template<typename MerkleTreeType>
         struct seal_commit_phase1_output {
+            typedef typename MerkleTreeType::hash_type tree_hash_type;
+
             std::vector<std::vector<vanilla_seal_proof<MerkleTreeType>>> vanilla_proofs;
             commitment_type comm_r;
             commitment_type comm_d;
-            typename MerkleTreeType::hash_type::digest_type replica_id;
+            typename tree_hash_type::digest_type replica_id;
             ticket_type seed;
             ticket_type tckt;
         };
@@ -69,7 +71,7 @@ namespace nil {
 
         template<typename MerkleTreeType>
         struct seal_precommit_phase1_output {
-            labels<MerkleTreeType> labels;
+            stacked::vanilla::Labels<MerkleTreeType> labels;
             StoreConfig config;
             commitment_type comm_d;
         };

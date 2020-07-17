@@ -67,6 +67,8 @@ macro(define_filecoin_test test)
 endmacro()
 
 set(TESTS_NAMES
+    api/mod
+
     types/bytes_amount
 
     commitment_reader

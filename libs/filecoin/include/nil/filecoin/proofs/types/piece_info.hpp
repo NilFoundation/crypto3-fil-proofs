@@ -33,12 +33,10 @@ namespace nil {
     namespace filecoin {
         struct piece_info {
             piece_info(const commitment_type &commitment, unpadded_bytes_amount size) {
-                assert(
-                    ("Invalid all zero commitment",
-                     commitment.empty() || !std::accumulate(commitment.begin(), commitment.end(), false,
-                                                            [&](bool c, const typename commitment_type::value_type &v) {
-                                                                return c * v;
-                                                            })));
+                assert(("Invalid all zero commitment",
+                        !std::accumulate(
+                            commitment.begin(), commitment.end(), false,
+                            [&](bool c, const typename commitment_type::value_type &v) { return c * !(v == 0); })));
             }
 
             commitment_type commitment;
