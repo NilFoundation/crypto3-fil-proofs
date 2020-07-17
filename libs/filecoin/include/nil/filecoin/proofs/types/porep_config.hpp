@@ -28,6 +28,8 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
+
 #include <nil/filecoin/proofs/types/porep_proof_partitions.hpp>
 #include <nil/filecoin/proofs/types/sector_size.hpp>
 
@@ -43,29 +45,25 @@ namespace nil {
             /// Returns the cache identifier as used by `storage-proofs::paramater_cache`.
             template<typename MerkleTreeType>
             std::string get_cache_identifier() {
-                let params =
-                    crate::parameters::public_params<MerkleTreeType>(sector_size.into(), partitions.into(), porep_id);
+                let params = parameters::public_params<MerkleTreeType>(sector_size.into(), partitions.into(), porep_id);
 
                 Ok(<StackedCompound<MerkleTreeType, DefaultPieceHasher> as CacheableParameters<
-                       StackedCircuit<Tree, DefaultPieceHasher>, _, >>::cache_identifier(&params), )
+                       StackedCircuit<Tree, DefaultPieceHasher>, _, >>::cache_identifier(&params));
             }
 
             template<typename MerkleTreeType>
             boost::filesystem::path get_cache_metadata_path() {
-                let id = self.get_cache_identifier::<Tree>() ? ;
-                Ok(parameter_cache::parameter_cache_metadata_path(&id))
+                return parameter_cache_metadata_path(get_cache_identifier<MerkleTreeType>());
             }
 
             template<typename MerkleTreeType>
             boost::filesystem::path get_cache_verifying_key_path() {
-                let id = self.get_cache_identifier::<Tree>() ? ;
-                Ok(parameter_cache::parameter_cache_verifying_key_path(&id))
+                return parameter_cache_verifying_key_path(get_cache_identifier<MerkleTreeType>());
             }    // namespace filecoin
 
             template<typename MerkleTreeType>
-            boost::filesystem::config get_cache_params_path() {
-                let id = self.get_cache_identifier::<Tree>() ? ;
-                Ok(parameter_cache::parameter_cache_params_path(&id))
+            boost::filesystem::path get_cache_params_path() {
+                return parameter_cache_params_path(get_cache_identifier<MerkleTreeType>());
             }    // namespace filecoin
         };       // namespace filecoin
     }            // namespace filecoin
