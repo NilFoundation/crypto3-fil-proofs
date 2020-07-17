@@ -26,306 +26,282 @@
 #ifndef FILECOIN_PROOFS_PIECES_HPP
 #define FILECOIN_PROOFS_PIECES_HPP
 
+#include <unordered_map>
+
 #include <nil/filecoin/storage/proofs/core/fr32.hpp>
 #include <nil/filecoin/storage/proofs/core/utilities.hpp>
 
 #include <nil/filecoin/proofs/types/sector_size.hpp>
+#include <nil/filecoin/proofs/types/piece_info.hpp>
 
 namespace nil {
     namespace filecoin {
+        static std::unordered_map<sector_size_type, commitment_type> COMMITMENTS;
+
+        struct EmptySource {
+            std::size_t read(std::vector<std::uint8_t> &target) {
+                std::size_t to_read = std::min(size, target.size());
+                size -= to_read;
+                for (std::uint8_t &val : target) {
+                    val = 0;
+                }
+
+                return to_read;
+            }
+
+            std::size_t size;
+        };
+
+        commitment_type empty_comm_d(sector_size_type sector_size) {
+            let map = &mut * COMMITMENTS.lock().unwrap();
+
+            *map.entry(sector_size).or_insert_with(|| {
+                unpadded_bytes_amount size = sector_size;
+                let fr32_reader = Fr32Reader::new (EmptySource::new (size.into()));
+                let mut commitment_reader = CommitmentReader::new (fr32_reader);
+                io::copy(&mut commitment_reader, &mut io::sink()).unwrap();
+
+                commitment_type comm;
+                comm.copy_from_slice(commitment_reader.finish().expect("failed to create commitment").as_ref(), );
+                return comm;
+            })
+        }
+
+        commitment_type compute_comm_d(sector_size_type sector_size, const std::vector<piece_info> &piece_infos) {
+            info !("verifying {} pieces", piece_infos.size());
+            if (piece_infos.empty()) {
+                return empty_comm_d(sector_size);
+            }
+
+            unpadded_bytes_amount unpadded_sector = sector_size.into();
+
+            assert(("Too many pieces ",
+                    piece_infos.size() <= unpadded_sector / MINIMUM_RESERVED_BYTES_FOR_PIECE_IN_FULLY_ALIGNED_SECTOR));
+
+            // make sure the piece sizes are at most a sector size large
+            std::uint64_t piece_size = piece_infos.iter().map(| info | info.size).sum();
+
+            assert(("Piece is larger than sector.", piece_size <= sector_size));
+
+            let mut stack = Stack::new ();
+
+            let first = piece_infos.first().unwrap().clone();
+            ensure !(u64::from(PaddedBytesAmount::from(first.size)).is_power_of_two(),
+                     "Piece size ({:?}) must be a power of 2.",
+                     PaddedBytesAmount::from(first.size));
+            stack.shift(first);
+
+            for (const piece_info &piece_info : piece_infos.iter().skip(1)) {
+                ensure !(u64::from(PaddedBytesAmount::from(piece_info.size)).is_power_of_two(),
+                         "Piece size ({:?}) must be a power of 2.",
+                         PaddedBytesAmount::from(piece_info.size));
+
+                while (stack.peek().size < piece_info.size) {
+                    stack.shift_reduce(zero_padding(stack.peek().size));
+                }
+
+                stack.shift_reduce(piece_info.clone());
+            }
+
+            while (stack.size() > 1) {
+                stack.shift_reduce(zero_padding(stack.peek().size));
+            }
+
+            ensure !(stack.len() == 1, "Stack size ({}) must be 1.", stack.len());
+
+            commitment_type comm_d_calculated = stack.pop() ?.commitment;
+
+            return comm_d_calculated;
+        }
+
         /// Verify that the provided `piece_infos` and `comm_d` match.
-        bool verify_pieces(const commitment_type &comm_d, const std::vector<PieceInfo> &piece_infos,
-                           sector_size_tye sector_size) {
+        bool verify_pieces(const commitment_type &comm_d, const std::vector<piece_info> &piece_infos,
+                           sector_size_type sector_size) {
             return compute_comm_d(sector_size, piece_infos) == comm_d;
         }
 
-        lazy_static !{
-            static ref COMMITMENTS : Mutex<HashMap<SectorSize, Commitment>> = Mutex::new (HashMap::new ());
-        }
-        use crate::commitment_reader::CommitmentReader;
-        use crate::fr32_reader::Fr32Reader;
+        /// Stack used for piece reduction.
+        struct Stack(Vec<piece_info>);
 
-#[derive(Debug, Clone)]
-        struct EmptySource {
-            size : usize,
-        }
+        impl Stack {
+            /// Creates a new stack.
+            fn new ()
+                ->Self {Stack(Vec::new ())}
 
-        impl EmptySource {
-            pub fn new (size : usize)->Self {
-                EmptySource {
-                    size
+            /// Pushes a single element onto the stack.
+            fn shift(&mut self, el
+                     : piece_info) {self .0.push(el)}
+
+            /// Look at the last element of the stack.
+            fn peek(&self)
+                ->&piece_info {&self .0 [self .0.len() - 1]}
+
+            /// Look at the second to last element of the stack.
+            fn peek2(&self)
+                ->&piece_info {&self .0 [self .0.len() - 2]}
+
+            /// Pop the last element of the stack.
+            fn pop(&mut self)
+                ->Result<piece_info> {self .0.pop().context("empty stack popped")}
+
+            fn reduce1(&mut self)
+                ->Result<bool> {
+                if (self.size() < 2) {
+                    return Ok(false);
                 }
+
+                if (self.peek().size == self.peek2().size) {
+                    let right = self.pop() ? ;
+                    let left = self.pop() ? ;
+                    let joined = join_piece_infos(left, right) ? ;
+                    self.shift(joined);
+                    return Ok(true);
+                }
+
+                Ok(false)
+            }
+
+            fn reduce(&mut self)->Result<()> {
+                while
+                    self.reduce1() ? {
+                    }
+                Ok(())
+            }
+
+            fn shift_reduce(&mut self, piece : piece_info)->Result<()> {
+                self.shift(piece);
+                self.reduce()
+            }
+
+            fn len(&self)->usize {
+                self .0.len()
             }
         }
 
-impl Read for EmptySource {
-    fn read(&mut self, target : &mut[u8])->io::Result<usize> {
-        let to_read = std::cmp::min(self.size, target.len());
-        self.size -= to_read;
-for
-    val in target {
-        *val = 0;
-    }
+        /// Create a padding `piece_info` of size `size`.
+        piece_info zero_padding(unpadded_bytes_amount size) {
+            padded_bytes_amount padded_size = size.into();
+            commitment_type commitment = [0u8; 32];
 
-Ok(to_read)
-    }
-}
+            // TODO: cache common piece hashes
+            std::size_t hashed_size = 64;
+            let h1 = piece_hash(&commitment, &commitment);
+            commitment.copy_from_slice(h1.as_ref());
 
-fn empty_comm_d(sector_size : SectorSize)->Commitment {
-    let map = &mut * COMMITMENTS.lock().unwrap();
-
-    *map.entry(sector_size).or_insert_with(|| {
-        let size : UnpaddedBytesAmount = sector_size.into();
-        let fr32_reader = Fr32Reader::new (EmptySource::new (size.into()));
-        let mut commitment_reader = CommitmentReader::new (fr32_reader);
-        io::copy(&mut commitment_reader, &mut io::sink()).unwrap();
-
-        let mut comm = [0u8; 32];
-        comm.copy_from_slice(commitment_reader.finish().expect("failed to create commitment").as_ref(), );
-        comm
-    })
-}
-
-pub fn compute_comm_d(sector_size : SectorSize, piece_infos : &[PieceInfo])->Result<Commitment> {
-    info !("verifying {} pieces", piece_infos.len());
-    if piece_infos
-        .is_empty() {
-            return Ok(empty_comm_d(sector_size));
-        }
-
-    let unpadded_sector : UnpaddedBytesAmount = sector_size.into();
-
-    ensure !(piece_infos.len() as u64 <= u64::from(unpadded_sector) / MINIMUM_PIECE_SIZE, "Too many pieces");
-
-    // make sure the piece sizes are at most a sector size large
-    let piece_size : u64 = piece_infos.iter().map(| info | u64::from(PaddedBytesAmount::from(info.size))).sum();
-
-    ensure !(piece_size <= u64::from(sector_size), "Piece is larger than sector.");
-
-    let mut stack = Stack::new ();
-
-    let first = piece_infos.first().unwrap().clone();
-    ensure !(u64::from(PaddedBytesAmount::from(first.size)).is_power_of_two(),
-             "Piece size ({:?}) must be a power of 2.",
-             PaddedBytesAmount::from(first.size));
-    stack.shift(first);
-
-for
-    piece_info in piece_infos.iter().skip(1) {
-        ensure !(u64::from(PaddedBytesAmount::from(piece_info.size)).is_power_of_two(),
-                 "Piece size ({:?}) must be a power of 2.",
-                 PaddedBytesAmount::from(piece_info.size));
-
-        while stack.peek().size < piece_info.size {
-stack.shift_reduce(zero_padding(stack.peek().size)?)?
-}
-
-stack.shift_reduce(piece_info.clone())?;
-    }
-
-while
-    stack.len() > 1 {
-stack.shift_reduce(zero_padding(stack.peek().size)?)?;
-    }
-
-ensure !(stack.len() == 1, "Stack size ({}) must be 1.", stack.len());
-
-let comm_d_calculated = stack.pop() ?.commitment;
-
-Ok(comm_d_calculated)
-}
-
-/// Stack used for piece reduction.
-struct Stack(Vec<PieceInfo>);
-
-impl Stack {
-    /// Creates a new stack.
-    fn new ()
-        ->Self {Stack(Vec::new ())}
-
-    /// Pushes a single element onto the stack.
-    fn shift(&mut self, el
-             : PieceInfo) {self .0.push(el)}
-
-    /// Look at the last element of the stack.
-    fn peek(&self)
-        ->&PieceInfo {&self .0 [self .0.len() - 1]}
-
-    /// Look at the second to last element of the stack.
-    fn peek2(&self)
-        ->&PieceInfo {&self .0 [self .0.len() - 2]}
-
-    /// Pop the last element of the stack.
-    fn pop(&mut self)
-        ->Result<PieceInfo> {self .0.pop().context("empty stack popped")}
-
-    fn reduce1(&mut self)
-        ->Result<bool> {
-        if self
-            .len() < 2 {
-                return Ok(false);
+            while (hashed_size < padded_size) {
+                let h = piece_hash(&commitment, &commitment);
+                commitment.copy_from_slice(h.as_ref());
+                hashed_size *= 2;
             }
 
-        if self
-            .peek().size == self.peek2().size {
-                let right = self.pop() ? ;
-                let left = self.pop() ? ;
-                let joined = join_piece_infos(left, right) ? ;
-                self.shift(joined);
-                return Ok(true);
-            }
+            assert(("Hashed size must equal padded size", hashed_size == padded_size));
 
-        Ok(false)
-    }
-
-    fn reduce(&mut self)->Result<()> {
-        while
-            self.reduce1() ? {
-            }
-        Ok(())
-    }
-
-    fn shift_reduce(&mut self, piece : PieceInfo)->Result<()> {
-        self.shift(piece);
-        self.reduce()
-    }
-
-    fn len(&self)->usize {
-        self .0.len()
-    }
-}
-
-/// Create a padding `PieceInfo` of size `size`.
-fn zero_padding(size : UnpaddedBytesAmount)->Result<PieceInfo> {
-    let padded_size : PaddedBytesAmount = size.into();
-    let mut commitment = [0u8; 32];
-
-    // TODO: cache common piece hashes
-    let mut hashed_size = 64;
-    let h1 = piece_hash(&commitment, &commitment);
-    commitment.copy_from_slice(h1.as_ref());
-
-    while
-        hashed_size < u64::from(padded_size) {
-            let h = piece_hash(&commitment, &commitment);
-            commitment.copy_from_slice(h.as_ref());
-            hashed_size *= 2;
+            return {commitment, size};
         }
 
-    ensure !(hashed_size == u64::from(padded_size), "Hashed size must equal padded size");
+        /// Join two equally sized `piece_info`s together, by hashing them and adding their sizes.
+        piece_info join_piece_infos(const piece_info &left, const piece_info &right) {
+            assert(("Piece sizes must be equal", left.size == right.size));
+            let h = piece_hash(&left.commitment, &right.commitment);
 
-    PieceInfo::new (commitment, size)
-}
-
-/// Join two equally sized `PieceInfo`s together, by hashing them and adding their sizes.
-fn join_piece_infos(mut left : PieceInfo, right : PieceInfo)->Result<PieceInfo> {
-    ensure !(left.size == right.size, "Piece sizes must be equal (left: {:?}, right: {:?})", left.size, right.size);
-    let h = piece_hash(&left.commitment, &right.commitment);
-
-    left.commitment.copy_from_slice(AsRef::<[u8]>::as_ref(&h));
-    left.size = left.size + right.size;
-    Ok(left)
-}
-
-pub(crate) fn piece_hash(a : &[u8], b : &[u8])-><DefaultPieceHasher as Hasher>::Domain {
-    let mut buf = [0u8; NODE_SIZE * 2];
-    buf[..NODE_SIZE].copy_from_slice(a);
-    buf[NODE_SIZE..].copy_from_slice(b);
-    <DefaultPieceHasher as Hasher>::Function::hash(&buf)
-}
-
-#[derive(Debug, Clone)]
-pub struct PieceAlignment {
-    pub left_bytes : UnpaddedBytesAmount, pub right_bytes : UnpaddedBytesAmount,
-}
-
-impl PieceAlignment {
-    pub fn sum(&self, piece_size : UnpaddedBytesAmount)->UnpaddedBytesAmount {
-        self.left_bytes + piece_size + self.right_bytes
-    }
-}
-
-/// Given a list of pieces, sum the number of bytes taken by those pieces in that order.
-pub fn sum_piece_bytes_with_alignment(pieces
-                                      : &[UnpaddedBytesAmount])
-    ->UnpaddedBytesAmount {
-        pieces.iter().fold(UnpaddedBytesAmount(0),
-                           | acc,
-                           piece_bytes | {acc + get_piece_alignment(acc, *piece_bytes).sum(*piece_bytes)})}
-
-/// Given a list of pieces, find the byte where a given piece does or would start.
-pub fn get_piece_start_byte(pieces
-                            : &[UnpaddedBytesAmount], piece_bytes
-                            : UnpaddedBytesAmount, )
-    ->UnpaddedByteIndex {
-    // sum up all the bytes taken by the ordered pieces
-    let last_byte = sum_piece_bytes_with_alignment(&pieces);
-    let alignment = get_piece_alignment(last_byte, piece_bytes);
-
-    // add only the left padding of the target piece to give the start of that piece's data
-    UnpaddedByteIndex::from(last_byte + alignment.left_bytes)
-}
-
-/// Given a number of bytes already written to a staged sector (ignoring bit padding) and a number
-/// of bytes (before bit padding) to be added, return the alignment required to create a piece where
-/// len(piece) == len(sector size)/(2^n) and sufficient left padding to ensure simple merkle proof
-/// construction.
-pub fn get_piece_alignment(written_bytes : UnpaddedBytesAmount, piece_bytes : UnpaddedBytesAmount, )->PieceAlignment {
-    let mut piece_bytes_needed = MINIMUM_PIECE_SIZE as u64;
-
-    // Calculate the next power of two multiple that will fully contain the piece's data.
-    // This is required to ensure a clean piece merkle root, without being affected by
-    // preceding or following pieces.
-    while
-        piece_bytes_needed < u64::from(piece_bytes) {
-            piece_bytes_needed *= 2;
+            left.commitment.copy_from_slice(AsRef::<[u8]>::as_ref(&h));
+            left.size = left.size + right.size;
+            return left;
         }
 
-    // Calculate the bytes being affected from the left of the piece by the previous piece.
-    let encroaching = u64::from(written_bytes) % piece_bytes_needed;
+        template<typename FirstInputIterator, typename SecondInputIterator, typename PieceHash = DefaultPieceHasher>
+        typename PieceHash::digest_type piece_hash(FirstInputIterator ffirst, FirstInputIterator flast,
+                                                   SecondInputIterator sfirst, SecondInputIterator slast) {
+            let mut buf = [0u8; NODE_SIZE * 2];
+            buf[..NODE_SIZE].copy_from_slice(a);
+            buf[NODE_SIZE..].copy_from_slice(b);
+            <DefaultPieceHasher as Hasher>::Function::hash(&buf)
+        }
 
-    // Calculate the bytes to push from the left to ensure a clean piece merkle root.
-    let left_bytes = if encroaching > 0 {
-        piece_bytes_needed - encroaching
-    }
-    else {0};
+        struct PieceAlignment {
+            unpadded_bytes_amount sum(unpadded_bytes_amount piece_size) {
+                return left_bytes + piece_size + right_bytes;
+            }
 
-    let right_bytes = piece_bytes_needed - u64::from(piece_bytes);
+            unpadded_bytes_amount left_bytes;
+            unpadded_bytes_amount right_bytes;
+        };
 
-    PieceAlignment {
-    left_bytes:
-        UnpaddedBytesAmount(left_bytes), right_bytes : UnpaddedBytesAmount(right_bytes),
-    }
-}
+        /// Given a list of pieces, sum the number of bytes taken by those pieces in that order.
+        unpadded_bytes_amount sum_piece_bytes_with_alignment(const std::vector<unpadded_bytes_amount> &pieces) {
+            pieces.iter().fold(0, | acc,
+                               piece_bytes | {acc + get_piece_alignment(acc, *piece_bytes).sum(*piece_bytes)});
+        }
 
-/// Wraps a Readable source with null bytes on either end according to a provided PieceAlignment.
-fn with_alignment(source : impl Read, piece_alignment : PieceAlignment)->impl Read {
-    let PieceAlignment {
-        left_bytes,
-        right_bytes,
-    } = piece_alignment;
+        /// Given a number of bytes already written to a staged sector (ignoring bit padding) and a number
+        /// of bytes (before bit padding) to be added, return the alignment required to create a piece where
+        /// len(piece) == len(sector size)/(2^n) and sufficient left padding to ensure simple merkle proof
+        /// construction.
+        PieceAlignment get_piece_alignment(unpadded_bytes_amount written_bytes, unpadded_bytes_amount piece_bytes) {
+            std::uint64_t piece_bytes_needed = MINIMUM_PIECE_SIZE;
 
-    let left_padding = Cursor::new (vec ![0; left_bytes.into()]);
-    let right_padding = Cursor::new (vec ![0; right_bytes.into()]);
+            // Calculate the next power of two multiple that will fully contain the piece's data.
+            // This is required to ensure a clean piece merkle root, without being affected by
+            // preceding or following pieces.
+            while (piece_bytes_needed < piece_bytes) {
+                piece_bytes_needed *= 2;
+            }
 
-    left_padding.chain(source).chain(right_padding)
-}
+            // Calculate the bytes being affected from the left of the piece by the previous piece.
+            std::uint64_t encroaching = written_bytes % piece_bytes_needed;
 
-/// Given an enumeration of pieces in a staged sector and a piece to be added (represented by a Read
-/// and corresponding length, in UnpaddedBytesAmount) to the staged sector, produce a new Read and
-/// UnpaddedBytesAmount pair which includes the appropriate amount of alignment bytes for the piece
-/// to be written to the target staged sector.
-pub fn get_aligned_source<T : Read>(source
-                                    : T, pieces
-                                    : &[UnpaddedBytesAmount], piece_bytes
-                                    : UnpaddedBytesAmount, )
-    ->(UnpaddedBytesAmount, PieceAlignment, impl Read) {
-    let written_bytes = sum_piece_bytes_with_alignment(pieces);
-    let piece_alignment = get_piece_alignment(written_bytes, piece_bytes);
-    let expected_num_bytes_written = piece_alignment.left_bytes + piece_bytes + piece_alignment.right_bytes;
+            // Calculate the bytes to push from the left to ensure a clean piece merkle root.
+            std::uint64_t left_bytes;
+            if (encroaching > 0) {
+                left_bytes = piece_bytes_needed - encroaching;
+            } else {
+                left_bytes = 0;
+            }
 
-    (expected_num_bytes_written, piece_alignment.clone(), with_alignment(source, piece_alignment), )
-}
+            std::size_t right_bytes = piece_bytes_needed - piece_bytes;
+
+            return {left_bytes, right_bytes};
+
+        }    // namespace filecoin
+
+        /// Given a list of pieces, find the byte where a given piece does or would start.
+        unpadded_byte_index get_piece_start_byte(const std::vector<unpadded_bytes_amount> &pieces,
+                                                 unpadded_bytes_amount piece_bytes) {
+            // sum up all the bytes taken by the ordered pieces
+            unpadded_bytes_amount last_byte = sum_piece_bytes_with_alignment(pieces);
+            PieceAlignment alignment = get_piece_alignment(last_byte, piece_bytes);
+
+            // add only the left padding of the target piece to give the start of that piece's data
+            return last_byte + alignment.left_bytes;
+        }
+
+        /// Wraps a Readable source with null bytes on either end according to a provided PieceAlignment.
+        template<typename Read>
+        Read with_alignment(const Read &source, const PieceAlignment &piece_alignment) {
+            PieceAlignment piece_alignment {left_bytes, right_bytes};
+
+            let left_padding = Cursor::new (vec ![0; left_bytes.into()]);
+            let right_padding = Cursor::new (vec ![0; right_bytes.into()]);
+
+            left_padding.chain(source).chain(right_padding)
+        }
+
+        /// Given an enumeration of pieces in a staged sector and a piece to be added (represented by a Read
+        /// and corresponding length, in UnpaddedBytesAmount) to the staged sector, produce a new Read and
+        /// UnpaddedBytesAmount pair which includes the appropriate amount of alignment bytes for the piece
+        /// to be written to the target staged sector.
+        template<typename Read>
+        std::tuple<unpadded_bytes_amount, PieceAlignment, Read>
+            get_aligned_source(const Read &source, std::vector<unpadded_bytes_amount> &pieces,
+                               unpadded_bytes_amount piece_bytes) {
+            std::size_t written_bytes = sum_piece_bytes_with_alignment(pieces);
+            PieceAlignment piece_alignment = get_piece_alignment(written_bytes, piece_bytes);
+            unpadded_bytes_amount expected_num_bytes_written =
+                piece_alignment.left_bytes + piece_bytes + piece_alignment.right_bytes;
+
+            return std::make_tuple(expected_num_bytes_written, piece_alignment.clone(),
+                                   with_alignment(source, piece_alignment));
+        }
     }    // namespace filecoin
 }    // namespace nil
 

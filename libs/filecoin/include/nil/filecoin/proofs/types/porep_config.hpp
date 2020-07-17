@@ -26,6 +26,8 @@
 #ifndef FILECOIN_PROOFS_TYPES_POREP_CONFIG_HPP
 #define FILECOIN_PROOFS_TYPES_POREP_CONFIG_HPP
 
+#include <boost/filesystem/path.hpp>
+
 #include <nil/filecoin/proofs/types/porep_proof_partitions.hpp>
 #include <nil/filecoin/proofs/types/sector_size.hpp>
 
@@ -41,11 +43,10 @@ namespace nil {
             /// Returns the cache identifier as used by `storage-proofs::paramater_cache`.
             template<typename MerkleTreeType>
             std::string get_cache_identifier() {
-                let params = crate::parameters::public_params::<Tree>(self.sector_size.into(), self.partitions.into(),
-                                                                      self.porep_id, ) ?
-                    ;
+                let params =
+                    crate::parameters::public_params<MerkleTreeType>(sector_size.into(), partitions.into(), porep_id);
 
-                Ok(<StackedCompound<Tree, DefaultPieceHasher> as CacheableParameters<
+                Ok(<StackedCompound<MerkleTreeType, DefaultPieceHasher> as CacheableParameters<
                        StackedCircuit<Tree, DefaultPieceHasher>, _, >>::cache_identifier(&params), )
             }
 
@@ -69,3 +70,5 @@ namespace nil {
         };       // namespace filecoin
     }            // namespace filecoin
 }    // namespace nil
+
+#endif

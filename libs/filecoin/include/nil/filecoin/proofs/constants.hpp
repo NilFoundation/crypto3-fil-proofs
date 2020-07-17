@@ -114,16 +114,16 @@ namespace nil {
         typedef storage_proofs::merkle::OctMerkleTree<DefaultTreeHasher> DefaultOctTree;
         typedef storage_proofs::merkle::OctLCMerkleTree<DefaultTreeHasher> DefaultOctLCTree;
 
-        pub type SectorShape2KiB = LCTree<DefaultTreeHasher, U8, U0, U0>;
-        pub type SectorShape4KiB = LCTree<DefaultTreeHasher, U8, U2, U0>;
-        pub type SectorShape16KiB = LCTree<DefaultTreeHasher, U8, U8, U0>;
-        pub type SectorShape32KiB = LCTree<DefaultTreeHasher, U8, U8, U2>;
-        pub type SectorShape8MiB = LCTree<DefaultTreeHasher, U8, U0, U0>;
-        pub type SectorShape16MiB = LCTree<DefaultTreeHasher, U8, U2, U0>;
-        pub type SectorShape512MiB = LCTree<DefaultTreeHasher, U8, U0, U0>;
-        pub type SectorShape1GiB = LCTree<DefaultTreeHasher, U8, U2, U0>;
-        pub type SectorShape32GiB = LCTree<DefaultTreeHasher, U8, U8, U0>;
-        pub type SectorShape64GiB = LCTree<DefaultTreeHasher, U8, U8, U2>;
+        typedef LCTree<DefaultTreeHasher, U8, U0, U0> SectorShape2KiB;
+        typedef LCTree<DefaultTreeHasher, U8, U2, U0> SectorShape4KiB;
+        typedef LCTree<DefaultTreeHasher, U8, U8, U0> SectorShape16KiB;
+        typedef LCTree<DefaultTreeHasher, U8, U8, U2> SectorShape32KiB;
+        typedef LCTree<DefaultTreeHasher, U8, U0, U0> SectorShape8MiB;
+        typedef LCTree<DefaultTreeHasher, U8, U2, U0> SectorShape16MiB;
+        typedef LCTree<DefaultTreeHasher, U8, U0, U0> SectorShape512MiB;
+        typedef LCTree<DefaultTreeHasher, U8, U2, U0> SectorShape1GiB;
+        typedef LCTree<DefaultTreeHasher, U8, U8, U0> SectorShape32GiB;
+        typedef LCTree<DefaultTreeHasher, U8, U8, U2> SectorShape64GiB;
 
         bool is_sector_shape_base(sector_size_type sector_size) {
             return sector_size == sector_size_2kb || sector_size == sector_size_8mb || sector_size == sector_size_512mb;
@@ -141,13 +141,13 @@ namespace nil {
             return sector_size == sector_size_32kb || sector_size == sector_size_64gb;
         }
 
-        /// Get the correct parameter data for a given cache id.
-        parameter_data get_parameter_data(const std::string &cache_id) {
-            return PARAMETERS[&parameter_id(cache_id)];
+        inline std::string parameter_id(const std::string &cache_id) {
+            return std::string("v") + std::to_string(VERSION) + "-" + cache_id + ".params";
         }
 
-        std::string parameter_id(const std::string &cache_id) {
-            return std::string("v") + VERSION + "-" + cache_id + ".params";
+        /// Get the correct parameter data for a given cache id.
+        inline parameter_data get_parameter_data(const std::string &cache_id) {
+            return PARAMETERS[parameter_id(cache_id)];
         }
     }    // namespace filecoin
 }    // namespace nil
