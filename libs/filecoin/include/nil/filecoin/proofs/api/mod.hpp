@@ -99,12 +99,11 @@ namespace nil {
                                            const commitment_type &comm_d, const ticket_type &ticket,
                                            unpadded_byte_index offset, unpadded_bytes_amount num_bytes) {
             info !("unseal_range:start");
-            assert(
-                ("Invalid all zero commitment (comm_d)",
-                 comm_d.empty() || !std::accumulate(comm_d.begin(), comm_d.end(), false,
-                                                    [&](bool state, typename commitment_type::value_type &v) -> bool {
-                                                        return state * (v != 0);
-                                                    })));
+            assert(("Invalid all zero commitment (comm_d)",
+                    !std::accumulate(comm_d.begin(), comm_d.end(), false,
+                                     [&](bool state, typename commitment_type::value_type &v) -> bool {
+                                         return state * (v != 0);
+                                     })));
 
             commitment_type comm_d = as_safe_commitment<typename DefaultPieceHasher::digest_type>(comm_d, "comm_d");
 
