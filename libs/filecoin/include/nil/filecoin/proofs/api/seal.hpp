@@ -123,24 +123,18 @@ verify_pieces(&comm_d, piece_infos, porep_config.into())?,
 "pieces and comm_d do not match"
 );
 
-let replica_id =
-    generate_replica_id::<Tree::Hasher, _>(&prover_id, sector_id.into(), &ticket, comm_d, &porep_config.porep_id, );
+let replica_id = generate_replica_id<typename MerkleTreeType::hash_type>(prover_id, sector_id.into(), ticket, comm_d,
+                                                                            porep_config.porep_id);
 
-let labels = StackedDrg::<Tree, DefaultPieceHasher>::replicate_phase1(&compound_public_params.vanilla_params,
-                                                                      &replica_id, config.clone(), ) ?
-    ;
+let labels = StackedDrg<MerkleTreeType, DefaultPieceHasher>::replicate_phase1(&compound_public_params.vanilla_params,
+                                                                              &replica_id, config.clone());
 
-let out = SealPreCommitPhase1Output {
-    labels,
-    config,
-    comm_d,
-};
+SealPreCommitPhase1Output out = {labels, config, comm_d};
 
 info !("seal_pre_commit_phase1:finish");
 Ok(out)
         }
 
-#[allow(clippy::too_many_arguments)]
 pub fn seal_pre_commit_phase2<R, S, Tree: 'static + MerkleTreeTrait>(
 porep_config: PoRepConfig,
 phase1_output: SealPreCommitPhase1Output<Tree>,

@@ -15,26 +15,26 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-const ERROR_PARAMETER_FILE : &str = "failed to find file in cache";
-const ERROR_PARAMETER_ID : &str = "failed to find key in manifest";
+constexpr static const char *ERROR_PARAMETER_FILE = "failed to find file in cache";
+constexpr static const char *ERROR_PARAMETER_ID = "failed to find key in manifest";
 
-const IPGET_PATH : &str = "/var/tmp/ipget";
-const DEFAULT_PARAMETERS : &str = include_str !("../../parameters.json");
-const IPGET_VERSION : &str = "v0.4.0";
+constexpr static const char *IPGET_PATH = "/var/tmp/ipget";
+constexpr static const char *DEFAULT_PARAMETERS = include_str !("../../parameters.json");
+constexpr static const char *IPGET_VERSION = "v0.4.0";
 
-struct FetchProgress<R> {
-    inner: R,
-        progress_bar: ProgressBar<Stdout>,
-}
+template<typename R>
+struct FetchProgress {
+    fn read(&mut self, buf
+            : &mut[u8])
+        ->io::Result<usize> {self.inner.read(buf).map(| n |
+                                                      {
+                                                          self.progress_bar.add(n as u64);
+                                                          n
+                                                      })}
 
-    impl<R: Read> Read for FetchProgress<R> {
-    fn read(&mut self, buf : &mut[u8])->io::Result<usize> {
-        self.inner.read(buf).map(| n | {
-            self.progress_bar.add(n as u64);
-            n
-        })
-    }
-}
+    R inner;
+    ProgressBar<Stdout> progress_bar;
+};
 
 int main(int argc, char *argv[]) {
     fil_logger::init();
