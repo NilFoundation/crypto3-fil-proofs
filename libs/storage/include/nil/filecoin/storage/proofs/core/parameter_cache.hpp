@@ -81,7 +81,7 @@ namespace nil {
                 bail !("{:?} has no parent directory", cache_entry_path);
             }
 
-            Ok(cache_entry_path)
+            return cache_entry_path;
         }
 
         struct parameter_set_metadata {
@@ -150,7 +150,7 @@ namespace nil {
                     write_cached_params(&cache_path, generate()?).unwrap_or_else(|e| {
                         panic!("{}: failed to write generated parameters to cache", e)
                     });
-                    Ok(read_cached_params(&cache_path)?)
+                    return read_cached_params(&cache_path);
                     }
                 }
             }
@@ -175,8 +175,7 @@ namespace nil {
         groth16::mapped_params<Bls12> read_cached_params(const boost::filesystem::path &cache_entry_path) {
             with_exclusive_read_lock(cache_entry_path, [&]() -> groth16::mapped_params<Bls12> {
                 groth16::mapped_params<Bls12> params =
-                    Parameters::build_mapped_parameters(cache_entry_path.to_path_buf(), false) ?
-                    ;
+                    Parameters::build_mapped_parameters(cache_entry_path.to_path_buf(), false);
                 info !("read parameters from cache {:?} ", cache_entry_path);
             });
         }
