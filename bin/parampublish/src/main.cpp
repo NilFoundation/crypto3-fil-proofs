@@ -47,15 +47,12 @@
 /// $ RUST_BACKTRACE=1 ./target/release/phase2 verifyd
 /// ```
 
-const ERROR_IPFS_COMMAND : &str = "failed to run ipfs";
-const ERROR_IPFS_PUBLISH : &str = "failed to publish via ipfs";
-const PUBLISH_SECTOR_SIZES : [u64; 5] = [
-    SECTOR_SIZE_2_KIB,
-    SECTOR_SIZE_8_MIB,
-    SECTOR_SIZE_512_MIB,
-    SECTOR_SIZE_32_GIB,
-    SECTOR_SIZE_64_GIB,
-];
+#include <array>
+
+constexpr static const char *ERROR_IPFS_COMMAND = "failed to run ipfs";
+constexpr static const char *ERROR_IPFS_PUBLISH = "failed to publish via ipfs";
+constexpr static const std::array<std::uint64_t, 5> PUBLISH_SECTOR_SIZES = {
+    SECTOR_SIZE_2_KIB, SECTOR_SIZE_8_MIB, SECTOR_SIZE_512_MIB, SECTOR_SIZE_32_GIB, SECTOR_SIZE_64_GIB};
 
 void publish(ArgMatches &matches) {
     let ipfs_bin_path = matches.value_of("ipfs-bin").unwrap_or("ipfs");
@@ -94,16 +91,14 @@ void publish(ArgMatches &matches) {
               }, );
 
     // There might be lef-overs from the last fold iterations
-    if counter
-        < 3 {
-            parameter_ids.pop();
-        }
+    if (counter < 3) {
+        parameter_ids.pop();
+    }
 
-    if parameter_ids
-        .is_empty() {
-            println !("No valid parameters in directory {:?} found.", parameter_cache_dir());
-            std::process::exit(1)
-        }
+    if (parameter_ids.is_empty()) {
+        println !("No valid parameters in directory {:?} found.", parameter_cache_dir());
+        std::process::exit(1)
+    }
 
     // build a mapping from parameter id to metadata
     let meta_map = parameter_id_to_metadata_map(&parameter_ids) ? ;

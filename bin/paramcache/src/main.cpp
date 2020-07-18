@@ -15,125 +15,110 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#define BOOST_APPLICATION_FEATURE_NS_SELECT_BOOST
-
+#include <array>
 #include <fstream>
 #include <iostream>
 
-const PUBLISHED_SECTOR_SIZES : [u64; 10] = [
-    SECTOR_SIZE_2_KIB,
-    SECTOR_SIZE_4_KIB,
-    SECTOR_SIZE_16_KIB,
-    SECTOR_SIZE_32_KIB,
-    SECTOR_SIZE_8_MIB,
-    SECTOR_SIZE_16_MIB,
-    SECTOR_SIZE_512_MIB,
-    SECTOR_SIZE_1_GIB,
-    SECTOR_SIZE_32_GIB,
-    SECTOR_SIZE_64_GIB,
-];
+constexpr static const std::array<std::uint64_t, 10> PUBLISHED_SECTOR_SIZES = {
+    SECTOR_SIZE_2_KIB,  SECTOR_SIZE_4_KIB,   SECTOR_SIZE_16_KIB, SECTOR_SIZE_32_KIB, SECTOR_SIZE_8_MIB,
+    SECTOR_SIZE_16_MIB, SECTOR_SIZE_512_MIB, SECTOR_SIZE_1_GIB,  SECTOR_SIZE_32_GIB, SECTOR_SIZE_64_GIB};
 
-fn cache_porep_params < Tree : 'static + MerkleTreeTrait>(porep_config: PoRepConfig) { info !("PoRep params");
+template<typename MerkleTreeType>
+void cache_porep_params(const porep_config &conig) {
+    info !("PoRep params");
 
     let public_params = public_params(PaddedBytesAmount::from(porep_config),
                                       usize::from(PoRepProofPartitions::from(porep_config)), porep_config.porep_id, )
                             .unwrap();
 
-{
-    let circuit = <StackedCompound<Tree, DefaultPieceHasher>
-                       as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
-    let _ = StackedCompound::<Tree, DefaultPieceHasher>::get_param_metadata(circuit, &public_params, );
-}
-{
-    let circuit = <StackedCompound<Tree, DefaultPieceHasher>
-                       as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
-    StackedCompound::<Tree, DefaultPieceHasher>::get_groth_params(Some(&mut OsRng), circuit, &public_params, )
-        .expect("failed to get groth params");
-}
-{
-    let circuit = <StackedCompound<Tree, DefaultPieceHasher>
-                       as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
+    {
+        let circuit = <StackedCompound<Tree, DefaultPieceHasher>
+                           as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
+        let _ = StackedCompound::<Tree, DefaultPieceHasher>::get_param_metadata(circuit, &public_params, );
+    }
+    {
+        let circuit = <StackedCompound<Tree, DefaultPieceHasher>
+                           as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
+        StackedCompound::<Tree, DefaultPieceHasher>::get_groth_params(Some(&mut OsRng), circuit, &public_params, )
+            .expect("failed to get groth params");
+    }
+    {
+        let circuit = <StackedCompound<Tree, DefaultPieceHasher>
+                           as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
 
-    StackedCompound::<Tree, DefaultPieceHasher>::get_verifying_key(Some(&mut OsRng), circuit, &public_params, )
-        .expect("failed to get verifying key");
-}
+        StackedCompound::<Tree, DefaultPieceHasher>::get_verifying_key(Some(&mut OsRng), circuit, &public_params, )
+            .expect("failed to get verifying key");
+    }
 }
 
-fn cache_winning_post_params < Tree : 'static + MerkleTreeTrait>(post_config: &PoStConfig) { info !("Winning PoSt params");
+template<typename MerkleTreeType>
+void cache_winning_post_params(const post_config &config) {
+    info !("Winning PoSt params");
 
     let post_public_params = winning_post_public_params::<Tree>(post_config).unwrap();
 
-{
-    let post_circuit
-        : FallbackPoStCircuit<Tree> =
-              <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
-                  blank_circuit(&post_public_params);
-    let _ = <FallbackPoStCompound<Tree>>::get_param_metadata(post_circuit, &post_public_params)
-                .expect("failed to get metadata");
-}
-{
-    let post_circuit
-        : FallbackPoStCircuit<Tree> =
-              <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
-                  blank_circuit(&post_public_params);
-    <FallbackPoStCompound<Tree>>::get_groth_params(Some(&mut OsRng), post_circuit, &post_public_params, )
-        .expect("failed to get groth params");
-}
-{
-    let post_circuit
-        : FallbackPoStCircuit<Tree> =
-              <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
-                  blank_circuit(&post_public_params);
+    {
+        let post_circuit
+            : FallbackPoStCircuit<Tree> =
+                  <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
+                      blank_circuit(&post_public_params);
+        let _ = <FallbackPoStCompound<Tree>>::get_param_metadata(post_circuit, &post_public_params)
+                    .expect("failed to get metadata");
+    }
+    {
+        let post_circuit
+            : FallbackPoStCircuit<Tree> =
+                  <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
+                      blank_circuit(&post_public_params);
+        <FallbackPoStCompound<Tree>>::get_groth_params(Some(&mut OsRng), post_circuit, &post_public_params, )
+            .expect("failed to get groth params");
+    }
+    {
+        let post_circuit
+            : FallbackPoStCircuit<Tree> =
+                  <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
+                      blank_circuit(&post_public_params);
 
-    <FallbackPoStCompound<Tree>>::get_verifying_key(Some(&mut OsRng), post_circuit, &post_public_params, )
-        .expect("failed to get verifying key");
-}
+        <FallbackPoStCompound<Tree>>::get_verifying_key(Some(&mut OsRng), post_circuit, &post_public_params, )
+            .expect("failed to get verifying key");
+    }
 }
 
-fn cache_window_post_params < Tree : 'static + MerkleTreeTrait>(post_config: &PoStConfig) { info !("Window PoSt params");
+template<typename MerkleTreeType>
+void cache_window_post_params(const post_config &config) {
+    info !("Window PoSt params");
 
-    let post_public_params = window_post_public_params::<Tree>(post_config).unwrap();
+    let post_public_params = window_post_public_params<MerkleTreeType>(config).unwrap();
 
-{
-    let post_circuit
-        : FallbackPoStCircuit<Tree> =
-              <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
-                  blank_circuit(&post_public_params);
-    let _ = <FallbackPoStCompound<Tree>>::get_param_metadata(post_circuit, &post_public_params)
-                .expect("failed to get metadata");
-}
-{
-    let post_circuit
-        : FallbackPoStCircuit<Tree> =
-              <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
-                  blank_circuit(&post_public_params);
-    <FallbackPoStCompound<Tree>>::get_groth_params(Some(&mut OsRng), post_circuit, &post_public_params, )
-        .expect("failed to get groth params");
-}
-{
-    let post_circuit
-        : FallbackPoStCircuit<Tree> =
-              <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::
-                  blank_circuit(&post_public_params);
+    {
+        FallbackPoStCircuit<MerkleTreeType> post_circuit = <FallbackPoStCompound<MerkleTreeType> as CompoundProof<
+            FallbackPoSt<MerkleTreeType>, FallbackPoStCircuit<MerkleTreeType>>>::blank_circuit(post_public_params);
+        let _ = <FallbackPoStCompound<MerkleTreeType>>::get_param_metadata(post_circuit, post_public_params)
+                    .expect("failed to get metadata");
+    }
+    {
+        FallbackPoStCircuit<MerkleTreeType> post_circuit = <FallbackPoStCompound<MerkleTreeType> as CompoundProof<
+            FallbackPoSt<Tree>, FallbackPoStCircuit<MerkleTreeType>>>::blank_circuit(post_public_params);
+        <FallbackPoStCompound<MerkleTreeType>>::get_groth_params(Some(&mut OsRng), post_circuit, post_public_params)
+            .expect("failed to get groth params");
+    }
+    {
+        FallbackPoStCircuit<MerkleTreeType> post_circuit = <FallbackPoStCompound<MerkleTreeType> as CompoundProof<
+            FallbackPoSt<Tree>, FallbackPoStCircuit<MerkleTreeType>>>::blank_circuit(post_public_params);
 
-    <FallbackPoStCompound<Tree>>::get_verifying_key(Some(&mut OsRng), post_circuit, &post_public_params, )
-        .expect("failed to get verifying key");
-}
+        <FallbackPoStCompound<MerkleTreeType>>::get_verifying_key(Some(&mut OsRng), post_circuit, post_public_params)
+            .expect("failed to get verifying key");
+    }
 }
 
 /// Generate and persist Groth parameters and verifying keys for filecoin-proofs.
-#[derive(Debug, StructOpt)]
-#[structopt(name = "paramcache")]
 struct Opt {
     /// Only generate parameters for post.
-#[structopt(long)]
-    only_post : bool,
-#[structopt(short = "z", long, use_delimiter = true)]
-                params_for_sector_sizes : Vec<u64>,
-}
+    bool only_post;
+    std::vector<std::uint64_t> params_for_sector_sizes;
+};
 
-fn generate_params_post(sector_size
-                        : u64) {
+void generate_params_post(std::uint64_t sector_size) {
     with_shape !(sector_size, cache_winning_post_params, &PoStConfig {
         sector_size : SectorSize(sector_size),
         challenge_count : WINNING_POST_CHALLENGE_COUNT,
@@ -151,7 +136,7 @@ fn generate_params_post(sector_size
     });
 }
 
-fn generate_params_porep(sector_size : u64) {
+void generate_params_porep(std::uint64_t sector_size) {
     with_shape !(
         sector_size, cache_porep_params, PoRepConfig {
             sector_size:
@@ -172,7 +157,8 @@ int main(int argc, char *argv[]) {
     let opts = Opt::from_args();
 
     // Display interactive menu if no sizes are given
-    let sizes : Vec<u64> = if (opts.params_for_sector_sizes.is_empty()) {
+    std::vector<std::uint64_t> sizes;
+    if (opts.params_for_sector_sizes.is_empty()) {
         let sector_sizes = PUBLISHED_SECTOR_SIZES.iter()
                                .map(| sector_size |
                                     {// Right aligning the numbers makes them easier to read
@@ -188,31 +174,30 @@ int main(int argc, char *argv[]) {
                 .unwrap();
 
         // Extract the selected sizes
-        PUBLISHED_SECTOR_SIZES.iter()
-            .enumerate()
-            .filter_map(| (index, size) |
-                        {
-                            if (selected_sector_sizes.contains(&index)) {
-                                Some(*size)
-                            } else {
-                                None
-                            }
-                        })
-            .collect()
-    }
-    else {opts.params_for_sector_sizes.into_iter()
-              .filter(| size |
-                      {
-                          if PUBLISHED_SECTOR_SIZES
-                              .contains(size) {
-                                  return true;
-                              }
-
-                          warn !("ignoring invalid sector size: {}", size);
-                          println !("ignoring invalid sector size: {}", size);
-                          false
-                      })
-              .collect()};
+        sizes = PUBLISHED_SECTOR_SIZES.iter()
+                    .enumerate()
+                    .filter_map(| (index, size) |
+                                {
+                                    if (selected_sector_sizes.contains(&index)) {
+                                        Some(*size)
+                                    } else {
+                                        None
+                                    }
+                                })
+                    .collect();
+    } else {
+        sizes = opts.params_for_sector_sizes.into_iter()
+                    .filter(| size |
+                            {
+                                if (PUBLISHED_SECTOR_SIZES.contains(size)) {
+                                    return true;
+                                }
+                                warn !("ignoring invalid sector size: {}", size);
+                                println !("ignoring invalid sector size: {}", size);
+                                return false;
+                            })
+                    .collect();
+    };
 
     if (sizes.is_empty()) {
         info !("No valid sector sizes given. Abort.");
@@ -221,7 +206,7 @@ int main(int argc, char *argv[]) {
 
     let only_post = opts.only_post;
 
-    for (sector_size : sizes) {
+    for (std::uint64_t sector_size : sizes) {
         let human_size = sector_size.file_size(file_size_opts::BINARY).unwrap();
         let message = format !("Generating sector size: {}", human_size);
         info !("{}", &message);
@@ -232,10 +217,9 @@ int main(int argc, char *argv[]) {
 
         generate_params_post(sector_size);
 
-        if
-            !only_post {
-                generate_params_porep(sector_size);
-            }
+        if (!only_post) {
+            generate_params_porep(sector_size);
+        }
         spinner.finish_with_message(&format !("✔ {}", &message));
     }
 }
