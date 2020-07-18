@@ -30,6 +30,8 @@
 
 #include <nil/filecoin/storage/proofs/core/btree/map.hpp>
 
+#include <nil/filecoin/proofs/api/utilities.hpp>
+
 namespace nil {
     namespace filecoin {
         /// The minimal information required about a replica, in order to be able to generate
@@ -318,7 +320,7 @@ namespace nil {
                                     const btree::map<sector_id_type, PrivateReplicaInfo<MerkleTreeType>> &replicas,
                                     prover_id_type prover_id) {
         info !("generate_window_post:start");
-        ensure !(post_config.typ == PoStType::Window, "invalid post config type");
+        assert(("invalid post config type", post_config.typ == PoStType::Window));
 
         typename MerkleTreeType::hash_type::digest_type randomness_safe = as_safe_commitment(randomness, "randomness");
         typename MerkleTreeType::hash_type::digest_type prover_id_safe = as_safe_commitment(prover_id, "prover_id");
@@ -377,10 +379,10 @@ namespace nil {
                             const std::vector<std::uint8_t> &proof) {
         info !("verify_window_post:start");
 
-        ensure !(post_config.typ == PoStType::Window, "invalid post config type");
+        assert(("invalid post config type", post_config.typ == PoStType::Window));
 
         let randomness_safe = as_safe_commitment(randomness, "randomness");
-        let prover_id_safe = as_safe_commitment(&prover_id, "prover_id");
+        let prover_id_safe = as_safe_commitment(prover_id, "prover_id");
 
         let vanilla_params = window_post_setup_params(config);
         let partitions = get_partitions_for_window_post(replicas.size(), config);
