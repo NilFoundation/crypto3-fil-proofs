@@ -33,6 +33,9 @@
 #include <nil/filecoin/proofs/types/porep_config.hpp>
 #include <nil/filecoin/proofs/types/mod.hpp>
 
+#include <nil/filecoin/proofs/api/seal.hpp>
+#include <nil/filecoin/proofs/api/post.hpp>
+
 namespace nil {
     namespace filecoin {
         /// Unseals the sector at `sealed_path` and returns the bytes for a piece
