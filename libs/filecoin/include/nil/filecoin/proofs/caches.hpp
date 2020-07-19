@@ -66,73 +66,49 @@ namespace nil {
         }
 
         template<typename MerkleTreeType>
-        Bls12GrothParams &stacked_params(porep_config &config) {
-            let public_params = public_params<MerkleTreeType>(PaddedBytesAmount::from(config),
-                                                              usize::from(PoRepProofPartitions::from(config)),
-                                                              porep_config.porep_id);
+        Bls12GrothParams &stacked_params(const porep_config &config) {
+            let public_params = public_params<MerkleTreeType>(
+                PaddedBytesAmount::from(config), PoRepProofPartitions::from(config), porep_config.porep_id);
 
             let parameters_generator = || {<StackedCompound<MerkleTreeType, DefaultPieceHasher>
                                                 as CompoundProof<StackedDrg<MerkleTreeType, DefaultPieceHasher>, _, >>::
                                                groth_params::<rand::rngs::OsRng>(None, &public_params)
                                                    .map_err(Into::into)};
 
-            Ok(lookup_groth_params(
-                format!(
-                "STACKED[{}]",
-                    usize::from(PaddedBytesAmount::from(config))
-            ),
-                parameters_generator,
-            )?)
+            return lookup_groth_params(format !("STACKED[{}]", PaddedBytesAmount::from(config)), parameters_generator);
         }
 
         template<typename MerkleTreeType>
-        Bls12GrothParams &get_post_params(post_config &config) {
-            match post_config.typ {
-                PoStType::Winning = > {
-                    let post_public_params = winning_post_public_params::<MerkleTreeType>(config) ? ;
+        Bls12GrothParams &get_post_params(const post_config &config) {
+            if (config.typ == PoStType::Winning) {
+                let post_public_params = winning_post_public_params<MerkleTreeType>(config);
 
-                    let parameters_generator =
-                        ||
-                        {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<
-                            fallback::FallbackPoSt<MerkleTreeType>, fallback::FallbackPoStCircuit<MerkleTreeType>, >>::
-                             groth_params::<rand::rngs::OsRng>(None, &post_public_params)
-                                 .map_err(Into::into)};
+                let parameters_generator =
+                    || {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<
+                           fallback::FallbackPoSt<MerkleTreeType>, fallback::FallbackPoStCircuit<MerkleTreeType>, >>::
+                            groth_params::<rand::rngs::OsRng>(None, &post_public_params)
+                                .map_err(Into::into)};
 
-                    Ok(lookup_groth_params(
-                        format!(
-                        "WINNING_POST[{}]",
-                            usize::from(config.padded_sector_size())
-                    ),
-                        parameters_generator,
-                    )?)
-                }
-                PoStType::Window = > {
-                    let post_public_params = window_post_public_params<MerkleTreeType>(config);
+                return lookup_groth_params(format !("WINNING_POST[{}]", config.padded_sector_size()),
+                                           parameters_generator);
+            } else if (config.typ == PoStType::Window) {
+                let post_public_params = window_post_public_params<MerkleTreeType>(config);
 
-                    let parameters_generator =
-                        ||
-                        {<fallback::FallbackPoStCompound<Tree> as CompoundProof<
-                            fallback::FallbackPoSt<MerkleTreeType>, fallback::FallbackPoStCircuit<MerkleTreeType>, >>::
-                             groth_params::<rand::rngs::OsRng>(None, &post_public_params)
-                                 .map_err(Into::into)};
+                let parameters_generator =
+                    || {<fallback::FallbackPoStCompound<Tree> as CompoundProof<
+                           fallback::FallbackPoSt<MerkleTreeType>, fallback::FallbackPoStCircuit<MerkleTreeType>>>::
+                            groth_params::<rand::rngs::OsRng>(None, post_public_params)
+                                .map_err(Into::into)};
 
-                    Ok(lookup_groth_params(
-                        format!(
-                        "Window_POST[{}]",
-                            usize::from(config.padded_sector_size())
-                    ),
-                        parameters_generator,
-                    )?)
-                }
+                return lookup_groth_params(format !("Window_POST[{}]", config.padded_sector_size()),
+                                           parameters_generator);
             }
         }
 
         template<typename MerkleTreeType>
         Bls12VerifyingKey &get_stacked_verifying_key(const porep_config &config) {
-            let public_params =
-                public_params(PaddedBytesAmount::from(porep_config),
-                              usize::from(PoRepProofPartitions::from(porep_config)), porep_config.porep_id, ) ?
-                ;
+            let public_params = public_params(PaddedBytesAmount::from(porep_config),
+                                              PoRepProofPartitions::from(porep_config), porep_config.porep_id);
 
             let vk_generator =
                 || {<StackedCompound<Tree, DefaultPieceHasher> as CompoundProof<
@@ -140,54 +116,33 @@ namespace nil {
                                                                                                        &public_params)
                         .map_err(Into::into)};
 
-            Ok(lookup_verifying_key(
-                format!(
-                "STACKED[{}]",
-                    usize::from(PaddedBytesAmount::from(porep_config))
-            ),
-                vk_generator,
-            )?)
+            return lookup_verifying_key(format !("STACKED[{}]", PaddedBytesAmount::from(porep_config)), vk_generator);
         }
 
         template<typename MerkleTreeType>
         Bls12VerifyingKey &get_post_verifying_key(const porep_config &config) {
-            match post_config.typ {
-                PoStType::Winning = > {
-                    let post_public_params = winning_post_public_params::<MerkleTreeType>(config) ? ;
+            if (config.typ == PoStType::Winning) {
+                let post_public_params = winning_post_public_params::<MerkleTreeType>(config) ? ;
 
-                    let vk_generator =
-                        ||
-                        {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<
-                            fallback::FallbackPoSt<MerkleTreeType>, fallback::FallbackPoStCircuit<MerkleTreeType>, >>::
-                             verifying_key::<rand::rngs::OsRng>(None, &post_public_params)
-                                 .map_err(Into::into)};
+                let vk_generator =
+                    || {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<
+                           fallback::FallbackPoSt<MerkleTreeType>, fallback::FallbackPoStCircuit<MerkleTreeType>, >>::
+                            verifying_key::<rand::rngs::OsRng>(None, &post_public_params)
+                                .map_err(Into::into)};
 
-                    Ok(lookup_verifying_key(
-                        format!(
-                        "WINNING_POST[{}]",
-                            usize::from(post_config.padded_sector_size())
-                    ),
-                        vk_generator,
-                    )?)
-                }
-                PoStType::Window = > {
-                    let post_public_params = window_post_public_params::<MerkleTreeType>(config) ? ;
+                return lookup_verifying_key(format !("WINNING_POST[{}]", post_config.padded_sector_size()),
+                                            vk_generator);
+            } else if (config.typ == PoStType::Window) {
+                let post_public_params = window_post_public_params<MerkleTreeType>(config);
 
-                    let vk_generator =
-                        ||
-                        {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<
-                            fallback::FallbackPoSt<MerkleTreeType>, fallback::FallbackPoStCircuit<MerkleTreeType>, >>::
-                             verifying_key::<rand::rngs::OsRng>(None, &post_public_params)
-                                 .map_err(Into::into)};
+                let vk_generator =
+                    || {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<
+                           fallback::FallbackPoSt<MerkleTreeType>, fallback::FallbackPoStCircuit<MerkleTreeType>, >>::
+                            verifying_key::<rand::rngs::OsRng>(None, &post_public_params)
+                                .map_err(Into::into)};
 
-                    Ok(lookup_verifying_key(
-                        format!(
-                        "WINDOW_POST[{}]",
-                            usize::from(post_config.padded_sector_size())
-                    ),
-                        vk_generator,
-                    )?)
-                }
+                return lookup_verifying_key(format !("WINDOW_POST[{}]", usize::from(post_config.padded_sector_size())),
+                                            vk_generator);
             }
         }
     }    // namespace filecoin

@@ -59,7 +59,6 @@ namespace nil {
         inline std::size_t get_base_tree_leafs(std::size_t base_tree_size) {
             return get_merkle_tree_leafs(base_tree_size, MerkleTreeType::Arity);
         }
-
     }    // namespace filecoin
 }    // namespace nil
 
