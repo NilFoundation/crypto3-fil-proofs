@@ -20,35 +20,32 @@
 
 #include <nil/filecoin/proofs/constants.hpp>
 
-enum Proof {
-    Porep,
-    WinningPost,
-    WindowPost,
-}
+enum Proof { Porep, WinningPost, WindowPost };
 
-    impl Display for Proof {
-    fn fmt(&self, f : &mut Formatter)->fmt::Result {
-        let s = match self {
-            Proof::Porep = > "PoRep",
-            Proof::WinningPost = > "WinningPoSt",
-            Proof::WindowPost = > "WindowPoSt",
-        };
-        write !(f, "{}", s)
+std::ostream &operator<<(std::ostream &out, const Proof &p) {
+    switch (p) {
+        case Proof::Porep: {
+            out << "PoRep";
+        } break;
+        case Proof::WinningPost: {
+            out << "WinningPoSt";
+        } break;
+        case Proof::WindowPost: {
+            out << "WindowPoSt";
+        } break;
     }
 }
 
 enum Hasher {
     Poseidon,
     // ShaPedersen,
-}
+};
 
-    impl Display for Hasher {
-    fn fmt(&self, f : &mut Formatter)->fmt::Result {
-        let s = match self {
-            Hasher::Poseidon = > "Poseidon",
-            // Hasher::ShaPedersen => "SHA-Pedersen",
-        };
-        write !(f, "{}", s)
+std::ostream &operator<<(std::ostream &out, const Hasher &h) {
+    switch (p) {
+        case Hasher::Poseidon: {
+            out << "Poseidon";
+        } break;
     }
 }
 
@@ -100,8 +97,8 @@ std::string initial_params_filename(Proof proof, Hasher hasher, std::uint64_t se
 /// containing the proof, hasher, sector-size, shortened head commit, and contribution number (e.g.
 /// `(Proof::Porep, Hasher::Poseidon, SECTOR_SIZE_32_GIB, "abcdef1", 0)`).
 std::tuple<Proof, Hashes, sector_size_t, std::string, std::size_t> parse_params_filename(const std::string &path) {
-    let filename = path.rsplitn(2, '/').next().unwrap();
-    let split : Vec<&str> = filename.split('_').collect();
+    std::string filename = path.rsplitn(2, '/').next().unwrap();
+    std::vector<std::string> split = filename.split('_').collect();
 
     let proof = match split[0] {
         "porep" = > Proof::Porep,
@@ -125,37 +122,33 @@ std::tuple<Proof, Hashes, sector_size_t, std::string, std::size_t> parse_params_
 
     let head = split[3].to_string();
 
-    let param_number =
-        usize::from_str(split[4]).unwrap_or_else(| _ | panic !("invalid param number in filename: {}", split[3]));
+    std::size_t param_number =
+        std::to_string(split[4]).unwrap_or_else(| _ | panic !("invalid param number in filename: {}", split[3]));
 
-    (proof, hasher, sector_size, head, param_number)
+    return std::make_tuple(proof, hasher, sector_size, head, param_number);
 }
 
-fn blank_porep_poseidon_circuit<Tree : MerkleTreeTrait>(sector_size
-                                                        : u64, )
-        ->StackedCircuit <'static, Tree, Sha256Hasher> { let n_partitions = *POREP_PARTITIONS.read() .unwrap()
-                              .get(&sector_size)
-                              .unwrap();
+template<typename MerkleTreeType, template<typename, typename> class StackedCircuit>
+StackedCircuit<MerkleTreeType, Sha256Hasher> blank_porep_poseidon_circuit(std::uint64_t sector_size) {
+    let n_partitions = *POREP_PARTITIONS.read().unwrap().get(&sector_size).unwrap();
 
-let porep_config = PoRepConfig {
-sector_size:
-    SectorSize(sector_size), partitions : PoRepProofPartitions(n_partitions), porep_id : [0; 32],
-};
+    porep_config config = {sector_size, PoRepProofPartitions(n_partitions), std::array<std::uint8_t, 32>()};
 
-let setup_params = compound_proof::SetupParams {
-    vanilla_params : setup_params(PaddedBytesAmount::from(porep_config),
-                                  usize::from(PoRepProofPartitions::from(porep_config)), porep_config.porep_id, )
-        .unwrap(),
-    partitions : Some(usize::from(PoRepProofPartitions::from(porep_config))),
-    priority : false,
-};
+    let setup_params = compound_proof::SetupParams {
+        vanilla_params : setup_params(PaddedBytesAmount::from(porep_config),
+                                      usize::from(PoRepProofPartitions::from(porep_config)), porep_config.porep_id, )
+            .unwrap(),
+        partitions : Some(usize::from(PoRepProofPartitions::from(porep_config))),
+        priority : false,
+    };
 
-let public_params =
-    <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::setup(&setup_params)
-        .unwrap();
+    let public_params =
+        <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::setup(
+            &setup_params)
+            .unwrap();
 
-<StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::blank_circuit(
-    &public_params.vanilla_params)
+    <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::blank_circuit(
+        &public_params.vanilla_params)
 }
 
 /*
@@ -194,14 +187,9 @@ _>>::setup( &setup_params,
 */
 
 template<typename MerkleTreeType>
-FallbackPoStCircuit<MerkleTreeType> blank_winning_post_poseidon_circuit<MerkleTreeType>(std::uint64_t sector_size) {
-    let post_config = PoStConfig {
-        sector_size : SectorSize(sector_size),
-        challenge_count : WINNING_POST_CHALLENGE_COUNT,
-        sector_count : WINNING_POST_SECTOR_COUNT,
-        typ : PoStType::Winning,
-        priority : false,
-    };
+FallbackPoStCircuit<MerkleTreeType> blank_winning_post_poseidon_circuit(std::uint64_t sector_size) {
+    post_config config = {SectorSize(sector_size), WINNING_POST_CHALLENGE_COUNT, WINNING_POST_SECTOR_COUNT,
+                          PoStType::Winning, false};
 
     let public_params = winning_post_public_params::<Tree>(&post_config).unwrap();
 
@@ -211,13 +199,9 @@ FallbackPoStCircuit<MerkleTreeType> blank_winning_post_poseidon_circuit<MerkleTr
 
 template<typename MerkleTreeType>
 FallbackPoStCircuit<MerkleTreeType> blank_window_post_poseidon_circuit(std::uint64_t sector_size) {
-    let post_config = PoStConfig {
-        sector_size : SectorSize(sector_size),
-        challenge_count : WINDOW_POST_CHALLENGE_COUNT,
-        sector_count : *WINDOW_POST_SECTOR_COUNT.read().unwrap().get(&sector_size).unwrap(),
-        typ : PoStType::Window,
-        priority : false,
-    };
+    post_config config = {sector_size, WINDOW_POST_CHALLENGE_COUNT,
+                          *WINDOW_POST_SECTOR_COUNT.read().unwrap().get(&sector_size).unwrap(), PoStType::Window,
+                          false};
 
     let public_params = window_post_public_params::<MerkleTreeType>(&post_config).unwrap();
 
@@ -617,8 +601,7 @@ fn setup_verifyd_logger(proof : Proof, hasher : Hasher, sector_size : u64) {
         .expect("failed to setup logger");
 }
 
-#[allow(clippy::cognitive_complexity)]
-fn main() {
+int main(int argc, char *argv[]) {
     let new_command =
         SubCommand::with_name("new")
             .about("Create parameters")

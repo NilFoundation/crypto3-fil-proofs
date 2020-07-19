@@ -101,30 +101,32 @@ void publish(ArgMatches &matches) {
     }
 
     // build a mapping from parameter id to metadata
-    let meta_map = parameter_id_to_metadata_map(&parameter_ids) ? ;
+    let meta_map = parameter_id_to_metadata_map(parameter_ids);
 
-    let filenames = if (!matches.is_present("all")) {
+    let filenames;
+    if (!matches.is_present("all")) {
         let tmp_filenames = meta_map.keys()
                                 .flat_map(| parameter_id | {vec ![
                                               add_extension(parameter_id, GROTH_PARAMETER_EXT),
                                               add_extension(parameter_id, VERIFYING_KEY_EXT),
                                           ]})
                                 .collect_vec();
-        choose_from(&tmp_filenames, | filename |
-                                        {filename_to_parameter_id(PathBuf::from(filename))
-                                             .as_ref()
-                                             .and_then(| p_id | meta_map.get(p_id).map(| x | x.sector_size))}) ?
-    }
-    else {
+        filenames =
+            choose_from(&tmp_filenames, | filename |
+                                            {filename_to_parameter_id(PathBuf::from(filename))
+                                                 .as_ref()
+                                                 .and_then(| p_id | meta_map.get(p_id).map(| x | x.sector_size))});
+    } else {
         // `--all` let's you select a specific version
-        let versions : Vec<String> = meta_map
-                                         .keys()
-                                         // Split off the version of the parameters
-                                         .map(| parameter_id | parameter_id.split('-').next().unwrap().to_string())
-                                         // Sort by descending order, newest parameter first
-                                         .sorted_by(| a, b | Ord::cmp(&b, &a))
-                                         .dedup()
-                                         .collect();
+        std::vector<std::string> versions =
+            meta_map
+                .keys()
+                // Split off the version of the parameters
+                .map(| parameter_id | parameter_id.split('-').next().unwrap().to_string())
+                // Sort by descending order, newest parameter first
+                .sorted_by(| a, b | Ord::cmp(&b, &a))
+                .dedup()
+                .collect();
         let selected_version = Select::with_theme(&ColorfulTheme::default())
                                    .with_prompt("Select a version (press 'q' to quit)")
                                    .default(0)
@@ -173,11 +175,9 @@ let selected_sector_sizes = MultiSelect::with_theme(&ColorfulTheme::default())
                                 .interact()
                                 .unwrap();
 
-if selected_sector_sizes
-    .is_empty() {
-        println !("Nothing selected. Abort.");
-    }
-else {
+if (selected_sector_sizes.empty()) {
+    println !("Nothing selected. Abort.");
+} else {
     // Filter out the selected ones
     parameter_ids = parameter_ids.into_iter()
                         .enumerate()
@@ -206,7 +206,7 @@ parameter_ids.iter()
 println !();
 
 let json = PathBuf::from(matches.value_of("json").unwrap_or("./parameters.json"));
-let mut parameter_map : ParameterMap = BTreeMap::new ();
+ParameterMap parameter_map;
 
 if (!filenames.is_empty()) {
     println !("publishing {} files...", filenames.len());
@@ -217,9 +217,8 @@ if (!filenames.is_empty()) {
             || format !("failed to parse id from file name {}", filename)) ?
             ;
 
-        let meta : &CacheEntryMetadata =
-                       meta_map.get(&id).with_context(|| format !("no metadata found for parameter id {}", id)) ?
-            ;
+        CacheEntryMetadata &meta =
+            meta_map.get(&id).with_context(|| format !("no metadata found for parameter id {}", id));
 
         println !("publishing: {}", filename);
         print !("publishing to ipfs... ");
@@ -229,7 +228,7 @@ if (!filenames.is_empty()) {
         print !("generating digest... ");
         io::stdout().flush().unwrap();
 
-        let digest = get_digest_for_file_within_cache(&filename) ? ;
+        let digest = get_digest_for_file_within_cache(&filename);
         let data = ParameterData {
             cid,
             digest,
@@ -251,8 +250,6 @@ write_parameter_map_to_disk(&parameter_map, &json) ? ;
 else {
     println !("no files to publish");
 }
-
-Ok(())
 }
 
 std::vector<std::string> get_filenames_in_cache_dir() {
