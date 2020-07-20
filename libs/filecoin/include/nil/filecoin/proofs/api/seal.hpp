@@ -26,7 +26,7 @@
 #ifndef FILECOIN_SEAL_API_HPP
 #define FILECOIN_SEAL_API_HPP
 
-#include <nil/filecoin//proofs/caches.hpp>
+#include <nil/filecoin/proofs/caches.hpp>
 
 #include <nil/filecoin/proofs/types/mod.hpp>
 #include <nil/filecoin/proofs/types/piece_info.hpp>
@@ -43,14 +43,12 @@ namespace nil {
                                                                          sector_id_type sector_id,
                                                                          ticket_type ticket,
                                                                          const std::vector<piece_info> &piece_infos) {
-            info("seal_pre_commit_phase1:start");
-
             // Sanity check all input path types.
             assert(("in_path must be a file", metadata(in_path.as_ref()).is_file()));
             assert(("out_path must be a file", metadata(out_path.as_ref()).is_file()));
             assert(("cache_path must be a directory", metadata(cache_path.as_ref()).is_dir()));
 
-            std::size_t sector_bytes = PaddedBytesAmount::from(porep_config);
+            std::size_t sector_bytes = PaddedBytesAmount::from(config);
             fs::metadata(&in_path).with_context(||
                                                 format !("could not read in_path={:?})", in_path.as_ref().display()));
 
@@ -73,39 +71,35 @@ namespace nil {
                 || format !("could not mmap out_path={:?}", out_path.as_ref().display())) ? };
 
             compound_proof::SetupParams compound_setup_params = {
-                setup_params(PaddedBytesAmount::from(porep_config), PoRepProofPartitions::from(porep_config),
-                             porep_config.porep_id),
-                partitions : Some(PoRepProofPartitions::from(porep_config)),
-                priority : false
-            };
+                setup_params(PaddedBytesAmount::from(config), PoRepProofPartitions::from(config), config.porep_id),
+                PoRepProofPartitions::from(config), false};
 
-            let compound_public_params =
-                <StackedCompound<Tree, DefaultPieceHasher>
-                     as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::setup(&compound_setup_params) ?
-                ;
+            PublicParams<StackedDrg<MerkleTreeType, DefaultPieceHasher>> compound_public_params =
+                <StackedCompound<MerkleTreeType, DefaultPieceHasher> as CompoundProof<
+                    StackedDrg<MerkleTreeType, DefaultPieceHasher>, _, >>::setup(&compound_setup_params);
 
-            info !("building merkle tree for the original data");
-            let(config, comm_d) = measure_op(
+            std::tuple<StoreConfig, commitment_type> let(config, comm_d) = measure_op(
                 CommD, ||->Result<_> {
-                    let base_tree_size = get_base_tree_size::<DefaultBinaryTree>(porep_config.sector_size) ? ;
-                    let base_tree_leafs = get_base_tree_leafs::<DefaultBinaryTree>(base_tree_size) ? ;
-                    ensure !(compound_public_params.vanilla_params.graph.size() == base_tree_leafs,
-                             "graph size and leaf size don't match");
+                    std::size_t base_tree_size = get_base_tree_size<DefaultBinaryTree>(config.sector_size);
+                    let base_tree_leafs = get_base_tree_leafs<DefaultBinaryTree>(base_tree_size);
+                    assert(("graph size and leaf size don't match",
+                            compound_public_params.vanilla_params.graph.size() == base_tree_leafs));
 
-                    trace !("seal phase 1: sector_size {}, base tree size {}, base tree leafs {}",
-                            u64::from(porep_config.sector_size), base_tree_size, base_tree_leafs, );
+                    trace !("seal phase 1: sector_size {}, base tree size {}, base tree leafs {}", config.sector_size,
+                            base_tree_size, base_tree_leafs);
 
                     // MT for original data is always named tree-d, and it will be
                     // referenced later in the process as such.
                     let mut config = StoreConfig::new (cache_path.as_ref(), CacheKey::CommDTree.to_string(),
-                                                       default_rows_to_discard(base_tree_leafs, BINARY_ARITY), );
-                    let data_tree = create_base_merkle_tree<BinaryMerkleTree<DefaultPieceHasher>>(
-                        Some(config.clone()), base_tree_leafs, &data);
+                                                       default_rows_to_discard(base_tree_leafs, BINARY_ARITY));
+                    BinaryMerkleTree<DefaultPieceHasher> data_tree =
+                        create_base_merkle_tree<BinaryMerkleTree<DefaultPieceHasher>>(Some(config.clone()),
+                                                                                      base_tree_leafs, &data);
                     drop(data);
 
-                    config.size = Some(data_tree.len());
-                    let comm_d_root : Fr = data_tree.root().into();
-                    let comm_d = commitment_from_fr(comm_d_root);
+                    config.size = Some(data_tree.size());
+                    Fr comm_d_root = data_tree.root().into();
+                    commitment_type comm_d = commitment_from_fr(comm_d_root);
 
                     drop(data_tree);
 
@@ -114,15 +108,15 @@ namespace nil {
 
             info("verifying pieces");
 
-            ensure !(verify_pieces(&comm_d, piece_infos, porep_config.into()), "pieces and comm_d do not match");
+            assert(("pieces and comm_d do not match", verify_pieces(comm_d, piece_infos, config)));
 
-            let replica_id = generate_replica_id<typename MerkleTreeType::hash_type>(
-                prover_id, sector_id.into(), ticket, comm_d, porep_config.porep_id);
+            auto replica_id = generate_replica_id<typename MerkleTreeType::hash_type>(prover_id, sector_id.into(),
+                                                                                      ticket, comm_d, config.porep_id);
 
-            let labels = StackedDrg<MerkleTreeType, DefaultPieceHasher>::replicate_phase1(
-                &compound_public_params.vanilla_params, &replica_id, config.clone());
+            Labels<MerkleTreeType> labels = StackedDrg<MerkleTreeType, DefaultPieceHasher>::replicate_phase1(
+                compound_public_params.vanilla_params, replica_id, config.clone());
 
-            SealPreCommitPhase1Output out = {labels, config, comm_d};
+            seal_precommit_phase1_output<MerkleTreeType> out = {labels, config, comm_d};
 
             info !("seal_pre_commit_phase1:finish");
             return out;
@@ -139,7 +133,7 @@ namespace nil {
             assert(("cache_path must be a directory", metadata(cache_path.as_ref()).is_dir()));
             assert(("replica_path must be a file", metadata(replica_path.as_ref()).is_file()));
 
-            let SealPreCommitPhase1Output {mut labels, mut config, comm_d, ..} = phase1_output;
+            seal_precommit_phase1_output<MerkleTreeType> {labels, config, comm_d, ..} = phase1_output;
 
             labels.update_root(cache_path.as_ref());
             config.path = cache_path.as_ref().into();
@@ -156,7 +150,7 @@ namespace nil {
 
             // Load data tree from disk
 
-            std::size_t base_tree_size = get_base_tree_size<DefaultBinaryTree>(porep_config.sector_size);
+            std::size_t base_tree_size = get_base_tree_size<DefaultBinaryTree>(config.sector_size);
             std::size_t base_tree_leafs = get_base_tree_leafs<DefaultBinaryTree>(base_tree_size);
 
             trace !("seal phase 2: base tree size {}, base tree leafs {}, rows to discard {}",
@@ -171,10 +165,10 @@ namespace nil {
                 BinaryMerkleTree<DefaultPieceHasher>::from_data_store(store, base_tree_leafs);
 
             compound_proof::SetupParams compound_setup_params = {
-                setup_params(porep_config, PoRepProofPartitions::from(porep_config), porep_config.porep_id),
-                PoRepProofPartitions::from(porep_config), false};
+                setup_params(config, PoRepProofPartitions::from(config), config.porep_id),
+                PoRepProofPartitions::from(config), false};
 
-            let compound_public_params =
+            PublicParams<StackedDrg<MerkleTreeType, DefaultPieceHasher>> compound_public_params =
                 <StackedCompound<Tree, DefaultPieceHasher>
                      as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::setup(&compound_setup_params);
 
@@ -182,104 +176,104 @@ namespace nil {
                 compound_public_params.vanilla_params, labels, data, data_tree, config,
                 replica_path.as_ref().to_path_buf());
 
-            let comm_r = commitment_from_fr(tau.comm_r.into());
+            commitment_type comm_r = commitment_from_fr(tau.comm_r.into());
 
             // Persist p_aux and t_aux here
-            let p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
+            boost::filesystem::path p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
             let mut f_p_aux =
                 File::create(&p_aux_path).with_context(|| format !("could not create file p_aux={:?}", p_aux_path));
-            let p_aux_bytes = serialize(p_aux);
+            std::vector<std::uint8_t> p_aux_bytes = serialize(p_aux);
             f_p_aux.write_all(&p_aux_bytes).with_context(|| format !("could not write to file p_aux={:?}", p_aux_path));
 
-            let t_aux_path = cache_path.as_ref().join(CacheKey::TAux.to_string());
+            boost::filesystem::path t_aux_path = cache_path.as_ref().join(CacheKey::TAux.to_string());
             let mut f_t_aux =
                 File::create(&t_aux_path).with_context(|| format !("could not create file t_aux={:?}", t_aux_path));
-            let t_aux_bytes = serialize(t_aux);
+            std::vector<std::uint8_t> t_aux_bytes = serialize(t_aux);
             f_t_aux.write_all(&t_aux_bytes).with_context(|| format !("could not write to file t_aux={:?}", t_aux_path));
 
-            let out = SealPreCommitOutput {comm_r, comm_d};
-
             info !("seal_pre_commit_phase2:finish");
-            return out;
+            return {comm_r, comm_d};
         }    // namespace filecoin
 
         template<typename MerkleTreeType>
         SealCommitPhase1Output<MerkleTreeType>
-            seal_commit_phase1(const porep_config &config, , const boost::filesystem::path &cache_path,
+            seal_commit_phase1(const porep_config &config, const boost::filesystem::path &cache_path,
                                const boost::filesystem::path &replica_path, prover_id_type prover_id,
                                sector_id_type sector_id, ticket_type ticket, ticket_type seed,
-                               SealPreCommitOutput pre_commit, const std::vector<PieceInfo> &piece_infos) {
+                               const seal_precommit_output &pre_commit, const std::vector<PieceInfo> &piece_infos) {
             info !("seal_commit_phase1:start");
 
             // Sanity check all input path types.
             assert(("cache_path must be a directory", metadata(cache_path.as_ref()).is_dir()));
             assert(("replica_path must be a file", metadata(replica_path.as_ref()).is_file()));
 
-            let SealPreCommitOutput {comm_d, comm_r} = pre_commit;
+            let seal_precommit_output {comm_d, comm_r} = pre_commit;
 
             assert(("Invalid all zero commitment (comm_d)",
                     !std::accumulate(comm_d.begin(), comm_d.end(), false,
                                      [&](bool state, typename commitment_type::value_type &v) -> bool {
                                          return state * (v != 0);
                                      })));
-            assert(("Invalid all zero commitment (comm_r)", !std::accumulate(comm_r.begin(), comm_r.end(), false,
-                [&](bool state, typename commitment_type::value_type &v) -> bool {
-                return state * (v != 0);
-                }));
-            assert(("pieces and comm_d do not match", verify_pieces(comm_d, piece_infos, porep_config)));
+            assert(("Invalid all zero commitment (comm_r)",
+                    !std::accumulate(comm_r.begin(), comm_r.end(), false,
+                                     [&](bool state, typename commitment_type::value_type &v) -> bool {
+                                         return state * (v != 0);
+                                     })));
+            assert(("pieces and comm_d do not match", verify_pieces(comm_d, piece_infos, config)));
 
-                let p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
-                let p_aux_bytes =
-                    std::fs::read(&p_aux_path).with_context(|| format !("could not read file p_aux={:?}", p_aux_path));
+            boost::filesystem::path p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
+            let p_aux_bytes =
+                std::fs::read(&p_aux_path).with_context(|| format !("could not read file p_aux={:?}", p_aux_path));
 
-                PersistentAux p_aux = deserialize(p_aux_bytes);
+            PersistentAux<typename MerkleTreeType::hash_type::digest_type> p_aux = deserialize(p_aux_bytes);
 
-                boost::filesystem::path t_aux_path = cache_path.as_ref().join(CacheKey::TAux.to_string());
-                let t_aux_bytes =
-                    std::fs::read(&t_aux_path).with_context(|| format !("could not read file t_aux={:?}", t_aux_path));
+            boost::filesystem::path t_aux_path = cache_path.as_ref().join(CacheKey::TAux.to_string());
+            let t_aux_bytes =
+                std::fs::read(&t_aux_path).with_context(|| format !("could not read file t_aux={:?}", t_aux_path));
 
-                TemporaryAux res = deserialize(t_aux_bytes);
+            TemporaryAux<MerkleTreeType, DefaultPieceHasher> res = deserialize(t_aux_bytes);
 
-                // Switch t_aux to the passed in cache_path
-                res.set_cache_path(cache_path);
-                TemporaryAux t_aux = res;
+            // Switch t_aux to the passed in cache_path
+            res.set_cache_path(cache_path);
+            TemporaryAux<MerkleTreeType, DefaultPieceHasher> t_aux = res;
 
-    // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
-    // elements based on the configs stored in TemporaryAux.
-    TemporaryAuxCache<MerkleTreeType, DefaultPieceHasher>
-        t_aux_cache(t_aux, replica_path.as_ref().to_path_buf()).context("failed to restore contents of t_aux");
+            // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
+            // elements based on the configs stored in TemporaryAux.
+            TemporaryAuxCache<MerkleTreeType, DefaultPieceHasher>
+                t_aux_cache(t_aux, replica_path.as_ref().to_path_buf()).context("failed to restore contents of t_aux");
 
-    let comm_r_safe = as_safe_commitment(comm_r, "comm_r");
-    let comm_d_safe = DefaultPieceDomain::try_from_bytes(comm_d);
+            commitment_type comm_r_safe = as_safe_commitment(comm_r, "comm_r");
+            commitment_type comm_d_safe = DefaultPieceDomain::try_from_bytes(comm_d);
 
-    let replica_id = generate_replica_id<typename MerkleTreeType::hash_type>(prover_id, sector_id.into(), ticket,
-                                                                             comm_d_safe, porep_config.porep_id);
+            typename MerkleTreeType::hash_type::digest_type replica_id =
+                generate_replica_id<typename MerkleTreeType::hash_type>(prover_id, sector_id.into(), ticket,
+                                                                        comm_d_safe, config.porep_id);
 
-    stacked::PublicInputs public_inputs = {replica_id, stacked::Tau(comm_d_safe, comm_r_safe), k : None, seed};
+            stacked::PublicInputs public_inputs = {replica_id, stacked::Tau(comm_d_safe, comm_r_safe), k : None, seed};
 
-    stacked::PrivateInputs<MerkleTreeType, DefaultPieceHasher> private_inputs = {p_aux, t_aux_cache};
+            stacked::PrivateInputs<MerkleTreeType, DefaultPieceHasher> private_inputs = {p_aux, t_aux_cache};
 
-    compound_proof::SetupParams compound_setup_params = {
-        setup_params(porep_config, PoRepProofPartitions::from(porep_config), porep_config.porep_id),
-        PoRepProofPartitions::from(porep_config), false};
+            compound_proof::SetupParams compound_setup_params = {
+                setup_params(config, PoRepProofPartitions::from(config), config.porep_id),
+                PoRepProofPartitions::from(config), false};
 
-    let compound_public_params =
-        <StackedCompound<MerkleTreeType, DefaultPieceHasher>
-             as CompoundProof<StackedDrg<MerkleTreeType, DefaultPieceHasher>, _, >>::setup(&compound_setup_params);
+            PublicParams<StackedDrg<MerkleTreeType, DefaultPieceHasher>> compound_public_params =
+                <StackedCompound<MerkleTreeType, DefaultPieceHasher> as CompoundProof<
+                    StackedDrg<MerkleTreeType, DefaultPieceHasher>, _, >>::setup(compound_setup_params);
 
-    let vanilla_proofs =
-        StackedDrg::prove_all_partitions(compound_public_params.vanilla_params, public_inputs, private_inputs,
-                                         StackedCompound::partition_count(compound_public_params));
+            std::vector<Proof> vanilla_proofs =
+                StackedDrg::prove_all_partitions(compound_public_params.vanilla_params, public_inputs, private_inputs,
+                                                 StackedCompound::partition_count(compound_public_params));
 
-    let sanity_check = StackedDrg<MerkleTreeType, DefaultPieceHasher>::verify_all_partitions(
-        compound_public_params.vanilla_params, public_inputs, &vanilla_proofs);
+            bool sanity_check = StackedDrg<MerkleTreeType, DefaultPieceHasher>::verify_all_partitions(
+                compound_public_params.vanilla_params, public_inputs, vanilla_proofs);
 
-    ensure !(sanity_check, "Invalid vanilla proof generated");
+            assert(("Invalid vanilla proof generated", sanity_check));
 
-    let out = SealCommitPhase1Output {vanilla_proofs, comm_r, comm_d, replica_id, seed, ticket};
+            SealCommitPhase1Output out = {vanilla_proofs, comm_r, comm_d, replica_id, seed, ticket};
 
-    info !("seal_commit_phase1:finish");
-    return out;
+            info !("seal_commit_phase1:finish");
+            return out;
         }    // namespace nil
 
         template<typename MerkleTreeType>
@@ -293,51 +287,54 @@ namespace nil {
                 vanilla_proofs, comm_d, comm_r, replica_id, seed, ticket,
             } = phase1_output;
 
-            ensure !(comm_d != [0; 32], "Invalid all zero commitment (comm_d)");
-            ensure !(comm_r != [0; 32], "Invalid all zero commitment (comm_r)");
+            assert(("Invalid all zero commitment (comm_d)",
+                    !std::accumulate(comm_d.begin(), comm_d.end(), false,
+                                     [&](bool state, typename commitment_type::value_type &v) -> bool {
+                                         return state * (v != 0);
+                                     })));
+            assert(("Invalid all zero commitment (comm_r)",
+                    !std::accumulate(comm_r.begin(), comm_r.end(), false,
+                                     [&](bool state, typename commitment_type::value_type &v) -> bool {
+                                         return state * (v != 0);
+                                     })));
 
-            let comm_r_safe = as_safe_commitment(comm_r, "comm_r");
-            let comm_d_safe = DefaultPieceDomain::try_from_bytes(comm_d);
+            commitment_type comm_r_safe = as_safe_commitment(comm_r, "comm_r");
+            commitment_type comm_d_safe = DefaultPieceDomain::try_from_bytes(comm_d);
 
             stacked::PublicInputs public_inputs = {replica_id, stacked::Tau {comm_d_safe, comm_r_safe}, k : None, seed};
 
-            let groth_params = get_stacked_params<MerkleTreeType>(porep_config);
+            let groth_params = get_stacked_params<MerkleTreeType>(config);
 
-            info !("got groth params ({}) while sealing", u64::from(PaddedBytesAmount::from(porep_config)));
+            info !("got groth params ({}) while sealing", u64::from(PaddedBytesAmount::from(config)));
 
             compound_proof::SetupParams compound_setup_params = {
-                setup_params(PaddedBytesAmount::from(porep_config),
-                             usize::from(PoRepProofPartitions::from(porep_config)), porep_config.porep_id),
-                partitions : Some(usize::from(PoRepProofPartitions::from(porep_config))),
-                priority : false,
-            };
+                setup_params(PaddedBytesAmount::from(config), PoRepProofPartitions::from(config), config.porep_id),
+                Some(PoRepProofPartitions::from(config)), false};
 
-            let compound_public_params =
+            PublicParams<StackedDrg<MerkleTreeType, DefaultPieceHasher>> compound_public_params =
                 <StackedCompound<Tree, DefaultPieceHasher>
-                     as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::setup(&compound_setup_params) ?
-                ;
+                     as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::setup(&compound_setup_params);
 
             info !("snark_proof:start");
-            let groth_proofs = StackedCompound<MerkleTreeType, DefaultPieceHasher>::circuit_proofs(
-                public_inputs, vanilla_proofs, compound_public_params.vanilla_params, groth_params,
-                compound_public_params.priority);
+            std::vector<Proof<Bls12>> groth_proofs =
+                StackedCompound<MerkleTreeType, DefaultPieceHasher>::circuit_proofs(
+                    public_inputs, vanilla_proofs, compound_public_params.vanilla_params, groth_params,
+                    compound_public_params.priority);
             info !("snark_proof:finish");
 
             MultiProof proof(groth_proofs, groth_params.vk);
 
-            std::vector<std::uint8_t> buf(SINGLE_PARTITION_PROOF_LEN * PoRepProofPartitions::from(porep_config));
+            std::vector<std::uint8_t> buf(SINGLE_PARTITION_PROOF_LEN * PoRepProofPartitions::from(config));
 
             proof.write(buf);
 
             // Verification is cheap when parameters are cached,
             // and it is never correct to return a proof which does not verify.
-            verify_seal<Tree>(porep_config, comm_r, comm_d, prover_id, sector_id, ticket, seed, buf)
+            verify_seal<MerkleTreeType>(porep_config, comm_r, comm_d, prover_id, sector_id, ticket, seed, buf)
                 .context("post-seal verification sanity check failed");
 
-            let out = SealCommitOutput {buf};
-
             info !("seal_commit_phase2:finish");
-            return out;
+            return {buf};
         }
 
         /// Computes a sectors's `comm_d` given its pieces.
@@ -404,9 +401,9 @@ namespace nil {
                 StackedCompound::setup(compound_setup_params);
 
             stacked::PublicInputs<typename MerkleTreeType::hash_type::digest_type, DefaultPieceDomain> public_inputs
-                = {replica_id, Tau {comm_r, comm_d}), seed, k : None};
+                = {replica_id, Tau {comm_r, comm_d}), seed};
 
-            let verifying_key = get_stacked_verifying_key<MerkleTreeType>(config);
+            Bls12VerifyingKey verifying_key = get_stacked_verifying_key<MerkleTreeType>(config);
 
             info !("got verifying key ({}) while verifying seal", sector_bytes);
 
@@ -418,7 +415,7 @@ namespace nil {
                                   .unwrap()
                                   .get(&u64::from(SectorSize::from(porep_config)))
                                   .expect("unknown sector size") as usize,
-                          }, )
+                          })
                               .map_err(Into::into);
 
             info !("verify_seal:finish");
@@ -475,92 +472,80 @@ namespace nil {
             let verifying_key = get_stacked_verifying_key<MerkleTreeType>(config);
             info !("got verifying key ({}) while verifying seal", sector_bytes);
 
-            compound_proof::SetupParams compound_setup_params = {setup_params(PaddedBytesAmount::from(porep_config),
-                                                                              PoRepProofPartitions::from(porep_config),
+            compound_proof::SetupParams compound_setup_params = {setup_params(PaddedBytesAmount::from(config),
+                                                                              PoRepProofPartitions::from(config),
                                                                               porep_config.porep_id),
-                                                                 PoRepProofPartitions::from(porep_config), false};
+                                                                 PoRepProofPartitions::from(config), false};
 
             compound_proof::PublicParams<StackedDrg<MerkleTreeType, DefaultPieceHasher>> compound_public_params =
                 StackedCompound::setup(compound_setup_params);
 
-            std::vector<PublicInput> public_inputs(l);
-            let mut proofs = Vec::with_capacity(l);
+            std::vector<PublicInputs<typename MerkleTreeType::hash_type::digest_type, DefaultPieceDomain>>
+                public_inputs(l);
+            std::vector<MultiProof> proofs(l);
 
-for
-    i in 0..l {
-        let comm_r = as_safe_commitment(&comm_r_ins[i], "comm_r") ? ;
-        let comm_d = as_safe_commitment(&comm_d_ins[i], "comm_d") ? ;
+            for (int i = 0; i < l; i++) {
+                commitment_type comm_r = as_safe_commitment(&comm_r_ins[i], "comm_r");
+                commitment_type comm_d = as_safe_commitment(&comm_d_ins[i], "comm_d");
 
-        let replica_id = generate_replica_id::<Tree::Hasher, _>(&prover_ids[i], sector_ids[i].into(), &tickets[i],
-                                                                comm_d, &porep_config.porep_id, );
+                typename MerkleTreeType::hash_type::digest_type replica_id =
+                    generate_replica_id<typename MerkleTreeType::hash_type>(prover_ids[i], sector_ids[i].into(),
+                                                                            tickets[i], comm_d, config.porep_id);
 
-        public_inputs.push(stacked::PublicInputs:: << Tree::Hasher as Hasher > ::Domain, DefaultPieceDomain, > {
-            replica_id,
-            tau : Some(Tau {comm_r, comm_d}),
-            seed : seeds[i],
-            k : None,
-        });
-proofs.push(MultiProof::new_from_reader(
-    Some(usize::from(PoRepProofPartitions::from(porep_config))),
-    proof_vecs[i],
-    &verifying_key,
-)?);
-    }
+                public_inputs.push_back(
+                    stacked::PublicInputs<typename MerkleTreeType::hash_type::digest_type, DefaultPieceDomain> {
+                        replica_id, {comm_r, comm_d}, seeds[i]});
+                proofs.push_back(
+                    MultiProof::new_from_reader(PoRepProofPartitions::from(config), proof_vecs[i], verifying_key));
+            }
 
-let result = StackedCompound::<Tree, DefaultPieceHasher>::batch_verify(
-                 &compound_public_params, &public_inputs, &proofs, &ChallengeRequirements {
-                     minimum_challenges : *POREP_MINIMUM_CHALLENGES.read()
-                         .unwrap()
-                         .get(&u64::from(SectorSize::from(porep_config)))
-                         .expect("unknown sector size") as usize,
-                 }, )
-                 .map_err(Into::into);
+            let result = StackedCompound<MerkleTreeType, DefaultPieceHasher>::batch_verify(
+                             compound_public_params, public_inputs, proofs, ChallengeRequirements {
+                                 minimum_challenges : *POREP_MINIMUM_CHALLENGES.read()
+                                     .unwrap()
+                                     .get(&u64::from(SectorSize::from(porep_config)))
+                                     .expect("unknown sector size") as usize,
+                             })
+                             .map_err(Into::into);
 
-info !("verify_batch_seal:finish");
-result
+            info !("verify_batch_seal:finish");
+            return result;
         }
 
-pub fn fauxrep<R: AsRef<Path>, S: AsRef<Path>, Tree: 'static + MerkleTreeTrait>(
-porep_config: PoRepConfig,
-cache_path: R,
-out_path: S,
-) -> Result<Commitment> {
-    let mut rng = rand::thread_rng();
-    fauxrep_aux::<_, R, S, Tree>(&mut rng, porep_config, cache_path, out_path)
-}
+        template<typename MerkleTreeType>
+        commitment_type fauxrep(const porep_config &config, const boost::filesystem::path &cache_path,
+                                const boost::filesystem::path &out_path) {
+            let mut rng = rand::thread_rng();
+            return fauxrep_aux(rng, config, cache_path, out_path);
+        }
 
-pub fn fauxrep_aux<Rng : rand::Rng, R : AsRef<Path>, S : AsRef<Path>, Tree : 'static + MerkleTreeTrait, >(mut rng
-                                                                                                          : &mut Rng,
-                                                                                                            porep_config
-                                                                                                          : PoRepConfig,
-                                                                                                            cache_path
-                                                                                                          : R, out_path
-                                                                                                          : S, )
-    ->Result<Commitment> {
-    let sector_bytes = PaddedBytesAmount::from(porep_config) .0;
+        template<typename MerkleTreeType, typename UniformRandomGenerator>
+        commitment_type fauxrep_aux(UniformRandomGenerator &rng, const porep_config &config,
+                                    const boost::filesystem::path &cache_path,
+                                    const boost::filesystem::path &out_path) {
+            std::size_t sector_bytes = PaddedBytesAmount::from(config);
 
-    {
-        // Create a sector full of null bytes at `out_path`.
-        let file = File::create(&out_path) ? ;
-        file.set_len(sector_bytes) ? ;
-    }
+            {
+                // Create a sector full of null bytes at `out_path`.
+                let file = File::create(out_path);
+                file.set_len(sector_bytes);
+            }
 
-    let fake_comm_c = <Tree::Hasher as Hasher>::Domain::random(&mut rng);
-    let(comm_r, p_aux) = StackedDrg::<Tree, DefaultPieceHasher>::fake_replicate_phase2(
-        fake_comm_c, out_path, &cache_path, sector_bytes as usize, ) ?
-        ;
+            typename MerkleTreeType::hash_type::digest_type fake_comm_c = random(rng);
+            let(comm_r, p_aux) = StackedDrg<MerkleTreeType, DefaultPieceHasher>::fake_replicate_phase2(
+                fake_comm_c, out_path, cache_path, sector_bytes);
 
-    let p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
-    let mut f_p_aux =
-        File::create(&p_aux_path).with_context(|| format !("could not create file p_aux={:?}", p_aux_path)) ?
-        ;
-    let p_aux_bytes = serialize(&p_aux) ? ;
-    f_p_aux.write_all(&p_aux_bytes).with_context(|| format !("could not write to file p_aux={:?}", p_aux_path)) ? ;
+            let p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
+            let mut f_p_aux =
+                File::create(p_aux_path).with_context(|| format !("could not create file p_aux={:?}", p_aux_path));
+            let p_aux_bytes = serialize(p_aux);
+            f_p_aux.write_all(p_aux_bytes).with_context(|| format !("could not write to file p_aux={:?}", p_aux_path));
 
-    let mut commitment = [0u8; 32];
-    commitment[..].copy_from_slice(&comm_r.into_bytes()[..]);
-    Ok(commitment)
-}
+            std::array<std::uint8_t, 32> commitment;
+            commitment.fill(0);
+            commitment[..].copy_from_slice(&comm_r.into_bytes()[..]);
+            return commitment;
+        }
     }    // namespace filecoin
 }    // namespace nil
 
