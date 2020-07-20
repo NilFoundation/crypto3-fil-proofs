@@ -28,6 +28,8 @@
 
 #include <nil/filecoin/storage/proofs/core/sector.hpp>
 
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
+
 #include <nil/filecoin/proofs/types/bytes_amount.hpp>
 #include <nil/filecoin/proofs/types/piece_info.hpp>
 #include <nil/filecoin/proofs/types/porep_config.hpp>
@@ -61,8 +63,6 @@ namespace nil {
                                const boost::filesystem::path &sealed_path, const boost::filesystem::path &output_path,
                                prover_id_type prover_id, sector_id_type sector_id, const commitment_type &comm_d,
                                const ticket_type &ticket, unpadded_byte_index offset, unpadded_bytes_amount num_bytes) {
-            info !("get_unsealed_range:start");
-
             let f_in = File::open(&sealed_path)
                            .with_context(|| format !("could not open sealed_path={:?}", sealed_path.as_ref()));
 
@@ -71,11 +71,8 @@ namespace nil {
 
             let buf_f_out = BufWriter::new (f_out);
 
-            let result = unseal_range::<_, _, _, Tree>(porep_config, cache_path, f_in, buf_f_out, prover_id, sector_id,
-                                                       comm_d, ticket, offset, num_bytes, );
-
-            info !("get_unsealed_range:finish");
-            return result;
+            return unseal_range<MerkleTreeType>(config, cache_path, f_in, buf_f_out, prover_id, sector_id, comm_d,
+                                                ticket, offset, num_bytes);
         }
 
         /// Unseals the sector read from `sealed_sector` and returns the bytes for a
@@ -116,8 +113,8 @@ namespace nil {
             let mut data = Vec::new ();
             sealed_sector.read_to_end(&mut data);
 
-            let base_tree_size = get_base_tree_size<DefaultBinaryTree>(porep_config.sector_size) ? ;
-            let base_tree_leafs = get_base_tree_leafs<DefaultBinaryTree>(base_tree_size) ? ;
+            let base_tree_size = get_base_tree_size<DefaultBinaryTree>(config.sector_size);
+            let base_tree_leafs = get_base_tree_leafs<DefaultBinaryTree>(base_tree_size);
             // MT for original data is always named tree-d, and it will be
             // referenced later in the process as such.
             let config =
