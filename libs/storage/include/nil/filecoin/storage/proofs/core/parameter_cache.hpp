@@ -115,12 +115,12 @@ namespace nil {
             }
 
             cache_entry_metadata get_param_metadata(const C &circuit, const P &pub_params) {
-                let id = cache_identifier(pub_params);
+                std::string id = cache_identifier(pub_params);
 
                 // generate (or load) metadata
                 boost::filesystem::path meta_path = ensure_ancestor_dirs_exist(parameter_cache_metadata_path(&id));
-                read_cached_metadata(&meta_path)
-                    .or_else(| _ | write_cached_metadata(&meta_path, cache_meta(pub_params)))
+                read_cached_metadata(meta_path)
+                    .or_else(| _ | write_cached_metadata(&meta_path, cache_meta(pub_params)));
             }
 
             template<typename Bls12, typename UniformRandomGenerator>

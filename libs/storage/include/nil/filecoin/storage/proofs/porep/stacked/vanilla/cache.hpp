@@ -38,7 +38,7 @@
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
 
-#include <nil/filecoin/storage/proofs/parameter_cache.hpp>
+#include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/graph.hpp>
 
@@ -97,7 +97,7 @@ namespace nil {
                             return;
                         }
 
-                        shift(0)
+                        shift(0);
                     }
 
                     static CacheData open(std::uint32_t offset, std::uint32_t len,
@@ -231,19 +231,21 @@ namespace nil {
                 template<template<typename, typename> class StackedGraph, typename Hash, typename Graph,
                          typename FormatHash = crypto3::hashes::sha2<256>>
                 boost::filesystem::path cache_path(std::uint32_t cache_entries, StackedGraph<Hash, Graph> &graph) {
-                    crypto3::accumulator_set<FormatHash> acc;
-                    crypto3::hash<FormatHash>(FormatHash::name, acc);
-                    crypto3::hash<FormatHash>(graph.identifier(), acc);
+                    using namespace nil::crypto3;
+
+                    accumulator_set<FormatHash> acc;
+                    hash<FormatHash>(FormatHash::name, acc);
+                    hash<FormatHash>(graph.identifier(), acc);
 
                     for (auto key : graph.feistel_keys) {
-                        crypto3::hash<FormatHash>(key, acc);
+                        hash<FormatHash>(key, acc);
                     }
 
-                    crypto3::hash<FormatHash>(cache_entries, acc);
+                    hash<FormatHash>(cache_entries, acc);
 
-                    typename FormatHash::digest_type h = crypto3::accumulators::extract::hash<FormatHash>(acc);
+                    typename FormatHash::digest_type h = accumulators::extract::hash<FormatHash>(acc);
                     return boost::filesystem::path(parent_cache_dir_name() + "v" + VERSION + "-sdr-parent-" +
-                                                   crypto3::encode<codec::hex>(h) + ".cache");
+                                                   encode<codec::hex>(h) + ".cache");
                 }
             }    // namespace vanilla
         }        // namespace stacked
