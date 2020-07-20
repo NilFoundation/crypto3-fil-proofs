@@ -32,8 +32,13 @@
 
 #include <nil/crypto3/detail/pack.hpp>
 
+#include <nil/crypto3/codec/hex.hpp>
+#include <nil/crypto3/codec/algorithm/encode.hpp>
+
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
+
+#include <nil/filecoin/storage/proofs/parameter_cache.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/graph.hpp>
 
@@ -103,7 +108,7 @@ namespace nil {
                             || format !("could not open path={}", path.display())) ?
                             ;
 
-                        let actual_len = file.as_ref().metadata() ?.len();
+                        let actual_len = file.as_ref().metadata().len();
                         if (actual_len < min_cache_size) {
                             bail !("corrupted cache: {}, expected at least {}, got {} bytes",
                                    path.display(),
@@ -182,11 +187,10 @@ namespace nil {
                                 });
 
                             info !("parent cache: generated");
-                            data.flush().context("failed to flush parent cache") ? ;
+                            data.flush().context("failed to flush parent cache");
                             drop(data);
 
                             info !("parent cache: written to disk");
-                            Ok(())
                         });
 
                         return {CacheData::open(0, len, &path), path, cache_entries};
@@ -199,9 +203,7 @@ namespace nil {
                         }
 
                         // not in memory, shift cache
-                        ensure !(node >= self.cache.offset + self.cache.len,
-                                 "cache must be read in ascending order {} < {} + {}", node, self.cache.offset,
-                                 self.cache.len, );
+                        assert(("cache must be read in ascending order", node >= cache.offset + cache.len));
 
                         // Shift cache by its current size.
                         std::size_t new_offset = (num_cache_entries - cache.len).min(cache.offset + cache.len);
@@ -222,20 +224,26 @@ namespace nil {
                     CacheData cache;
                 };
 
-                template<template<typename, typename> class StackedGraph, typename Hash, typename Graph,
-                         typename FormatHash = crypto3::hash::sha2<256>>
-                boost::filesystem::path cache_path(std::uint32_t cache_entries, StackedGraph<Hash, Graph> &graph) {
-                    let mut hasher = Sha256::default();
+                std::string parent_cache_dir_name() {
+                    return settings::SETTINGS.lock().unwrap().parent_cache.clone();
+                }
 
-                    hasher.input(H::name());
-                    hasher.input(graph.identifier());
-                    for (key : graph.feistel_keys) {
-                        hasher.input(key.to_le_bytes());
+                template<template<typename, typename> class StackedGraph, typename Hash, typename Graph,
+                         typename FormatHash = crypto3::hashes::sha2<256>>
+                boost::filesystem::path cache_path(std::uint32_t cache_entries, StackedGraph<Hash, Graph> &graph) {
+                    crypto3::accumulator_set<FormatHash> acc;
+                    crypto3::hash<FormatHash>(FormatHash::name, acc);
+                    crypto3::hash<FormatHash>(graph.identifier(), acc);
+
+                    for (auto key : graph.feistel_keys) {
+                        crypto3::hash<FormatHash>(key, acc);
                     }
-                    hasher.input(cache_entries.to_le_bytes());
-                    let h = hasher.result();
-                    return PathBuf::from(PARENT_CACHE_DIR)
-                        .join(format !("v{}-sdr-parent-{}.cache", VERSION, hex::encode(h)))
+
+                    crypto3::hash<FormatHash>(cache_entries, acc);
+
+                    typename FormatHash::digest_type h = crypto3::accumulators::extract::hash<FormatHash>(acc);
+                    return boost::filesystem::path(parent_cache_dir_name() + "v" + VERSION + "-sdr-parent-" +
+                                                   crypto3::encode<codec::hex>(h) + ".cache");
                 }
             }    // namespace vanilla
         }        // namespace stacked

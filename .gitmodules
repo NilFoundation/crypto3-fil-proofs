@@ -34,3 +34,6 @@
 [submodule "libs/crypto/fft"]
 	path = libs/crypto/fft
 	url = git@github.com:nilfoundation/fft.git
+[submodule "libs/predef"]
+	path = libs/predef
+	url = git@github.com:nilfoundation/predef.git
