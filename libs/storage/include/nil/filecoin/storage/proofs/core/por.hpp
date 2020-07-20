@@ -74,13 +74,6 @@ namespace nil {
         };
 
         template<typename MerkleTreeType>
-        struct por {
-            typedef MerkleTreeType tree_type;
-
-            tree_type &_tree;
-        };
-
-        template<typename MerkleTreeType>
         class PoR
             : public proof_scheme<
                   public_params, setup_params, public_inputs<typename MerkleTreeType::hash_type::digest_type>,
@@ -107,12 +100,10 @@ namespace nil {
                 std::size_t challenge = inputs.challenge % params.leaves;
                 tree_type tree = pinputs.tree;
 
-                if (inputs.commitmenr != tree.root()) {
+                if (inputs.commitment != tree.root()) {
                     return false;
                 }
-
-                auto proof = tree.gen_proof(challenge);
-                return {proof, pinputs.leaf};
+                return {tree.gen_proof(challenge), pinputs.leaf};
             }
             virtual bool verify(const public_params_type &pub_params, const public_inputs_type &pub_inputs,
                                 const proof_type &pr) override {
@@ -120,15 +111,13 @@ namespace nil {
                 bool commitments_match = pub_inputs.commitment ? pub_inputs.commitment == pr.proof.root() : true;
 
                 std::size_t expected_path_length = pr.proof.expected_len(pub_params.leaves);
-                bool path_length_match = expected_path_length == pr.proof.path().len();
+                bool path_length_match = expected_path_length == pr.proof.path().size();
 
                 if (!commitments_match && path_length_match) {
                     return false;
                 }
-                bool data_valid = pr.proof.validate_data(pr.data);
-                bool path_valid = pr.proof.validate(pub_inputs.challenge);
 
-                return data_valid && path_valid;
+                return pr.proof.validate_data(pr.data) && pr.proof.validate(pub_inputs.challenge);
             }
         };
     }    // namespace filecoin
