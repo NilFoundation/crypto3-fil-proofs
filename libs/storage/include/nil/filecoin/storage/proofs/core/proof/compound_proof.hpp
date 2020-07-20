@@ -171,9 +171,8 @@ namespace nil {
              * @param pp
              * @return
              */
-            template<typename UniformRandomGenerator>
-            virtual groth16::mapped_params<Bls12> groth_params(UniformRandomGenerator &rng,
-                                                               const public_params_type &pp) {
+            template<typename UniformRandomGenerator, template<typename> class Groth16MappedParams>
+            virtual Groth16MappedParams<Bls12> groth_params(UniformRandomGenerator &rng, const public_params_type &pp) {
                 return get_groth_params(rng, blank_circuit(pp), pp);
             }
 
@@ -188,9 +187,9 @@ namespace nil {
              * @param pp
              * @return
              */
-            template<typename UniformRandomGenerator>
-            virtual groth16::verifying_key<Bls12> verifying_key(UniformRandomGenerator &rng,
-                                                                const public_params_type &pp) {
+            template<typename UniformRandomGenerator, template<typename> class Groth16VerifyingKey>
+            virtual Groth16VerifyingKey<Bls12> verifying_key(UniformRandomGenerator &rng,
+                                                             const public_params_type &pp) {
                 return get_verifying_key(rng, blank_circuit(pp), pp);
             }
         };

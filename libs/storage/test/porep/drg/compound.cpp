@@ -66,7 +66,7 @@ void drgporep_test_compound() {
     };
 
     let public_params =
-        DrgPoRepCompound<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
+        drg_porep_compound<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
 
     let data_tree : Option<BinaryMerkleTree<Tree::Hasher>> = None;
     let(tau, aux) = drg::DrgPoRep::<Tree::Hasher, BucketGraph<_>>::replicate(
@@ -102,11 +102,11 @@ void drgporep_test_compound() {
     };
 
     let public_params =
-        DrgPoRepCompound<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
+        drg_porep_compound<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
 
     {
         let(circuit, inputs) =
-            DrgPoRepCompound<Tree::Hasher, _>::circuit_for_test(&public_params, &public_inputs, &private_inputs, )
+            drg_porep_compound<Tree::Hasher, _>::circuit_for_test(&public_params, &public_inputs, &private_inputs, )
                 .unwrap();
 
         let mut cs = TestConstraintSystem::new ();
@@ -116,7 +116,7 @@ void drgporep_test_compound() {
         assert(cs.verify(&inputs));
 
         let blank_circuit =
-            <DrgPoRepCompound<_, _> as CompoundProof<_, _>>::blank_circuit(&public_params.vanilla_params, );
+            <drg_porep_compound<_, _> as CompoundProof<_, _>>::blank_circuit(&public_params.vanilla_params, );
 
         let mut cs_blank = MetricCS::new ();
         blank_circuit.synthesize(&mut cs_blank).expect("failed to synthesize blank circuit");
@@ -131,13 +131,13 @@ void drgporep_test_compound() {
     }
 
     {
-        let gparams = DrgPoRepCompound<Tree::Hasher>::groth_params(Some(rng), &public_params.vanilla_params, )
+        let gparams = drg_porep_compound<Tree::Hasher>::groth_params(Some(rng), &public_params.vanilla_params, )
                           .expect("failed to get groth params");
 
-        let proof = DrgPoRepCompound<Tree::Hasher>::prove(&public_params, &public_inputs, &private_inputs, &gparams, )
+        let proof = drg_porep_compound<Tree::Hasher>::prove(&public_params, &public_inputs, &private_inputs, &gparams, )
                         .expect("failed while proving");
 
-        let verified = DrgPoRepCompound<Tree::Hasher>::verify(&public_params, &public_inputs, &proof, &NoRequirements, )
+        let verified = drg_porep_compound<Tree::Hasher>::verify(&public_params, &public_inputs, &proof, &NoRequirements, )
                            .expect("failed while verifying");
 
         assert(verified);

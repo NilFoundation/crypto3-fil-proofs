@@ -68,8 +68,10 @@ namespace nil {
 
                 template<typename Domain>
                 struct PublicInputs {
+                    typedef Challenge challenge_type;
+
                     /// The challenges, which leafs to prove.
-                    std::vector<Challenge> challenges;
+                    std::vector<challenge_type> challenges;
                     ordered_sector_set faults;
                     std::vector<Domain> comm_rs;
                 };

@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_HASH_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_HASH_HPP
 
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+
 #include <boost/filesystem/path.hpp>
 
 #include <nil/crypto3/detail/pack.hpp>

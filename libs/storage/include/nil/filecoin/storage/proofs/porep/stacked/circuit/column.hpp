@@ -32,20 +32,20 @@ namespace nil {
     namespace filecoin {
         namespace stacked {
             namespace circuit {
-                template<template<typename> class AllocatedNum, typename Bls12>
+                template<template<typename> class AllocatedNumber, typename Bls12>
                 struct AllocatedColumn {
                     template<template<typename> class ConstraintSystem>
-                    AllocatedNum<Bls12> hash(const ConstraintSystem<Bls12> &cs) {
+                    AllocatedNumber<Bls12> hash(const ConstraintSystem<Bls12> &cs) {
                         hash_single_column(cs, rows);
                     }
 
-                    AllocatedNum<Bls12> get_value(std::size_t layer) {
+                    AllocatedNumber<Bls12> get_value(std::size_t layer) {
                         assert(("layers are 1 indexed", layer > 0));
                         assert(layer <= self.rows.len(), "layer {} out of range: 1..={}", layer, rows.size());
                         return rows[layer - 1];
                     }
 
-                    std::vector<AllocatedNum<Bls12>> rows;
+                    std::vector<AllocatedNumber<Bls12>> rows;
                 };
 
                 struct Column {
@@ -67,7 +67,7 @@ namespace nil {
                         let rows = rows.into_iter()
                                        .enumerate()
                                        .map(| (i, val) |
-                                            {num::AllocatedNum::alloc(
+                                            {num::AllocatedNumber::alloc(
                                                 cs.namespace(|| format !("column_num_row_{}", i)),
                                                 || {val.ok_or_else(|| SynthesisError::AssignmentMissing)})})
                                        .collect::<Result<Vec<_>, _>>() ?

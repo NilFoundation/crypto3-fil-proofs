@@ -49,17 +49,17 @@ namespace nil {
 
                         // 1. Verify comm_r
 
-                        let comm_r_last_num = num::AllocatedNum::alloc(
+                        let comm_r_last_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "comm_r_last"),
                             || {comm_r_last.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                             ;
 
-                        let comm_c_num = num::AllocatedNum::alloc(
+                        let comm_c_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "comm_c"),
                             || {comm_c.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                             ;
 
-                        let comm_r_num = num::AllocatedNum::alloc(
+                        let comm_r_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "comm_r"),
                             || {comm_r.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                             ;
@@ -88,19 +88,19 @@ namespace nil {
                         // 3. Verify partial ticket
 
                         // randomness
-                        let randomness_num = num::AllocatedNum::alloc(
+                        let randomness_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "randomness"),
                             || {randomness.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                             ;
 
                         // prover_id
-                        let prover_id_num = num::AllocatedNum::alloc(
+                        let prover_id_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "prover_id"),
                             || {prover_id.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                             ;
 
                         // sector_id
-                        let sector_id_num = num::AllocatedNum::alloc(
+                        let sector_id_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "sector_id"),
                             || {sector_id.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                             ;
@@ -108,7 +108,7 @@ namespace nil {
                         let mut partial_ticket_nums = vec ![ randomness_num, prover_id_num, sector_id_num ];
                         for (i, leaf)
                             in leafs.iter().enumerate() {
-                                let leaf_num = num::AllocatedNum::alloc(
+                                let leaf_num = num::AllocatedNumber::alloc(
                                     cs.namespace(|| format !("leaf_{}", i)),
                                     || {leaf.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                                     ;
@@ -118,7 +118,7 @@ namespace nil {
                         // pad to a multiple of md arity
                         let arity = PoseidonMDArity::to_usize();
                         while (partial_ticket_nums.size() % arity) {
-                                partial_ticket_nums.push(num::AllocatedNum::alloc(
+                                partial_ticket_nums.push(num::AllocatedNumber::alloc(
                                     cs.namespace(|| format!("padding_{}", partial_ticket_nums.len())),
                                 || Ok(Fr::zero()),
                                 )?);
@@ -130,7 +130,7 @@ namespace nil {
                             ;
 
                         // allocate expected input
-                        let expected_partial_ticket_num = num::AllocatedNum::alloc(
+                        let expected_partial_ticket_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "partial_ticket"),
                             || {partial_ticket.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                             ;

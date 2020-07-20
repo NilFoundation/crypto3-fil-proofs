@@ -256,6 +256,8 @@ namespace nil {
 
                 template<typename T, typename S>
                 struct PublicInputs {
+                    typedef std::size_t challenge_type;
+
                     std::vector<std::size_t> challenges(const LayerChallenges &layer_challenges, std::size_t leaves,
                                                         std::size_t partition_k) {
                         let k = partition_k.unwrap_or(0);

@@ -49,7 +49,7 @@ namespace nil {
         }
 
         // Produces a BLAKE2b checksum for a file within the cache
-        template<typename FileHash>
+        template<typename FileHash = crypto3::hashes::blake2b>
         std::string get_digest_for_file_within_cache(const std::string &filename) {
             boost::filesystem::path path = get_full_path_for_file_within_cache(filename);
             let mut file = File::open(&path).with_context(|| format !("could not open path={:?}", path));
@@ -138,8 +138,7 @@ namespace nil {
             std::vector<std::string> chosen_filenames;
 
             while (first != last) {
-                std::size_t sector_size =
-                    lookup(*first).with_context(|| format !("no sector size found for filename {}", *first));
+                std::size_t sector_size = lookup(*first);
 
                 std::string msg = format !("(sector size: {}B) {}", sector_size, *first);
 

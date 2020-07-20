@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include <nil/filecoin/proofs/parameters.hpp>
+
 namespace nil {
     namespace filecoin {
         template<typename Bls12>
@@ -61,13 +63,13 @@ namespace nil {
         inline typename std::enable_if<std::is_same<typename UnaryPredicate::result_type, Bls12GrothParams>::value,
                                        Bls12GrothParams>::type
             lookup_verifying_key(const std::string &identifier, UnaryPredicate generator) {
-            let vk_identifier = format !("{}-verifying-key", &identifier);
+            std::strgin vk_identifier = identifier + "-verifying-key";
             cache_lookup(&*VERIFYING_KEY_MEMORY_CACHE, vk_identifier, generator)
         }
 
         template<typename MerkleTreeType>
         Bls12GrothParams &stacked_params(const porep_config &config) {
-            let public_params = public_params<MerkleTreeType>(
+            stacked::vanilla::PublicParams<MerkleTreeType> public_params = public_params<MerkleTreeType>(
                 PaddedBytesAmount::from(config), PoRepProofPartitions::from(config), porep_config.porep_id);
 
             let parameters_generator = || {<StackedCompound<MerkleTreeType, DefaultPieceHasher>
@@ -81,7 +83,7 @@ namespace nil {
         template<typename MerkleTreeType>
         Bls12GrothParams &get_post_params(const post_config &config) {
             if (config.typ == PoStType::Winning) {
-                let post_public_params = winning_post_public_params<MerkleTreeType>(config);
+                WinningPostPublicParams post_public_params = winning_post_public_params<MerkleTreeType>(config);
 
                 let parameters_generator =
                     || {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<
@@ -92,7 +94,7 @@ namespace nil {
                 return lookup_groth_params(format !("WINNING_POST[{}]", config.padded_sector_size()),
                                            parameters_generator);
             } else if (config.typ == PoStType::Window) {
-                let post_public_params = window_post_public_params<MerkleTreeType>(config);
+                WindowPostPublicParams post_public_params = window_post_public_params<MerkleTreeType>(config);
 
                 let parameters_generator =
                     || {<fallback::FallbackPoStCompound<Tree> as CompoundProof<
@@ -107,8 +109,8 @@ namespace nil {
 
         template<typename MerkleTreeType>
         Bls12VerifyingKey &get_stacked_verifying_key(const porep_config &config) {
-            let public_params = public_params(PaddedBytesAmount::from(porep_config),
-                                              PoRepProofPartitions::from(porep_config), porep_config.porep_id);
+            stacked::vanilla::PublicParams<MerkleTreeType> public_params = public_params(
+                PaddedBytesAmount::from(porep_config), PoRepProofPartitions::from(porep_config), porep_config.porep_id);
 
             let vk_generator =
                 || {<StackedCompound<Tree, DefaultPieceHasher> as CompoundProof<
@@ -122,7 +124,7 @@ namespace nil {
         template<typename MerkleTreeType>
         Bls12VerifyingKey &get_post_verifying_key(const porep_config &config) {
             if (config.typ == PoStType::Winning) {
-                let post_public_params = winning_post_public_params::<MerkleTreeType>(config) ? ;
+                WinningPostPublicParams post_public_params = winning_post_public_params<MerkleTreeType>(config);
 
                 let vk_generator =
                     || {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<
@@ -133,7 +135,7 @@ namespace nil {
                 return lookup_verifying_key(format !("WINNING_POST[{}]", post_config.padded_sector_size()),
                                             vk_generator);
             } else if (config.typ == PoStType::Window) {
-                let post_public_params = window_post_public_params<MerkleTreeType>(config);
+                WindowPostPublicParams post_public_params = window_post_public_params<MerkleTreeType>(config);
 
                 let vk_generator =
                     || {<fallback::FallbackPoStCompound<MerkleTreeType> as CompoundProof<

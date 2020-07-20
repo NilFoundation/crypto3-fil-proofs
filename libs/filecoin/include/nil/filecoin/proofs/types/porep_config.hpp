@@ -26,6 +26,8 @@
 #ifndef FILECOIN_PROOFS_TYPES_POREP_CONFIG_HPP
 #define FILECOIN_PROOFS_TYPES_POREP_CONFIG_HPP
 
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+
 #include <boost/filesystem/path.hpp>
 
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
