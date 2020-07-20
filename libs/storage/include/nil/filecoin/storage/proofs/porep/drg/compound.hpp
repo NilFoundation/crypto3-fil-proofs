@@ -94,8 +94,8 @@ namespace nil {
 
                             public_inputs por_pub_inputs = {comm_d, challenge};
 
-                            let por_inputs = PoRCompound::<BinaryMerkleTree<hash_type>>::generate_public_inputs(
-                                &por_pub_inputs, &por_pub_params, None);
+                            let por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
+                                por_pub_inputs, por_pub_params, None);
                             input.extend(por_inputs);
                         }
                         return input;
@@ -118,7 +118,7 @@ namespace nil {
                         let replica_nodes_paths
                             : Vec<_> = proof.replica_nodes.iter().map(| node | node.proof.as_options()).collect();
 
-                        let is_private = public_params.private;
+                        bool is_private = public_params.priv;
 
                         let(data_root, replica_root) = if is_private {
                 (
@@ -175,7 +175,7 @@ namespace nil {
                         std::size_t degree = public_params.graph.degree();
                         std::size_t arity = 2;
 
-                        let challenges_count = public_params.challenges_count;
+                        std::size_t challenges_count = public_params.challenges_count;
 
                         let replica_nodes = vec ![None; challenges_count];
                         let replica_nodes_paths =
