@@ -77,13 +77,13 @@ namespace nil {
                     auth_path_bits.extend_from_slice(&index_bits);
 
                     // Witness the authentication path elements adjacent at this depth.
-                    let path_hash_nums =
-                        path_hashes.iter()
-                            .enumerate()
-                            .map(| (i, elt) |
-                                 {num::AllocatedNum::alloc(cs.namespace(|| format !("path element {}", i)),
-                                                           || {elt.ok_or_else(|| SynthesisError::AssignmentMissing)})})
-                            .collect::<Result<Vec<_>, _>>() ?
+                    let path_hash_nums = path_hashes.iter()
+                                             .enumerate()
+                                             .map(| (i, elt) |
+                                                  {num::AllocatedNumber::alloc(
+                                                      cs.namespace(|| format !("path element {}", i)),
+                                                      || {elt.ok_or_else(|| SynthesisError::AssignmentMissing)})})
+                                             .collect::<Result<Vec<_>, _>>() ?
                         ;
 
                     let inserted = insert(cs, &cur, &index_bits, &path_hash_nums) ? ;
@@ -194,7 +194,7 @@ namespace nil {
             SubPath<Hash, TopTreeArity> top;
         };
 
-        template<typename MerkleTreeType, typename Bls12>
+        template<typename MerkleTreeType, template<typename> class Circuit, typename Bls12>
         struct PoRCircuit : public cacheable_parameters<Circuit<Bls12>, ParameterSetMetadata>, public Circuit<Bls12> {
             /// # Public Inputs
             ///

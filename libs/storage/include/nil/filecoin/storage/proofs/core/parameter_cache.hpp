@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_PARAMETER_CACHE_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_PARAMETER_CACHE_HPP
 
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+
 #include <boost/filesystem/path.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>

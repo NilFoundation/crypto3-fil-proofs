@@ -101,7 +101,7 @@ namespace nil {
                             // -- verify initial data layer
 
                             // PrivateInput: data_leaf
-                            let data_leaf_num = num::AllocatedNum::alloc(
+                            let data_leaf_num = num::AllocatedNumber::alloc(
                                 cs.namespace(|| "data_leaf"),
                                 || {data_leaf.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                                 ;

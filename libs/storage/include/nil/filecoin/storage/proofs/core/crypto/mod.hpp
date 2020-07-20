@@ -31,16 +31,14 @@
 
 namespace nil {
     namespace filecoin {
-        using namespace nil::crypto3;
-
         typedef const char *domain_separation_tag;
 
         constexpr static domain_separation_tag DRSAMPLE_DST = "Filecoin_DRSample";
         constexpr static domain_separation_tag FEISTEL_DST = "Filecoin_Feistel";
 
-        template<typename PoRepIDIterator, typename OutputIterator>
+        template<typename PoRepIDIterator, typename OutputIterator, typename SeedHash = crypto3::hashes::sha2<256>>
         OutputIterator derive_porep_domain_seed(PoRepIDIterator first, PoRepIDIterator last, OutputIterator out) {
-            return hash<hashes::sha2<256>>(hash<hashes::sha2<256>>(first, last), out);
+            return crypto3::hash<SeedHash>(crypto3::hash<SeedHash>(first, last), out);
         }
     }    // namespace filecoin
 }    // namespace nil

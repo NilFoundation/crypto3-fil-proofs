@@ -27,6 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_DRG_COMPOUND_HPP
 
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
+#include <nil/filecoin/storage/proofs/core/por.hpp>
 #include <nil/filecoin/storage/proofs/core/proof/compound_proof.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/drg/vanilla.hpp>
@@ -60,8 +61,8 @@ namespace nil {
                     std::vector<Fr> generate_public_inputs(const public_inputs_type &pub_in,
                                                            const public_params_type &pub_params,
                                                            std::size_t k = std::size_t()) {
-                        let replica_id = pub_in.replica_id.context("missing replica id") ? ;
-                        let challenges = &pub_in.challenges;
+                        let replica_id = pub_in.replica_id.context("missing replica id");
+                        std::vector<typename public_inputs_type::challenge_type> challenges = pub_in.challenges;
 
                         assert(("Public input parameter tau must be unset", pub_in.tau.is_none() == pub_params.priv));
 
@@ -72,32 +73,26 @@ namespace nil {
 
                         std::size_t leaves = pub_params.graph.size();
 
-                        por::PublicParams por_pub_params {leaves, pub_params.priv};
+                        public_params por_pub_params = {leaves, pub_params.priv};
 
                         std::vector<Fr> input;
                         input.push_back(replica_id.into());
 
                         std::vector<typename Hash::digest_type> parents(pub_params.graph.degree());
-                        for (challenge : challenges) {
-                            let mut por_nodes = vec ![*challenge as u32];
-                            pub_params.graph.parents(*challenge, &mut parents) ? ;
+                        for (const typename public_inputs_type::challenge_type &challenge : challenges) {
+                            std::vector<std::uint32_t> por_nodes = static_cast<std::uint32_t>(challenge);
+                            pub_params.graph.parents(*challenge, &mut parents);
                             por_nodes.extend_from_slice(&parents);
 
-                            for (node : por_nodes) {
-                                let por_pub_inputs = por::PublicInputs {
-                                    commitment : comm_r,
-                                    challenge : node as usize,
-                                };
-                                let por_inputs = PoRCompound::<BinaryMerkleTree<hash_type>>::generate_public_inputs(
+                            for (const std::uint32_t node : por_nodes) {
+                                public_inputs por_pub_inputs = {comm_r, node};
+                                let por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
                                     &por_pub_inputs, &por_pub_params, None);
 
                                 input.extend(por_inputs);
                             }
 
-                            let por_pub_inputs = por::PublicInputs {
-                                commitment : comm_d,
-                                challenge : *challenge,
-                            };
+                            public_inputs por_pub_inputs = {comm_d, challenge};
 
                             let por_inputs = PoRCompound::<BinaryMerkleTree<hash_type>>::generate_public_inputs(
                                 &por_pub_inputs, &por_pub_params, None);

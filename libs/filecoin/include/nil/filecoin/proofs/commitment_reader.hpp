@@ -52,7 +52,7 @@ namespace nil {
                 typename DefaultPieceHasher::digest_type finish() {
                     assert(("not enough inputs provided", buffer_pos == 0));
 
-                    let CommitmentReader {current_tree, ..} = self;
+                    let CommitmentReader<R> {current_tree, ..} = self;
 
                     let mut current_row = current_tree;
 
@@ -70,12 +70,12 @@ namespace nil {
                 }
 
                 void read(std::vector<std::uint8_t> &buf) {
-                    let start = buffer_pos;
-                    let left = 64 - buffer_pos;
-                    let end = start + std::min(left, buf.size());
+                    std::size_t start = buffer_pos;
+                    std::size_t left = 64 - buffer_pos;
+                    std::size_t end = start + std::min(left, buf.size());
 
                     // fill the buffer as much as possible
-                    let r = source.read(&mut self.buffer[start..end]) ? ;
+                    let r = source.read(&mut self.buffer[start..end]);
 
                     // write the data, we read
                     buf[..r].copy_from_slice(&buffer[start..start + r]);
@@ -85,7 +85,7 @@ namespace nil {
                     // try to hash
                     try_hash();
 
-                    Ok(r)
+                    return r;
                 }
 
                 R source;

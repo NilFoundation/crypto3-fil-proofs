@@ -51,8 +51,10 @@ namespace nil {
 
                 template<typename Domain>
                 struct PublicInputs {
+                    typedef std::size_t challenge_type;
+
                     Domain replica_id;
-                    std::vector<std::size_t> challenges;
+                    std::vector<challenge_type> challenges;
                     Tau<Domain> tau;
                 };
 

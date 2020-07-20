@@ -29,6 +29,12 @@
 #include <vector>
 #include <string>
 
+#include <boost/multiprecision/cpp_int.hpp>
+
+#include <nil/crypto3/detail/pack_numeric.hpp>
+
+#include <nil/crypto3/hash/sha2.hpp>
+
 namespace nil {
     namespace filecoin {
         namespace stacked {
@@ -46,33 +52,34 @@ namespace nil {
                         return derive_internal(max_count, leaves, replica_id, seed, k);
                     }
 
-                    template<typename Domain>
+                    template<typename Domain, typename ChallengeHasher = crypto3::hashes::sha2<256>>
                     std::vector<std::size_t> derive_internal(std::size_t challenges_count, std::size_t leaves,
                                                              Domain &replica_id,
                                                              const std::array<std::uint8_t, 32> &seed, std::uint8_t k) {
                         assert(("Too few leaves", leaves > 2));
 
-                        (0..challenges_count)
-                            .map(| i |
-                                 {
-                                     let j : u32 = ((challenges_count * k as usize) + i) as u32;
+                        std::vector<std::size_t> result;
 
-                                     let hash = Sha256::new ()
-                                                    .chain(replica_id.into_bytes())
-                                                    .chain(seed)
-                                                    .chain(&j.to_le_bytes())
-                                                    .result();
+                        for (int i = 0; i < challenges_count; i++) {
+                            std::uint32_t j = ((challenges_count * k) + i);
 
-                                     let big_challenge = BigUint::from_bytes_le(hash.as_ref());
+                            crypto3::accumulator_set<ChallengeHasher> acc;
 
-                                     // We cannot try to prove the first node, so make sure the challenge
-                                     // can never be 0.
-                                     let big_mod_challenge = big_challenge % (leaves - 1);
-                                     let big_mod_challenge = big_mod_challenge.to_usize().expect(
-                                         "`big_mod_challenge` exceeds size of `usize`");
-                                     big_mod_challenge + 1
-                                 })
-                            .collect()
+                            crypto3::hash<ChallengeHasher>(replica_id, acc);
+                            crypto3::hash<ChallengeHasher>(seed, acc);
+                            crypto3::hash<ChallengeHasher>(j, acc);
+
+                            typename ChallengeHasher::digest_type hash =
+                                crypto3::accumulators::extract::hash<ChallengeHasher>(acc);
+
+                            boost::endian::native_to_little_inplace(hash);
+                            boost::multiprecision::cpp_int big_challenge;
+                            boost::multiprecision::import_bits(big_challenge, hash);
+
+                            result.push_back(static_cast<std::size_t>(big_challenge % (leaves - 1)) + 1);
+                        }
+
+                        return result;
                     }
                 };
 

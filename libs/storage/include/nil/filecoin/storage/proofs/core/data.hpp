@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_DATA_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_DATA_HPP
 
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+
 #include <boost/filesystem/path.hpp>
 
 #include <boost/interprocess/file_mapping.hpp>

@@ -81,7 +81,7 @@ namespace nil {
         };
 
         template<typename MerkleTreeType>
-        class por_proof_scheme
+        class PoR
             : public proof_scheme<
                   public_params, setup_params, public_inputs<typename MerkleTreeType::hash_type::digest_type>,
                   private_inputs<MerkleTreeType>, data_proof<typename MerkleTreeType::proof_type>, no_requirements> {
