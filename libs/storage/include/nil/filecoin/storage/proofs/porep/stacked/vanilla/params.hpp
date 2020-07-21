@@ -66,10 +66,10 @@ namespace nil {
                     typedef typename tree_type::hash_type hash_type;
 
                     std::string identifier() {
-                        return format !("layered_drgporep::PublicParams{{ graph: {}, challenges: {:?}, tree: {} }}",
-                                        graph.identifier(),
-                                        layer_challenges,
-                                        MerkleTreeType::display());
+                        return std::string("layered_drgporep::PublicParams{{ graph:") +
+                               std::to_string(graph.identifier()) +
+                               ", challenges: " + std::to_string(layer_challenges) +
+                               ", tree: " + std::to_string(MerkleTreeType::display()) + "}}";
                     }
 
                     std::uint64_t sector_size() {
@@ -118,7 +118,7 @@ namespace nil {
                         let config = labels[row_index].clone();
                         assert(config.size.is_some());
 
-                        DiskStore::new_from_disk(config.size.unwrap(), Tree::Arity::to_usize(), &config)
+                        DiskStore::new_from_disk(config.size.unwrap(), MerkleTreeType::Arity, &config)
                     }
 
                     /// Returns label for the last layer.
@@ -525,19 +525,19 @@ namespace nil {
                                      std::uint32_t>::value,
                         bool>::type
                         verify(std::size_t challenge, const InputParentsRange &parents) {
-                        let expected_comm_c = c_x.root();
+                        typename MerkleProofType::tree_type::hash_type::digest_type expected_comm_c = c_x.root();
 
                         trace !("  verify c_x");
-                        check !(c_x.verify(challenge, &expected_comm_c));
+                        assert((c_x.verify(challenge, &expected_comm_c)));
 
                         trace !("  verify drg_parents");
                         for ((proof, parent) : drg_parents.iter().zip(parents.iter())) {
-                            check !(proof.verify(*parent, &expected_comm_c));
+                            assert((proof.verify(parent, expected_comm_c)));
                         }
 
                         trace !("  verify exp_parents");
                         for ((proof, parent) : exp_parents.iter().zip(parents.iter().skip(drg_parents.size()))) {
-                            check !(proof.verify(*parent, &expected_comm_c));
+                            assert((proof.verify(parent, expected_comm_c)));
                         }
                     }
 
