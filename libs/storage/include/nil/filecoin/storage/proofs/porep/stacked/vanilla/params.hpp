@@ -123,7 +123,7 @@ namespace nil {
 
                     /// Returns label for the last layer.
                     DiskStore<typename MerkleTreeType::hash_type::digest_type> labels_for_last_layer() {
-                        return labels_for_layer(labels.len() - 1);
+                        return labels_for_layer(labels.size() - 1);
                     }
 
                     /// How many layers are available.
@@ -224,15 +224,15 @@ namespace nil {
 
                         if (cached(&t_aux.tree_c_config)) {
                             delete_tree_c_store(&t_aux.tree_c_config, tree_c_size);
-                        } else if (cached(&configs[0])) {
+                        } else if (cached(configs[0])) {
                             for (const StoreConfig &config : configs) {
                                 // Trees with sub-trees cannot be instantiated and deleted via the existing tree
                                 // interface since knowledge of how the base trees are split exists outside of merkle
                                 // light.  For now, we manually remove each on disk tree file since we know where they
                                 // are here.
-                                boost::filesystem::path tree_c_path = StoreConfig::data_path(&config.path, &config.id);
-                                remove_file(&tree_c_path)
-                                    .with_context(|| format !("Failed to delete {:?}", &tree_c_path));
+                                boost::filesystem::path tree_c_path = StoreConfig::data_path(config.path, config.id);
+                                remove_file(tree_c_path)
+                                    .with_context(|| format !("Failed to delete {:?}", tree_c_path));
                             }
                         }
                         trace !("tree c deleted");
