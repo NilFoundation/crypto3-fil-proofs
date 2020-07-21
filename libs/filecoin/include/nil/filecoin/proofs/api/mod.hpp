@@ -160,17 +160,16 @@ namespace nil {
 
             let result = measure_op(
                 Operation::GeneratePieceCommitment, || {
-                    ensure_piece_size(piece_size) ? ;
+                    ensure_piece_size(piece_size);
 
                     // send the source through the preprocessor
                     let source = std::io::BufReader::new (source);
                     let mut fr32_reader = crate::fr32_reader::Fr32Reader::new (source);
 
                     let commitment = generate_piece_commitment_bytes_from_source::<DefaultPieceHasher>(
-                        &mut fr32_reader, PaddedBytesAmount::from(piece_size).into(), ) ?
-                        ;
+                        fr32_reader, PaddedBytesAmount::from(piece_size).into());
 
-                    PieceInfo::new (commitment, piece_size)
+                    return PieceInfo(commitment, piece_size);
                 });
 
             info !("generate_piece_commitment:finish");

@@ -90,14 +90,14 @@ namespace nil {
 
                     // MT for original data is always named tree-d, and it will be
                     // referenced later in the process as such.
-                    let mut config = StoreConfig::new (cache_path.as_ref(), CacheKey::CommDTree.to_string(),
-                                                       default_rows_to_discard(base_tree_leafs, BINARY_ARITY));
+                    StoreConfig config = StoreConfig(cache_path.as_ref(), CacheKey::CommDTree.to_string(),
+                                                     default_rows_to_discard(base_tree_leafs, BINARY_ARITY));
                     BinaryMerkleTree<DefaultPieceHasher> data_tree =
                         create_base_merkle_tree<BinaryMerkleTree<DefaultPieceHasher>>(Some(config.clone()),
                                                                                       base_tree_leafs, &data);
                     drop(data);
 
-                    config.size = Some(data_tree.size());
+                    config.size = data_tree.size();
                     Fr comm_d_root = data_tree.root().into();
                     commitment_type comm_d = commitment_from_fr(comm_d_root);
 
@@ -270,7 +270,7 @@ namespace nil {
 
             assert(("Invalid vanilla proof generated", sanity_check));
 
-            SealCommitPhase1Output out = {vanilla_proofs, comm_r, comm_d, replica_id, seed, ticket};
+            SealCommitPhase1Output<MerkleTreeType> out = {vanilla_proofs, comm_r, comm_d, replica_id, seed, ticket};
 
             info !("seal_commit_phase1:finish");
             return out;
@@ -283,9 +283,7 @@ namespace nil {
                                             sector_id_type sector_id) {
             info !("seal_commit_phase2:start");
 
-            let SealCommitPhase1Output {
-                vanilla_proofs, comm_d, comm_r, replica_id, seed, ticket,
-            } = phase1_output;
+            let SealCommitPhase1Output {vanilla_proofs, comm_d, comm_r, replica_id, seed, ticket} = phase1_output;
 
             assert(("Invalid all zero commitment (comm_d)",
                     !std::accumulate(comm_d.begin(), comm_d.end(), false,
