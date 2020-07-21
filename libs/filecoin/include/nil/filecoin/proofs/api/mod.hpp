@@ -337,13 +337,12 @@ namespace nil {
                     }
                 }
 
-                ensure !(configs.len() == required_configs, "Missing store file (or associated split paths): {}",
-                         store_path.display());
+                assert(("Missing store file (or associated split paths)", configs.size() == required_configs));
 
                 std::size_t store_len = config.size.unwrap();
                 for (const StoreConfig &config : configs) {
                     assert(LevelCacheStore::<DefaultPieceDomain, std::fs::File>::is_consistent(
-                        store_len, Tree::Arity::to_usize(), &config));
+                        store_len, MerkleTreeType::Arity, &config));
                 }
             } else {
                 assert(LevelCacheStore::<DefaultPieceDomain, std::fs::File>::is_consistent(
@@ -358,8 +357,7 @@ namespace nil {
             const seal_precommit_phase1_output<MerkleTreeType> &seal_precommit_phase1_output) {
             info !("validate_cache_for_precommit_phase2:start");
 
-            ensure !(replica_path.as_ref().exists(), "Missing replica: {}",
-                     replica_path.as_ref().to_path_buf().display());
+            assert(("Missing replica", replica_path.as_ref().exists()));
 
             // Verify all stores/labels within the Labels object, but
             // respecting the current cache_path.
