@@ -434,7 +434,9 @@ namespace nil {
                     typedef MerkleTreeType tree_type;
                     typedef typename tree_type::hash_type tree_hash_type;
 
-                    MerkleProof<hash_type, typenum::U2> comm_d_proofs;
+                    MerkleProof<hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
+                                MerkleTreeType::TopTreeArity>
+                        comm_d_proofs;
                     MerkleProof<tree_hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
                                 MerkleTreeType::TopTreeArity>
                         comm_r_last_proof;
