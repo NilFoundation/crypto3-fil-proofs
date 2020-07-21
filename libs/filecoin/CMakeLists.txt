@@ -37,9 +37,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
 include(CMConfig)
 include(CMSetupVersion)
 
-if(NOT CMAKE_WORKSPACE_NAME)
-    cm_workspace(nil)
-endif()
+cm_workspace(filecoin)
 
 macro(cm_find_package NAME)
     if(NOT "${NAME}" MATCHES "^${CMAKE_WORKSPACE_NAME}_.*$" AND NOT "${NAME}" STREQUAL CM)
@@ -53,7 +51,7 @@ cm_find_package(CM)
 include(CMDeploy)
 include(CMSetupVersion)
 
-cm_project(filecoin-proofs WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
+cm_project(proofs WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 
 option(BUILD_DOXYGEN_DOCS "Build with configuring Doxygen documentation compiler" TRUE)
 
@@ -62,7 +60,14 @@ set(DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_LIST_DIR}/docs" CACHE STRING "Specify do
 list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_HEADERS
      )
 
-list(APPEND ${CURRENT_PROJECT_NAME}_UNGROUPED_SOURCES)
+list(APPEND ${CURRENT_PROJECT_NAME}_UNGROUPED_SOURCES
+     src/api/mod.cpp
+     src/api/post.cpp
+     src/api/seal.cpp
+
+     src/param.cpp
+     src/pieces.cpp
+     )
 
 list(APPEND ${CURRENT_PROJECT_NAME}_HEADERS
      ${${CURRENT_PROJECT_NAME}_PUBLIC_HEADERS}
@@ -73,18 +78,23 @@ list(APPEND ${CURRENT_PROJECT_NAME}_SOURCES
 
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
-add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE)
+add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+            ${${CURRENT_PROJECT_NAME}_HEADERS}
+            ${${CURRENT_PROJECT_NAME}_SOURCES})
 
 set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
-                      EXPORT_NAME ${CURRENT_PROJECT_NAME})
+                      EXPORT_NAME filcrypto
+                      LINKER_LANGUAGE CXX
+                      CXX_STANDARD 14
+                      CXX_STANDARD_REQUIRED TRUE)
 
-target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PRIVATE
 
-                      ${CMAKE_WORKSPACE_NAME}::storage-proofs
+                      ${CMAKE_WORKSPACE_NAME}::storage_proofs
 
                       ${Boost_LIBRARIES})
 
-target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
+target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PRIVATE
                            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
                            "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
 

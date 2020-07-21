@@ -27,13 +27,13 @@ add_executable(${CURRENT_PROJECT_NAME}
 set_target_properties(${CURRENT_PROJECT_NAME} PROPERTIES
                       LINKER_LANGUAGE CXX
                       EXPORT_NAME ${CURRENT_PROJECT_NAME}
-                      CXX_STANDARD 17
+                      CXX_STANDARD 14
                       CXX_STANDARD_REQUIRED TRUE)
 
 target_link_libraries(${CURRENT_PROJECT_NAME}
 
-                      ${CMAKE_WORKSPACE_NAME}::filecoin-proofs
-                      ${CMAKE_WORKSPACE_NAME}::storage-proofs
+                      ${CMAKE_WORKSPACE_NAME}::proofs
+                      ${CMAKE_WORKSPACE_NAME}::storage_proofs
 
                       ${Boost_LIBRARIES})
 

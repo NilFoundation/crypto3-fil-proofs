@@ -128,13 +128,7 @@ namespace nil {
         /// The minimal information required about a replica, in order to be able to verify
         /// a PoSt over it.
         struct PublicReplicaInfo {
-            PublicReplicaInfo(const commitment_type &comm_r) {
-                assert(("Invalid all zero commitment (comm_r)",
-                        !std::accumulate(comm_r.begin(), comm_r.end(), false,
-                                         [&](bool state, typename commitment_type::value_type &v) -> bool {
-                                             return state * (v != 0);
-                                         })));
-            }
+            PublicReplicaInfo(const commitment_type &comm_r);
 
             template<typename Domain>
             Domain safe_comm_r() const {
@@ -286,7 +280,7 @@ namespace nil {
 
             let verifying_key = get_post_verifying_key<MerkleTreeType>(config);
 
-            let proof = MultiProof::new_from_reader(None, &proof[..], &verifying_key);
+            MultiProof proof = MultiProof::new_from_reader(None, &proof[..], &verifying_key);
             if (proof.size() != 1) {
                 return false;
             }
@@ -418,15 +412,7 @@ namespace nil {
         }
 
         boost::optional<std::size_t> get_partitions_for_window_post(std::size_t total_sector_count,
-                                                                    const post_config &config) {
-            std::size_t partitions = std::ceil(total_sector_count / config.sector_count);
-
-            if (partitions > 1) {
-                return boost::optional<std::size_t>(partitions);
-            } else {
-                return boost::optional<std::size_t>();
-            }
-        }
+                                                                    const post_config &config);
     }    // namespace filecoin
 }    // namespace nil
 

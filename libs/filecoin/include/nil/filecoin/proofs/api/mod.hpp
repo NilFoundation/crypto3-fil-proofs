@@ -110,22 +110,21 @@ namespace nil {
             replica_id_type replica_id = generate_replica_id<typename MerkleTreeType::hash_type>(
                 prover_id, sector_id, ticket, comm_d, config.porep_id);
 
-            let mut data = Vec::new ();
+            std::vector<std::uint8_t> data;
             sealed_sector.read_to_end(&mut data);
 
-            let base_tree_size = get_base_tree_size<DefaultBinaryTree>(config.sector_size);
-            let base_tree_leafs = get_base_tree_leafs<DefaultBinaryTree>(base_tree_size);
+            std::size_t base_tree_size = get_base_tree_size<DefaultBinaryTree>(config.sector_size);
+            std::size_t base_tree_leafs = get_base_tree_leafs<DefaultBinaryTree>(base_tree_size);
             // MT for original data is always named tree-d, and it will be
             // referenced later in the process as such.
-            let config =
-                StoreConfig::new (cache_path.as_ref(), CacheKey::CommDTree.to_string(),
-                                  default_rows_to_discard(
-                                      base_tree_leafs, <DefaultBinaryTree as MerkleTreeTrait>::Arity::to_usize(), ), );
-            let pp = public_params(PaddedBytesAmount::from(porep_config),
-                                   usize::from(PoRepProofPartitions::from(porep_config)), porep_config.porep_id);
+            let config = StoreConfig::new (
+                cache_path.as_ref(), CacheKey::CommDTree.to_string(),
+                default_rows_to_discard(base_tree_leafs, <DefaultBinaryTree as MerkleTreeTrait>::Arity));
+            let pp = public_params(PaddedBytesAmount::from(config), usize::from(PoRepProofPartitions::from(config)),
+                                   config.porep_id);
 
-            let offset_padded : PaddedBytesAmount = UnpaddedBytesAmount::from(offset).into();
-            let num_bytes_padded : PaddedBytesAmount = num_bytes.into();
+            padded_bytes_amount offset_padded = unpadded_bytes_amount::from(offset);
+            padded_bytes_amount num_bytes_padded = num_bytes;
 
             let unsealed_all =
                 StackedDrg<MerkleTreeType, DefaultPieceHasher>::extract_all(&pp, &replica_id, &data, Some(config));
@@ -137,13 +136,10 @@ namespace nil {
             // have a length which equals `num_bytes_padded`. The byte at its 0-index
             // byte will be the the byte at index `offset_padded` in the sealed sector.
             let written =
-                write_unpadded(unsealed, &mut unsealed_output, 0, num_bytes.into()).context("write_unpadded failed") ?
-                ;
-
-            let amount = UnpaddedBytesAmount(written as u64);
+                write_unpadded(unsealed, &mut unsealed_output, 0, num_bytes.into()).context("write_unpadded failed");
 
             info !("unseal_range:finish");
-            return amount;
+            return written;
         }    // namespace filecoin
 
         /// Generates a piece commitment for the provided byte source. Returns an error
@@ -246,15 +242,7 @@ namespace nil {
             result
         }
 
-        void ensure_piece_size(unpadded_bytes_amount piece_siz) {
-            ensure !(piece_size >= UnpaddedBytesAmount(MINIMUM_PIECE_SIZE),
-                     "Piece must be at least {} bytes",
-                     MINIMUM_PIECE_SIZE);
-
-            padded_bytes_amount padded_piece_size = piece_size;
-            ensure !(u64::from(padded_piece_size).is_power_of_two(),
-                     "Bit-padded piece size must be a power of 2 ({:?})", padded_piece_size, );
-        }
+        void ensure_piece_size(unpadded_bytes_amount piece_size);
 
         /// Writes bytes from `source` to `target`, adding bit-padding ("preprocessing")
         /// as needed. Returns a tuple containing the number of bytes written to
@@ -277,39 +265,7 @@ namespace nil {
         }
 
         // Verifies if a DiskStore specified by a config (or set of 'required_configs' is consistent).
-        void verify_store(StoreConfig &config, std::size_t arity, std::size_t required_configs) {
-            let store_path = StoreConfig::data_path(&config.path, config.id);
-            if (!Path::new (&store_path).exists()) {
-                // Configs may have split due to sector size, so we need to
-                // check deterministic paths from here.
-                let orig_path = store_path.clone().into_os_string().into_string().unwrap();
-                std::vector<StoreConfig> configs(required_configs);
-                for (int i = 0; i < required_configs; i++) {
-                    let cur_path = orig_path.clone().replace(".dat", format !("-{}.dat", i).as_str());
-
-                    if (Path ::new (&cur_path).exists()) {
-                        let path_str = cur_path.as_str();
-                        std::vector<std::string> tree_names = {"tree-d", "tree-c", "tree-r-last"};
-                        for (const std::string &name : tree_names) {
-                            if (path_str.find(name).is_some()) {
-                                configs.push_back(StoreConfig::from_config(config, format !("{}-{}", name, i), None, ));
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ensure !(configs.len() == required_configs, "Missing store file (or associated split paths): {}",
-                         store_path.display());
-
-                let store_len = config.size.unwrap();
-                for (const StoreConfig &config : configs) {
-                    assert(DiskStore::<DefaultPieceDomain>::is_consistent(store_len, arity, &config));
-                }
-            } else {
-                assert(DiskStore::<DefaultPieceDomain>::is_consistent(config.size.unwrap(), arity, &config));
-            }
-        }
+        void verify_store(StoreConfig &config, std::size_t arity, std::size_t required_configs);
 
         // Verifies if a LevelCacheStore specified by a config is consistent.
         template<typename MerkleTreeType>

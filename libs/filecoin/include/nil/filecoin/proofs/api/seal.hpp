@@ -341,14 +341,7 @@ namespace nil {
         ///
         /// * `porep_config` - this sector's porep config that contains the number of bytes in the sector.
         /// * `piece_infos` - the piece info (commitment and byte length) for each piece in this sector.
-        commitment_type compute_comm_d(sector_size_type sector_size, const std::vector<piece_info> &piece_infos) {
-            info !("compute_comm_d:start");
-
-            commitment_type result = pieces::compute_comm_d(sector_size, piece_infos);
-
-            info !("compute_comm_d:finish");
-            return result;
-        }
+        commitment_type compute_comm_d(sector_size_type sector_size, const std::vector<piece_info> &piece_infos);
 
         /// Verifies the output of some previously-run seal operation.
         ///
