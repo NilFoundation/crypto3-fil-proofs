@@ -29,12 +29,13 @@
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
 #include <nil/filecoin/proofs/constants.hpp>
+#include <nil/filecoin/proofs/pieces.hpp>
 
 namespace nil {
     namespace filecoin {
         namespace proofs {
             template<typename R>
-            struct CommitmentReader<R> {
+            struct CommitmentReader {
                 /// Attempt to generate the next hash, but only if the buffers are full.
                 void try_hash() {
                     if (buffer_pos < 63) {
@@ -43,7 +44,7 @@ namespace nil {
 
                     // WARNING: keep in sync with DefaultPieceHasher and its .node impl
                     typename DefaultPieceHasher::digest_type hash = crypto3::hash<DefaultPieceHasher>(buffer);
-                    current_tree.push(hash);
+                    current_tree.push_back(hash);
                     buffer_pos = 0;
 
                     // TODO: reduce hashes when possible, instead of keeping them around.
@@ -52,21 +53,19 @@ namespace nil {
                 typename DefaultPieceHasher::digest_type finish() {
                     assert(("not enough inputs provided", buffer_pos == 0));
 
-                    let CommitmentReader<R> {current_tree, ..} = self;
-
-                    let mut current_row = current_tree;
+                    std::vector<typename DefaultPieceHasher::digest_type> current_row = current_tree, next_row;
 
                     while (current_row.size() > 1) {
-                        let next_row =
-                            current_row.par_chunks(2)
-                                .map(| chunk | crate::pieces::piece_hash(chunk[0].as_ref(), chunk[1].as_ref()))
-                                .collect::<Vec<_>>();
+                        for (int i = 0; i < current_row.size(); i += 2) {
+                            next_row.push_back(piece_hash(current_row[i], current_row[i + 1]));
+                        }
 
                         current_row = next_row;
+                        next_row.clear();
                     }
-                    debug_assert_eq !(current_row.len(), 1);
+                    assert(current_row.size() == 1);
 
-                    return current_row.into_iter().next().unwrap();
+                    return current_row;
                 }
 
                 void read(std::vector<std::uint8_t> &buf) {

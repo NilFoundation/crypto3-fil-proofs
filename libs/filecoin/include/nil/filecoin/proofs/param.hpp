@@ -44,9 +44,7 @@ namespace nil {
         typedef btree::map<std::string, parameter_data> parameter_map;
 
         // Produces an absolute path to a file within the cache
-        boost::filesystem::path get_full_path_for_file_within_cache(const std::string &filename) {
-            return parameter_cache_dir() / filename;
-        }
+        boost::filesystem::path get_full_path_for_file_within_cache(const std::string &filename);
 
         // Produces a BLAKE2b checksum for a file within the cache
         template<typename FileHash = crypto3::hashes::blake2b>
@@ -92,9 +90,7 @@ namespace nil {
          * @param ext
          * @return
          */
-        std::string add_extension(const std::string &filename, const std::string &ext) {
-            return filename + "." + ext;
-        }
+        std::string add_extension(const std::string &filename, const std::string &ext);
 
         /*!
          * @brief Builds a map from a parameter_id (file in cache) to metadata
