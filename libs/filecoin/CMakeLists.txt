@@ -83,7 +83,7 @@ add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
             ${${CURRENT_PROJECT_NAME}_SOURCES})
 
 set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
-                      EXPORT_NAME filcrypto
+                      EXPORT_NAME ${CURRENT_PROJECT_NAME}
                       LINKER_LANGUAGE CXX
                       CXX_STANDARD 14
                       CXX_STANDARD_REQUIRED TRUE)
@@ -100,7 +100,9 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PRIVA
 
                            ${Boost_INCLUDE_DIRS})
 
-cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INCLUDE include NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
+cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+          INCLUDE include
+          NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
 
 if(BUILD_TESTS)
     add_subdirectory(test)
