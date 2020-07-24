@@ -37,3 +37,6 @@
 [submodule "libs/predef"]
 	path = libs/predef
 	url = git@github.com:nilfoundation/predef.git
+[submodule "libs/config"]
+	path = libs/config
+	url = git@github.com:nilfoundation/config.git
