@@ -18,7 +18,7 @@
 	url = git@github.com:nilfoundation/codec.git
 [submodule "libs/algebra"]
 	path = libs/algebra
-	url = https://github.com/nilfoundation/algebra.git
+	url = git@github.com:nilfoundation/algebra.git
 [submodule "libs/pairing"]
 	path = libs/pairing
 	url = git@github.com:nilfoundation/pairing.git
