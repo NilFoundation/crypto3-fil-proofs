@@ -40,3 +40,6 @@
 [submodule "libs/config"]
 	path = libs/config
 	url = git@github.com:nilfoundation/config.git
+[submodule "libs/cuda"]
+	path = libs/cuda
+	url = git@github.com:nilfoundation/actor-cuda.git
