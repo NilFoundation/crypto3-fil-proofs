@@ -50,7 +50,7 @@ namespace nil {
                 return ss;
             }
 
-            /// Returns the cache identifier as used by `storage-proofs::paramater_cache`.
+            /// Returns the cache identifier as used by `storage_proofs::paramater_cache`.
             template<typename MerkleTreeType>
             std::string get_cache_identifier() {
                 if (typ == post_type::Winning) {

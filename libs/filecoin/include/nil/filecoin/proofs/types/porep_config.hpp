@@ -44,7 +44,7 @@ namespace nil {
             porep_proof_partitions partitions;
             std::array<std::uint8_t, 32> porep_id;
 
-            /// Returns the cache identifier as used by `storage-proofs::paramater_cache`.
+            /// Returns the cache identifier as used by `storage_proofs::paramater_cache`.
             template<typename MerkleTreeType>
             std::string get_cache_identifier() {
                 let params = parameters::public_params<MerkleTreeType>(sector_size.into(), partitions.into(), porep_id);

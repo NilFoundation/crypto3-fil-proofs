@@ -34,7 +34,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        crypto3::block
                        crypto3::hash
 
-                       ${CMAKE_WORKSPACE_NAME}::storage-proofs
+                       ${CMAKE_WORKSPACE_NAME}::storage_proofs
 
                        ${Boost_LIBRARIES})
 
