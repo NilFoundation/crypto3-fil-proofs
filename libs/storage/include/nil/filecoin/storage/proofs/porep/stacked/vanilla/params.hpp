@@ -27,6 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_PARAMS_HPP
 
 #include <array>
+#include <string>
 
 #include <boost/filesystem/path.hpp>
 
@@ -35,6 +36,8 @@
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/challenges.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/column_proof.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/labelling_proof.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/encoding_proof.hpp>
 
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 
@@ -105,8 +108,8 @@ namespace nil {
                         std::vector<StoreConfig> updated_path_labels = labels;
                         std::size_t required_configs = get_base_tree_count<MerkleTreeType>();
                         for (const StoreConfig &label : updated_path_labels) {
-                            label.path = cache_dir.to_path_buf();
-                            callback(&label, BINARY_ARITY, required_configs);
+                            label.path = cache_dir;
+                            callback(label, BINARY_ARITY, required_configs);
                         }
                     }
 
@@ -115,10 +118,10 @@ namespace nil {
                         assert(("Layer {} is not available (only {} layers available)", layer <= layers()));
 
                         std::size_t row_index = layer - 1;
-                        let config = labels[row_index].clone();
+                        StoreConfig config = labels[row_index];
                         assert(config.size.is_some());
 
-                        DiskStore::new_from_disk(config.size.unwrap(), MerkleTreeType::Arity, &config)
+                        DiskStore::new_from_disk(config.size.unwrap(), MerkleTreeType::Arity, config);
                     }
 
                     /// Returns label for the last layer.
@@ -255,6 +258,7 @@ namespace nil {
 
                 template<typename T, typename S>
                 struct PublicInputs {
+                    typedef Tau<T, S> tau_type;
                     typedef std::size_t challenge_type;
 
                     std::vector<std::size_t> challenges(const LayerChallenges &layer_challenges, std::size_t leaves,
@@ -444,6 +448,10 @@ namespace nil {
                                                    MerkleTreeType::TopTreeArity>>
                         replica_column_proofs;
 
+                    /// Indexed by layer in 1..layers.
+                    std::vector<LabelingProof<typename MerkleTreeType::hash_type>> labeling_proofs;
+                    EncodingProof<typename MerkleTreeType::hash_type> encoding_proof;
+
                     typename tree_hash_type::digest_type comm_r_last() {
                         return comm_r_last_proof.root();
                     }
@@ -466,11 +474,9 @@ namespace nil {
 
                         result |= comm_d_proofs.proves_challenge(challenge);
 
-                        if let
-                            Some(ref tau) = pub_inputs.tau {
-                                check_eq !(&self.comm_d_proofs.root(), &tau.comm_d);
-                            }
-                        else {
+                        if (pub_inputs.tau) {
+                            assert(comm_d_proofs.root() == pub_inputs.tau.comm_d);
+                        } else {
                             return false;
                         }
 

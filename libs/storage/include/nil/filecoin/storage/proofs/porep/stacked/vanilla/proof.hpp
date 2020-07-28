@@ -306,7 +306,7 @@ namespace nil {
 
                             // Write the result to disk to avoid keeping it in memory all the time.
                             let layer_config =
-                                StoreConfig::from_config(&config, CacheKey::label_layer(layer), Some(graph.size()));
+                                StoreConfig::from_config(&config, cache_key::label_layer(layer), Some(graph.size()));
 
                             info !("  storing labels on disk");
                             // Construct and persist the layer data.
@@ -802,13 +802,13 @@ namespace nil {
 
                 // Generate all store configs that we need based on the
                 // cache_path in the specified config.
-                StoreConfig tree_d_config = StoreConfig::from_config(config, CacheKey::CommDTree.to_string(),
+                StoreConfig tree_d_config = StoreConfig::from_config(config, cache_key::CommDTree.to_string(),
                                                                      get_merkle_tree_len(nodes_count, BINARY_ARITY));
                 tree_d_config.rows_to_discard = default_rows_to_discard(nodes_count, BINARY_ARITY);
 
                 StoreConfig tree_r_last_config =
                     StoreConfig::from_config(config,
-                                             CacheKey::CommRLastTree.to_string(),
+                                             cache_key::CommRLastTree.to_string(),
                                              get_merkle_tree_len(nodes_count, Tree::Arity::to_usize()));
 
                 // A default 'rows_to_discard' value will be chosen for tree_r_last, unless the user overrides this
@@ -819,7 +819,7 @@ namespace nil {
 
                 StoreConfig mut tree_c_config = StoreConfig::from_config(
                         &config,
-                        CacheKey::CommCTree.to_string(),
+                        cache_key::CommCTree.to_string(),
                         Some(get_merkle_tree_len(nodes_count, Tree::Arity::to_usize())?),
                     );
                 tree_c_config.rows_to_discard = default_rows_to_discard(nodes_count, Tree::Arity::to_usize());

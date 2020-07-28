@@ -113,7 +113,7 @@ void test_extract_all() {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     let cache_dir = tempfile::tempdir().unwrap();
-    let config = StoreConfig::new (cache_dir.path(), CacheKey::CommDTree.to_string(),
+    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -199,7 +199,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     let cache_dir = tempfile::tempdir().unwrap();
-    let config = StoreConfig::new (cache_dir.path(), CacheKey::CommDTree.to_string(),
+    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.

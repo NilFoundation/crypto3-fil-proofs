@@ -26,7 +26,12 @@
 #ifndef FILECOIN_SEAL_API_POST_HPP
 #define FILECOIN_SEAL_API_POST_HPP
 
+#include <boost/filesystem/file_status.hpp>
+
 #include <nil/filecoin/storage/proofs/core/btree/map.hpp>
+#include <nil/filecoin/storage/proofs/core/proof/compound_proof.hpp>
+#include <nil/filecoin/storage/proofs/core/cache_key.hpp>
+#include <nil/filecoin/storage/proofs/core/sector.hpp>
 
 #include <nil/filecoin/proofs/api/utilities.hpp>
 
@@ -50,21 +55,21 @@ namespace nil {
                                              return state * (v != 0);
                                          })));
 
-                let f_aux_path = cache_dir.join(CacheKey::PAux.to_string());
-                let aux_bytes =
+                boost::filesystem::path f_aux_path = cache_dir / std::to_string(cache_key::PAux);
+                std::vector<std::uint8_t> aux_bytes =
                     std::fs::read(&f_aux_path).with_context(|| format !("could not read from path={:?}", f_aux_path));
 
                 aux = deserialize(aux_bytes);
 
-                assert(("Sealed replica does not exist", replica.exists()));
+                assert(("Sealed replica does not exist", boost::filesystem::exists(replica)));
             }
 
             boost::filesystem::path cache_dir_path() const {
-                return cache_dir.as_path();
+                return cache_dir;
             }
 
             boost::filesystem::path replica_path() const {
-                return replica.as_path();
+                return replica;
             }
 
             typename MerkleTreeType::hash_type::digest_type safe_comm_r() const {
@@ -90,9 +95,9 @@ namespace nil {
                         default_rows_to_discard(base_tree_leafs, MerkleTreeType::Arity), MerkleTreeType::Arity,
                         MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity);
 
-                StoreConfg config(cache_dir_path(), CacheKey::CommRLastTree.to_string(),
+                StoreConfg config(cache_dir_path(), std::to_string(cache_key::CommRLastTree),
                                   default_rows_to_discard(base_tree_leafs, MerkleTreeType::Arity));
-                config.size = Some(base_tree_size);
+                config.size = base_tree_size;
 
                 std::size_t tree_count = get_base_tree_count<MerkleTreeType>();
                 let(configs, replica_config) =
@@ -145,8 +150,8 @@ namespace nil {
             info !("clear_cache:start");
 
             TemporaryAux<MerkleTreeType> t_aux;
-            let f_aux_path = cache_dir.to_path_buf().join(CacheKey::TAux.to_string());
-            let aux_bytes =
+            boost::filesystem::path f_aux_path = cache_dir / std::to_string(cache_key::TAux);
+            std::vector<std::uint8_t> aux_bytes =
                 std::fs::read(&f_aux_path).with_context(|| format !("could not read from path={:?}", f_aux_path));
 
             deserialize(aux_bytes);
@@ -179,7 +184,7 @@ namespace nil {
                                          const btree::map<sector_id_type, PrivateReplicaInfo<MerkleTreeType>> &replicas,
                                          prover_id_type prover_id) {
             info !("generate_winning_post:start");
-            assert(("invalid post config type", config.typ == PoStType::Winning));
+            assert(("invalid post config type", config.typ == post_type::Winning));
             assert(("invalid amount of replicas", replicas.size() == post_config.sector_count));
 
             typename MerkleTreeType::hash_type::digest_type randomness_safe =
@@ -196,9 +201,11 @@ namespace nil {
                 fallback::FallbackPoStCompound::setup(setup_params);
             let groth_params = get_post_params<MerkleTreeType>(config);
 
-            let trees = replicas.iter()
-                            .map(| (_, replica) | replica.merkle_tree(config.sector_size))
-                            .collect::<Result<Vec<_>>>();
+            for (typename btree::map<sector_id_type, PrivateReplicaInfo<MerkleTreeType>>)
+
+                let trees = replicas.iter()
+                                .map(| (_, replica) | replica.merkle_tree(config.sector_size))
+                                .collect::<Result<Vec<_>>>();
 
             std::vector<fallback::PublicSector> pub_sectors(param_sector_count);
             std::vector<fallback::PrivateSector> priv_sectors(param_sector_count);

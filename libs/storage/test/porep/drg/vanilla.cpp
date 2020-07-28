@@ -38,7 +38,7 @@ void test_extract_all() {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     let cache_dir = tempfile::tempdir().unwrap();
-    let config = StoreConfig::new (cache_dir.path(), CacheKey::CommDTree.to_string(),
+    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     let cache_dir = tempfile::tempdir().unwrap();
-    let config = StoreConfig::new (cache_dir.path(), CacheKey::CommDTree.to_string(),
+    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -161,7 +161,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         // MT for original data is always named tree-d, and it will be
         // referenced later in the process as such.
         let cache_dir = tempfile::tempdir().unwrap();
-        let config = StoreConfig::new (cache_dir.path(), CacheKey::CommDTree.to_string(),
+        let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                        default_rows_to_discard(nodes, BINARY_ARITY), );
 
         // Generate a replica path.
