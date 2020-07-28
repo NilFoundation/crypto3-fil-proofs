@@ -338,7 +338,7 @@ namespace nil {
                             offsets : vec ![0],
                         };
                         let tree_r_last_config =
-                            StoreConfig::from_config(&config, CacheKey::CommRLastTree.to_string(), None);
+                            StoreConfig::from_config(&config, cache_key::CommRLastTree.to_string(), None);
                         let tree_r = create_base_lcmerkle_tree::<H, <BinaryLCMerkleTree<H> as MerkleTreeTrait>::Arity>(
                             tree_r_last_config, pp.graph.size(), &data.as_ref(), &replica_config);
 

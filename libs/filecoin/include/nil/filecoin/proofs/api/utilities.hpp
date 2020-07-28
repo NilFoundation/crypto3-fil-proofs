@@ -26,6 +26,10 @@
 #ifndef FILECOIN_UTILITIES_API_HPP
 #define FILECOIN_UTILITIES_API_HPP
 
+#include <nil/crypto3/algebra/fp.hpp>
+
+#include <nil/filecoin/storage/proofs/core/sector.hpp>
+
 #include <nil/filecoin/proofs/types/mod.hpp>
 
 namespace nil {

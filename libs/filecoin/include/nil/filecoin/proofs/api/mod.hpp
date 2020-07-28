@@ -63,13 +63,8 @@ namespace nil {
                                const boost::filesystem::path &sealed_path, const boost::filesystem::path &output_path,
                                prover_id_type prover_id, sector_id_type sector_id, const commitment_type &comm_d,
                                const ticket_type &ticket, unpadded_byte_index offset, unpadded_bytes_amount num_bytes) {
-            let f_in = File::open(&sealed_path)
-                           .with_context(|| format !("could not open sealed_path={:?}", sealed_path.as_ref()));
-
-            let f_out = File::create(&output_path)
-                            .with_context(|| format !("could not create output_path={:?}", output_path.as_ref()));
-
-            let buf_f_out = BufWriter::new (f_out);
+            std::ifstream f_in(sealed_path, std::ios::binary);
+            std::ofstream f_out(output_path, std::ios::binary);
 
             return unseal_range<MerkleTreeType>(config, cache_path, f_in, buf_f_out, prover_id, sector_id, comm_d,
                                                 ticket, offset, num_bytes);
@@ -118,7 +113,7 @@ namespace nil {
             // MT for original data is always named tree-d, and it will be
             // referenced later in the process as such.
             let config = StoreConfig::new (
-                cache_path.as_ref(), CacheKey::CommDTree.to_string(),
+                cache_path.as_ref(), cache_key::CommDTree.to_string(),
                 default_rows_to_discard(base_tree_leafs, <DefaultBinaryTree as MerkleTreeTrait>::Arity));
             let pp = public_params(PaddedBytesAmount::from(config), usize::from(PoRepProofPartitions::from(config)),
                                    config.porep_id);
@@ -217,11 +212,8 @@ namespace nil {
                     let n = std::io::copy(&mut commitment_reader, &mut target)
                                 .context("failed to write and preprocess bytes");
 
-                    ensure !(n != 0, "add_piece: read 0 bytes before EOF from source");
-                    let n = PaddedBytesAmount(n as u64);
-                    let n : UnpaddedBytesAmount = n.into();
-
-                    ensure !(n == piece_size, "add_piece: invalid bytes amount written");
+                    assert(("add_piece: read 0 bytes before EOF from source", n != 0));
+                    assert(("add_piece: invalid bytes amount written", n == piece_size));
 
                     // write right alignment
                     for (int i = 0; i < piece_alignment.right_bytes; i++) {
@@ -233,9 +225,9 @@ namespace nil {
                     comm.fill(0);
                     comm.copy_from_slice(commitment.as_ref());
 
-                    let written = piece_alignment.left_bytes + piece_alignment.right_bytes + piece_size;
+                    std::size_t written = piece_alignment.left_bytes + piece_alignment.right_bytes + piece_size;
 
-    Ok((PieceInfo::new(comm, n)?, written))
+                    return std::make_tuple(piece_info(comm, n), written);
                 });
 
             info !("add_piece:finish");
@@ -270,19 +262,20 @@ namespace nil {
         // Verifies if a LevelCacheStore specified by a config is consistent.
         template<typename MerkleTreeType>
         void verify_level_cache_store(const StoreConfig &config) {
-            let store_path = StoreConfig::data_path(config.path, config.id);
-            if (!Path::new (&store_path).exists()) {
-                let required_configs = get_base_tree_count<MerkleTreeType>();
+            StoreConfig store_path = StoreConfig::data_path(config.path, config.id);
+            if (!boost::filesystem::exists(store_path)) {
+                std::size_t required_configs = get_base_tree_count<MerkleTreeType>();
 
                 // Configs may have split due to sector size, so we need to
                 // check deterministic paths from here.
-                let orig_path = store_path.clone().into_os_string().into_string().unwrap();
+                boost::filesystem::path orig_path = store_path;
                 std::vector<StoreConfig> configs(required_configs);
                 for (int i = 0; i < required_configs; i++) {
-                    let cur_path = orig_path.clone().replace(".dat", format !("-{}.dat", i).as_str());
+                    boost::filesystem::path cur_path =
+                        orig_path.clone().replace(".dat", format !("-{}.dat", i).as_str());
 
-                    if (Path ::new (&cur_path).exists()) {
-                        let path_str = cur_path.as_str();
+                    if (boost::filesystem::exists(cur_path)) {
+                        std::string path_str = cur_path.str();
                         std::vector<std::string> tree_names = {"tree-d", "tree-c", "tree-r-last"};
                         for (const std::string &name : tree_names) {
                             if (path_str.find(name).is_some()) {
@@ -297,11 +290,11 @@ namespace nil {
 
                 std::size_t store_len = config.size.unwrap();
                 for (const StoreConfig &config : configs) {
-                    assert(LevelCacheStore::<DefaultPieceDomain, std::fs::File>::is_consistent(
+                    assert(LevelCacheStore<DefaultPieceDomain, std::fs::File>::is_consistent(
                         store_len, MerkleTreeType::Arity, &config));
                 }
             } else {
-                assert(LevelCacheStore::<DefaultPieceDomain, std::fs::File>::is_consistent(
+                assert(LevelCacheStore<DefaultPieceDomain, std::fs::File>::is_consistent(
                     config.size.unwrap(), MerkleTreeType::Arity, config));
             }
         }
@@ -313,18 +306,18 @@ namespace nil {
             const seal_precommit_phase1_output<MerkleTreeType> &seal_precommit_phase1_output) {
             info !("validate_cache_for_precommit_phase2:start");
 
-            assert(("Missing replica", replica_path.as_ref().exists()));
+            assert(("Missing replica", boost::filesystem::exists(replica_path)));
 
             // Verify all stores/labels within the Labels object, but
             // respecting the current cache_path.
-            let cache = cache_path.as_ref().to_path_buf();
+            boost::filesystem::path cache = cache_path;
             seal_precommit_phase1_output.labels.verify_stores(verify_store, cache);
 
             // Update the previous phase store path to the current cache_path.
             StoreConfig config =
                 StoreConfig::from_config(seal_precommit_phase1_output.config, seal_precommit_phase1_output.config.id,
                                          seal_precommit_phase1_output.config.size);
-            config.path = cache_path.as_ref().into();
+            config.path = cache_path;
 
             seal_precommit_phase1_output result =
                 verify_store(config, DefaultBinaryTree::Arity, get_base_tree_count<MerkleTreeType>());
@@ -344,45 +337,41 @@ namespace nil {
             // Verify that the replica exists and is not empty.
             assert(("Missing replica", replica_path.as_ref().exists()));
 
-            let metadata = File::open(&replica_path).metadata();
-            ensure !(metadata.len() > 0, "Replica {} exists, but is empty!",
-                     replica_path.as_ref().to_path_buf().display());
+            std::ifstream replica_file(replica_path, std::ios::binary);
+            assert(("Replica exists, but is empty!", replica_file.peek() != std::ifstream::traits_type::eof()));
 
-            let cache = &cache_path.as_ref();
+            boost::filesystem::path cache = cache_path;
 
             // Make sure p_aux exists and is valid.
-            let p_aux_path = cache.join(CacheKey::PAux.to_string());
-            let p_aux_bytes =
+            boost::filesystem::path p_aux_path = cache / std::to_string(cache_key::PAux);
+            std::vector<std::uint8_t> p_aux_bytes =
                 std::fs::read(&p_aux_path).with_context(|| format !("could not read file p_aux={:?}", p_aux_path));
 
             PersistentAux<typename MerkleTreeType::hash_type::digest_type> = deserialize(p_aux_bytes);
             drop(p_aux_bytes);
 
             // Make sure t_aux exists and is valid.
-            let t_aux = { let t_aux_path = cache.join(CacheKey::TAux.to_string());
-            let t_aux_bytes =
-                std::fs::read(&t_aux_path).with_context(|| format !("could not read file t_aux={:?}", t_aux_path)) ?
-                ;
+            boost::filesystem::path t_aux_path = cache / std::to_string(cache_key::TAux);
+            std::vector<std::uint8_t> t_aux_bytes =
+                std::fs::read(&t_aux_path).with_context(|| format !("could not read file t_aux={:?}", t_aux_path));
 
-            let mut res : TemporaryAux<Tree, DefaultPieceHasher> = deserialize(&t_aux_bytes) ? ;
+            TemporaryAux<MerkleTreeType, DefaultPieceHasher> t_aux = deserialize(t_aux_bytes);
 
             // Switch t_aux to the passed in cache_path
-            res.set_cache_path(&cache_path);
-            return res;
-        };
+            t_aux.set_cache_path(cache_path);
 
-        // Verify all stores/labels within the Labels object.
-        let cache = cache_path.as_ref().to_path_buf();
-        t_aux.labels.verify_stores(verify_store, cache);
+            // Verify all stores/labels within the Labels object.
+            boost::filesystem::path cache = cache_path;
+            t_aux.labels.verify_stores(verify_store, cache);
 
-        // Verify each tree disk store.
-        verify_store(&t_aux.tree_d_config, DefaultBinaryTree::Arity, get_base_tree_count<MerkleTreeType>());
-        verify_store(&t_aux.tree_c_config, DefaultOctTree::Arity, get_base_tree_count<MerkleTreeType>());
-        verify_level_cache_store<DefaultOctTree>(t_aux.tree_r_last_config);
+            // Verify each tree disk store.
+            verify_store(t_aux.tree_d_config, DefaultBinaryTree::Arity, get_base_tree_count<MerkleTreeType>());
+            verify_store(t_aux.tree_c_config, DefaultOctTree::Arity, get_base_tree_count<MerkleTreeType>());
+            verify_level_cache_store<DefaultOctTree>(t_aux.tree_r_last_config);
 
-        info !("validate_cache_for_precommit:finish");
-    }    // namespace filecoin
+            info !("validate_cache_for_precommit:finish");
+        }    // namespace filecoin
+    }        // namespace filecoin
 }    // namespace nil
-}
 
 #endif    // FILECOIN_SEAL_HPP

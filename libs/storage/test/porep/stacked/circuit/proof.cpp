@@ -43,7 +43,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     let cache_dir = tempfile::tempdir().unwrap();
-    let config = StoreConfig::new (cache_dir.path(), CacheKey::CommDTree.to_string(),
+    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -189,7 +189,7 @@ void stacked_test_compound() {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     let cache_dir = tempfile::tempdir().unwrap();
-    let config = StoreConfig::new (cache_dir.path(), CacheKey::CommDTree.to_string(),
+    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.

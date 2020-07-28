@@ -149,7 +149,8 @@ namespace nil {
         /// of bytes (before bit padding) to be added, return the alignment required to create a piece where
         /// len(piece) == len(sector size)/(2^n) and sufficient left padding to ensure simple merkle proof
         /// construction.
-        PieceAlignment get_piece_alignment(unpadded_bytes_amount written_bytes, unpadded_bytes_amount piece_bytes);    // namespace filecoin
+        PieceAlignment get_piece_alignment(unpadded_bytes_amount written_bytes,
+                                           unpadded_bytes_amount piece_bytes);    // namespace filecoin
 
         /// Given a list of pieces, find the byte where a given piece does or would start.
         unpadded_byte_index get_piece_start_byte(const std::vector<unpadded_bytes_amount> &pieces,

@@ -32,4 +32,26 @@ namespace nil {
     }
 }    // namespace nil
 
+namespace std {
+    std::string to_string(const cache_key &key) {
+        switch (key) {
+            case cache_key::PAux: {
+                return "p_aux";
+            } break;
+            case cache_key::TAux: {
+                return "t_aux";
+            } break;
+            case cache_key::CommDTree: {
+                return "tree-d";
+            } break;
+            case cache_key::CommCTree: {
+                return "tree-c";
+            } break;
+            case cache_key::CommRLastTree: {
+                return "tree-r-last";
+            } break;
+        }
+    }
+}    // namespace std
+
 #endif

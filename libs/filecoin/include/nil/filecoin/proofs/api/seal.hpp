@@ -90,7 +90,7 @@ namespace nil {
 
                     // MT for original data is always named tree-d, and it will be
                     // referenced later in the process as such.
-                    StoreConfig config = StoreConfig(cache_path.as_ref(), CacheKey::CommDTree.to_string(),
+                    StoreConfig config = StoreConfig(cache_path.as_ref(), cache_key::CommDTree.to_string(),
                                                      default_rows_to_discard(base_tree_leafs, BINARY_ARITY));
                     BinaryMerkleTree<DefaultPieceHasher> data_tree =
                         create_base_merkle_tree<BinaryMerkleTree<DefaultPieceHasher>>(Some(config.clone()),
@@ -179,13 +179,13 @@ namespace nil {
             commitment_type comm_r = commitment_from_fr(tau.comm_r.into());
 
             // Persist p_aux and t_aux here
-            boost::filesystem::path p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
+            boost::filesystem::path p_aux_path = cache_path.as_ref().join(cache_key::PAux.to_string());
             let mut f_p_aux =
                 File::create(&p_aux_path).with_context(|| format !("could not create file p_aux={:?}", p_aux_path));
             std::vector<std::uint8_t> p_aux_bytes = serialize(p_aux);
             f_p_aux.write_all(&p_aux_bytes).with_context(|| format !("could not write to file p_aux={:?}", p_aux_path));
 
-            boost::filesystem::path t_aux_path = cache_path.as_ref().join(CacheKey::TAux.to_string());
+            boost::filesystem::path t_aux_path = cache_path.as_ref().join(cache_key::TAux.to_string());
             let mut f_t_aux =
                 File::create(&t_aux_path).with_context(|| format !("could not create file t_aux={:?}", t_aux_path));
             std::vector<std::uint8_t> t_aux_bytes = serialize(t_aux);
@@ -221,13 +221,13 @@ namespace nil {
                                      })));
             assert(("pieces and comm_d do not match", verify_pieces(comm_d, piece_infos, config)));
 
-            boost::filesystem::path p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
+            boost::filesystem::path p_aux_path = cache_path.as_ref().join(cache_key::PAux.to_string());
             let p_aux_bytes =
                 std::fs::read(&p_aux_path).with_context(|| format !("could not read file p_aux={:?}", p_aux_path));
 
             PersistentAux<typename MerkleTreeType::hash_type::digest_type> p_aux = deserialize(p_aux_bytes);
 
-            boost::filesystem::path t_aux_path = cache_path.as_ref().join(CacheKey::TAux.to_string());
+            boost::filesystem::path t_aux_path = cache_path.as_ref().join(cache_key::TAux.to_string());
             let t_aux_bytes =
                 std::fs::read(&t_aux_path).with_context(|| format !("could not read file t_aux={:?}", t_aux_path));
 
@@ -526,7 +526,7 @@ namespace nil {
             let(comm_r, p_aux) = StackedDrg<MerkleTreeType, DefaultPieceHasher>::fake_replicate_phase2(
                 fake_comm_c, out_path, cache_path, sector_bytes);
 
-            let p_aux_path = cache_path.as_ref().join(CacheKey::PAux.to_string());
+            let p_aux_path = cache_path.as_ref().join(cache_key::PAux.to_string());
             let mut f_p_aux =
                 File::create(p_aux_path).with_context(|| format !("could not create file p_aux={:?}", p_aux_path));
             let p_aux_bytes = serialize(p_aux);
