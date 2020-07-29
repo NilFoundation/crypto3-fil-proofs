@@ -60,64 +60,6 @@ namespace nil {
         bool verify_pieces(const commitment_type &comm_d, const std::vector<piece_info> &piece_infos,
                            sector_size_type sector_size);
 
-        /// Stack used for piece reduction.
-        struct Stack(Vec<piece_info>);
-
-        impl Stack {
-            /// Creates a new stack.
-            fn new ()
-                ->Self {Stack(Vec::new ())}
-
-            /// Pushes a single element onto the stack.
-            fn shift(&mut self, el
-                     : piece_info) {self .0.push(el)}
-
-            /// Look at the last element of the stack.
-            fn peek(&self)
-                ->&piece_info {&self .0 [self .0.len() - 1]}
-
-            /// Look at the second to last element of the stack.
-            fn peek2(&self)
-                ->&piece_info {&self .0 [self .0.len() - 2]}
-
-            /// Pop the last element of the stack.
-            fn pop(&mut self)
-                ->Result<piece_info> {self .0.pop().context("empty stack popped")}
-
-            fn reduce1(&mut self)
-                ->Result<bool> {
-                if (self.size() < 2) {
-                    return Ok(false);
-                }
-
-                if (self.peek().size == self.peek2().size) {
-                    let right = self.pop() ? ;
-                    let left = self.pop() ? ;
-                    let joined = join_piece_infos(left, right) ? ;
-                    self.shift(joined);
-                    return Ok(true);
-                }
-
-                Ok(false)
-            }
-
-            fn reduce(&mut self)->Result<()> {
-                while
-                    self.reduce1() ? {
-                    }
-                Ok(())
-            }
-
-            fn shift_reduce(&mut self, piece : piece_info)->Result<()> {
-                self.shift(piece);
-                self.reduce()
-            }
-
-            fn len(&self)->usize {
-                self .0.len()
-            }
-        }
-
         /// Create a padding `piece_info` of size `size`.
         piece_info zero_padding(unpadded_bytes_amount size);
 
@@ -125,12 +67,19 @@ namespace nil {
         piece_info join_piece_infos(const piece_info &left, const piece_info &right);
 
         template<typename FirstInputIterator, typename SecondInputIterator, typename PieceHash = DefaultPieceHasher>
-        typename PieceHash::digest_type piece_hash(FirstInputIterator ffirst, FirstInputIterator flast,
-                                                   SecondInputIterator sfirst, SecondInputIterator slast) {
-            let mut buf = [0u8; NODE_SIZE * 2];
-            buf[..NODE_SIZE].copy_from_slice(a);
-            buf[NODE_SIZE..].copy_from_slice(b);
-            <DefaultPieceHasher as Hasher>::Function::hash(&buf)
+        inline typename PieceHash::digest_type piece_hash(FirstInputIterator ffirst, FirstInputIterator flast,
+                                                          SecondInputIterator sfirst, SecondInputIterator slast) {
+            using namespace nil::crypto3;
+
+            accumulator_set<PieceHash> acc;
+            hash<PieceHash>(ffirst, flast, acc);
+            hash<PieceHash>(sfirst, slast, acc);
+            return accumulators::extract::hash<PieceHash>(acc);
+        }
+
+        template<typename FirstRange, typename SecondRange, typename PieceHash = DefaultPieceHasher>
+        inline typename PieceHash::digest_type piece_hash(const FirstRange &first, const SecondRange &second) {
+            return piece_hash(std::begin(first), std::end(first), std::begin(second), std::end(second));
         }
 
         struct PieceAlignment {
@@ -149,8 +98,7 @@ namespace nil {
         /// of bytes (before bit padding) to be added, return the alignment required to create a piece where
         /// len(piece) == len(sector size)/(2^n) and sufficient left padding to ensure simple merkle proof
         /// construction.
-        PieceAlignment get_piece_alignment(unpadded_bytes_amount written_bytes,
-                                           unpadded_bytes_amount piece_bytes);    // namespace filecoin
+        PieceAlignment get_piece_alignment(unpadded_bytes_amount written_bytes, unpadded_bytes_amount piece_bytes);
 
         /// Given a list of pieces, find the byte where a given piece does or would start.
         unpadded_byte_index get_piece_start_byte(const std::vector<unpadded_bytes_amount> &pieces,
@@ -180,7 +128,7 @@ namespace nil {
             unpadded_bytes_amount expected_num_bytes_written =
                 piece_alignment.left_bytes + piece_bytes + piece_alignment.right_bytes;
 
-            return std::make_tuple(expected_num_bytes_written, piece_alignment.clone(),
+            return std::make_tuple(expected_num_bytes_written, piece_alignment,
                                    with_alignment(source, piece_alignment));
         }
     }    // namespace filecoin

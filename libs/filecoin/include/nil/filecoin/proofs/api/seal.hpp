@@ -44,9 +44,9 @@ namespace nil {
                                                                          ticket_type ticket,
                                                                          const std::vector<piece_info> &piece_infos) {
             // Sanity check all input path types.
-            assert(("in_path must be a file", metadata(in_path.as_ref()).is_file()));
-            assert(("out_path must be a file", metadata(out_path.as_ref()).is_file()));
-            assert(("cache_path must be a directory", metadata(cache_path.as_ref()).is_dir()));
+            assert(("in_path must be a file", in_path.is_file()));
+            assert(("out_path must be a file", out_path.is_file()));
+            assert(("cache_path must be a directory", cache_path.is_dir()));
 
             std::size_t sector_bytes = PaddedBytesAmount::from(config);
             fs::metadata(&in_path).with_context(||
@@ -106,8 +106,6 @@ namespace nil {
                     return std::make_tuple(config, comm_d);
                 });
 
-            info("verifying pieces");
-
             assert(("pieces and comm_d do not match", verify_pieces(comm_d, piece_infos, config)));
 
             auto replica_id = generate_replica_id<typename MerkleTreeType::hash_type>(prover_id, sector_id.into(),
@@ -117,8 +115,6 @@ namespace nil {
                 compound_public_params.vanilla_params, replica_id, config.clone());
 
             seal_precommit_phase1_output<MerkleTreeType> out = {labels, config, comm_d};
-
-            info !("seal_pre_commit_phase1:finish");
             return out;
         }
 
@@ -127,8 +123,6 @@ namespace nil {
                                                      const seal_precommit_phase1_output<MerkleTreeType> &phase1_output,
                                                      const boost::filesystem::path &cache_path,
                                                      const boost::filesystem::path &replica_path) {
-            info !("seal_pre_commit_phase2:start");
-
             // Sanity check all input path types.
             assert(("cache_path must be a directory", metadata(cache_path.as_ref()).is_dir()));
             assert(("replica_path must be a file", metadata(replica_path.as_ref()).is_file()));
@@ -153,10 +147,6 @@ namespace nil {
             std::size_t base_tree_size = get_base_tree_size<DefaultBinaryTree>(config.sector_size);
             std::size_t base_tree_leafs = get_base_tree_leafs<DefaultBinaryTree>(base_tree_size);
 
-            trace !("seal phase 2: base tree size {}, base tree leafs {}, rows to discard {}",
-                    base_tree_size,
-                    base_tree_leafs,
-                    default_rows_to_discard(base_tree_leafs, BINARY_ARITY));
             assert(("Invalid cache size specified",
                     config.rows_to_discard == default_rows_to_discard(base_tree_leafs, BINARY_ARITY)));
 
@@ -190,8 +180,6 @@ namespace nil {
                 File::create(&t_aux_path).with_context(|| format !("could not create file t_aux={:?}", t_aux_path));
             std::vector<std::uint8_t> t_aux_bytes = serialize(t_aux);
             f_t_aux.write_all(&t_aux_bytes).with_context(|| format !("could not write to file t_aux={:?}", t_aux_path));
-
-            info !("seal_pre_commit_phase2:finish");
             return {comm_r, comm_d};
         }    // namespace filecoin
 

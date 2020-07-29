@@ -28,10 +28,14 @@
 
 #include <fstream>
 
+#include <boost/range/adaptor/sliced.hpp>
+
 #include <nil/crypto3/codec/hex.hpp>
+#include <nil/crypto3/codec/adaptor/coded.hpp>
 #include <nil/crypto3/codec/algorithm/encode.hpp>
 
 #include <nil/crypto3/hash/blake2b.hpp>
+#include <nil/crypto3/hash/adaptor/hashed.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
 #include <nil/filecoin/proofs/btree/map.hpp>
@@ -64,7 +68,8 @@ namespace nil {
 
             std::vector<char> buffer(size);
             if (file.read(buffer.data(), size)) {
-                return encode<codec::hex>(hash<FileHash>(buffer))[..32];
+                return buffer | adaptors::hashed<FileHash> | adaptors::encoded<codec::hex> |
+                       boost::adaptors::sliced(0, 32);
             }
         }
 
@@ -91,7 +96,7 @@ namespace nil {
         // Predicate which matches the provided extension against the given filename
         template<typename S, typename P>
         bool has_extension(const P &filename, const S &ext) {
-            filename.as_ref().extension().and_then(OsStr::to_str).map(| s | s == ext.as_ref()).unwrap_or(false);
+            return filename.extension() == ext;
         }
 
         /*!

@@ -35,36 +35,35 @@ namespace nil {
         }
 
         void verify_store(StoreConfig &config, std::size_t arity, std::size_t required_configs) {
-            let store_path = StoreConfig::data_path(&config.path, config.id);
-            if (!Path::new (&store_path).exists()) {
+            boost::filesystem::path store_path = StoreConfig::data_path(config.path, config.id);
+            if (!boost::filesystem::exists(store_path)) {
                 // Configs may have split due to sector size, so we need to
                 // check deterministic paths from here.
-                let orig_path = store_path.clone().into_os_string().into_string().unwrap();
+                boost::filesystem::path orig_path = store_path;
                 std::vector<StoreConfig> configs(required_configs);
                 for (int i = 0; i < required_configs; i++) {
-                    let cur_path = orig_path.clone().replace(".dat", format !("-{}.dat", i).as_str());
-
-                    if (Path ::new (&cur_path).exists()) {
-                        let path_str = cur_path.as_str();
+                    std::string cur_path =
+                        orig_path.replace(orig_path.find(".dat"), orig_path.find(".dat") + 4, "-" + std::to_string(i));
+                    if (boost::filesystem::exists(boost::filesystem::path(cur_path))) {
+                        std::string path_str = cur_path.as_str();
                         std::vector<std::string> tree_names = {"tree-d", "tree-c", "tree-r-last"};
                         for (const std::string &name : tree_names) {
-                            if (path_str.find(name).is_some()) {
-                                configs.push_back(StoreConfig::from_config(config, format !("{}-{}", name, i), None, ));
+                            if (path_str.find(name) != path.str.end()) {
+                                configs.push_back(StoreConfig::from_config(config, format !("{}-{}", name, i), None));
                                 break;
                             }
                         }
                     }
                 }
 
-                ensure !(configs.len() == required_configs, "Missing store file (or associated split paths): {}",
-                         store_path.display());
+                assert(("Missing store file (or associated split paths)", configs.size() == required_configs));
 
-                let store_len = config.size.unwrap();
+                std::size_t store_len = config.size;
                 for (const StoreConfig &config : configs) {
-                    assert(DiskStore::<DefaultPieceDomain>::is_consistent(store_len, arity, &config));
+                    assert(DiskStore<DefaultPieceDomain>::is_consistent(store_len, arity, config));
                 }
             } else {
-                assert(DiskStore::<DefaultPieceDomain>::is_consistent(config.size.unwrap(), arity, &config));
+                assert(DiskStore<DefaultPieceDomain>::is_consistent(config.size, arity, config));
             }
         }
     }    // namespace filecoin

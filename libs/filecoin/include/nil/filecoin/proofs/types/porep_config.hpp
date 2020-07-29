@@ -61,14 +61,14 @@ namespace nil {
             template<typename MerkleTreeType>
             boost::filesystem::path get_cache_verifying_key_path() {
                 return parameter_cache_verifying_key_path(get_cache_identifier<MerkleTreeType>());
-            }    // namespace filecoin
+            }
 
             template<typename MerkleTreeType>
             boost::filesystem::path get_cache_params_path() {
                 return parameter_cache_params_path(get_cache_identifier<MerkleTreeType>());
-            }    // namespace filecoin
-        };       // namespace filecoin
-    }            // namespace filecoin
+            }
+        };
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif
