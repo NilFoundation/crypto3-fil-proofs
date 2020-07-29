@@ -24,40 +24,45 @@
 //---------------------------------------------------------------------------//
 
 #include <nil/filecoin/proofs/pieces.hpp>
+#include <nil/filecoin/proofs/fr32_reader.hpp>
+#include <nil/filecoin/proofs/commitment_reader.hpp>
 
 namespace nil {
     namespace filecoin {
         commitment_type empty_comm_d(sector_size_type sector_size) {
-            let map = &mut * COMMITMENTS.lock().unwrap();
-
-            *map.entry(sector_size).or_insert_with(|| {
+            if (COMMITMENTS.find(sector_size) == COMMITMENTS.end()) {
                 unpadded_bytes_amount size = sector_size;
-                let fr32_reader = Fr32Reader::new (EmptySource::new (size.into()));
-                let mut commitment_reader = CommitmentReader::new (fr32_reader);
-                io::copy(&mut commitment_reader, &mut io::sink()).unwrap();
+                Fr32Reader fr32_reader(EmptySource(size.into()));
+                CommitmentReader commitment_reader(fr32_reader);
+                io::copy(commitment_reader, io::sink()).unwrap();
 
                 commitment_type comm;
-                comm.copy_from_slice(commitment_reader.finish().expect("failed to create commitment").as_ref(), );
-                return comm;
-            })
+                comm.copy_from_slice(commitment_reader.finish().expect("failed to create commitment").as_ref());
+                COMMITMENTS[sector_size] = comm;
+            } else {
+                return COMMITMENTS[sector_size];
+            }
         }
+
         bool verify_pieces(const commitment_type &comm_d,
                            const std::vector<piece_info> &piece_infos,
                            sector_size_type sector_size) {
             return compute_comm_d(sector_size, piece_infos) == comm_d;
         }
+
         piece_info zero_padding(unpadded_bytes_amount size) {
             padded_bytes_amount padded_size = size.into();
-            commitment_type commitment = [0u8; 32];
+            commitment_type commitment;
+            commitment.fill(0);
 
             // TODO: cache common piece hashes
             std::size_t hashed_size = 64;
-            let h1 = piece_hash(&commitment, &commitment);
-            commitment.copy_from_slice(h1.as_ref());
+            typename DefaultPieceHasher::digest_type h1 = piece_hash(commitment, commitment);
+            commitment.copy_from_slice(h1);
 
             while (hashed_size < padded_size) {
-                let h = piece_hash(&commitment, &commitment);
-                commitment.copy_from_slice(h.as_ref());
+                typename DefaultPieceHasher::digest_type h = piece_hash(commitment, commitment);
+                commitment.copy_from_slice(h);
                 hashed_size *= 2;
             }
 
@@ -65,17 +70,19 @@ namespace nil {
 
             return {commitment, size};
         }
-        piece_info join_piece_infos(const piece_info &left, const piece_info &right) {
-            assert(("Piece sizes must be equal", left.size == right.size));
-            let h = piece_hash(&left.commitment, &right.commitment);
 
-            left.commitment.copy_from_slice(AsRef::<[u8]>::as_ref(&h));
+        piece_info join_piece_infos(piece_info &left, const piece_info &right) {
+            assert(("Piece sizes must be equal", left.size == right.size));
+            left.commitment = piece_hash(left.commitment, right.commitment);
             left.size = left.size + right.size;
             return left;
         }
+
         unpadded_bytes_amount sum_piece_bytes_with_alignment(const std::vector<unpadded_bytes_amount> &pieces) {
-            pieces.iter().fold(0, | acc,
-                               piece_bytes | {acc + get_piece_alignment(acc, *piece_bytes).sum(*piece_bytes)});
+            return std::accumulate(
+                pieces.begin(), pieces.end(), 0,
+                [&](unpadded_bytes_amount acc, typename std::vector<unpadded_bytes_amount>::value_type &val)
+                    -> unpadded_bytes_amount { return acc + get_piece_alignment(acc, val).sum(val); });
         }
         PieceAlignment get_piece_alignment(unpadded_bytes_amount written_bytes, unpadded_bytes_amount piece_bytes) {
             std::uint64_t piece_bytes_needed = MINIMUM_PIECE_SIZE;
@@ -101,7 +108,6 @@ namespace nil {
             std::size_t right_bytes = piece_bytes_needed - piece_bytes;
 
             return {left_bytes, right_bytes};
-
         }
         unpadded_byte_index get_piece_start_byte(const std::vector<unpadded_bytes_amount> &pieces,
                                                  unpadded_bytes_amount piece_bytes) {
@@ -113,33 +119,32 @@ namespace nil {
             return last_byte + alignment.left_bytes;
         }
         commitment_type compute_comm_d(sector_size_type sector_size, const std::vector<piece_info> &piece_infos) {
-            info !("verifying {} pieces", piece_infos.size());
             if (piece_infos.empty()) {
                 return empty_comm_d(sector_size);
             }
 
-            unpadded_bytes_amount unpadded_sector = sector_size.into();
+            unpadded_bytes_amount unpadded_sector = sector_size;
 
             assert(("Too many pieces ",
                     piece_infos.size() <= unpadded_sector / MINIMUM_RESERVED_BYTES_FOR_PIECE_IN_FULLY_ALIGNED_SECTOR));
 
             // make sure the piece sizes are at most a sector size large
-            std::uint64_t piece_size = piece_infos.iter().map(| info | info.size).sum();
+            std::uint64_t piece_size = std::accumulate(
+                piece_infos.begin(), piece_infos.end(), 0,
+                [&](std::uint64_t curr, typename std::vector<piece_info>::value_type &val) -> std::uint64_t {
+                    return curr + val.size;
+                });
 
             assert(("Piece is larger than sector.", piece_size <= sector_size));
 
-            let mut stack = Stack::new ();
+            std::stack<piece_info> stack;
 
-            let first = piece_infos.first().unwrap().clone();
-            ensure !(u64::from(PaddedBytesAmount::from(first.size)).is_power_of_two(),
-                     "Piece size ({:?}) must be a power of 2.",
-                     PaddedBytesAmount::from(first.size));
-            stack.shift(first);
+            piece_info first = *piece_infos.begin();
+            assert(("Piece size must be a power of 2.", first.size.is_power_of_two()));
+            stack.push(first);
 
-            for (const piece_info &piece_info : piece_infos.iter().skip(1)) {
-                ensure !(u64::from(PaddedBytesAmount::from(piece_info.size)).is_power_of_two(),
-                         "Piece size ({:?}) must be a power of 2.",
-                         PaddedBytesAmount::from(piece_info.size));
+            for (int i = 0; i < piece_infos.size(); i += 2) {
+                assert(("Piece size must be a power of 2.", piece_infos[i].size.is_power_of_two()));
 
                 while (stack.peek().size < piece_info.size) {
                     stack.shift_reduce(zero_padding(stack.peek().size));
@@ -152,9 +157,9 @@ namespace nil {
                 stack.shift_reduce(zero_padding(stack.peek().size));
             }
 
-            ensure !(stack.len() == 1, "Stack size ({}) must be 1.", stack.len());
+            assert(("Stack size must be 1.", stack.size() == 1));
 
-            commitment_type comm_d_calculated = stack.pop() ?.commitment;
+            commitment_type comm_d_calculated = stack.pop().commitment;
 
             return comm_d_calculated;
         }

@@ -197,12 +197,14 @@ namespace nil {
                             // Note: from_data_store requires the base tree leaf count
                             DiskTree<MerkleTreeType::Hasher, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
                                      MerkleTreeType::TopTreeArity>
-                                tree_c = DiskTree<MerkleTreeType::Hasher, MerkleTreeType::Arity,
-                                                  MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>::
-                                             from_data_store(
-                                                 tree_c_store,
-                                                 get_merkle_tree_leafs(tree_c_size, MerkleTreeType::Arity::to_usize()))
-                                                 .context("tree_c");
+                                tree_c =
+                                    DiskTree<MerkleTreeType::Hasher, MerkleTreeType::Arity,
+                                             MerkleTreeType::SubTreeArity,
+                                             MerkleTreeType::TopTreeArity>::from_data_store(tree_c_store,
+                                                                                            get_merkle_tree_leafs(
+                                                                                                tree_c_size,
+                                                                                                MerkleTreeType::Arity))
+                                        .context("tree_c");
                             tree_c.delete(config.clone()).context("tree_c");
                         };
 
@@ -217,7 +219,7 @@ namespace nil {
                                     tree_d_store, get_merkle_tree_leafs(tree_d_size, BINARY_ARITY))
                                     .context("tree_d");
 
-                            tree_d.delete(t_aux.tree_d_config).context("tree_d") ? ;
+                            tree_d.delete(t_aux.tree_d_config).context("tree_d");
                             trace !("tree d deleted");
                         }
 

@@ -26,6 +26,8 @@
 #ifndef FILECOIN_SEAL_API_POST_HPP
 #define FILECOIN_SEAL_API_POST_HPP
 
+#include <ifstream>
+
 #include <boost/filesystem/file_status.hpp>
 
 #include <nil/filecoin/storage/proofs/core/btree/map.hpp>
@@ -56,12 +58,17 @@ namespace nil {
                                          })));
 
                 boost::filesystem::path f_aux_path = cache_dir / std::to_string(cache_key::PAux);
-                std::vector<std::uint8_t> aux_bytes =
-                    std::fs::read(&f_aux_path).with_context(|| format !("could not read from path={:?}", f_aux_path));
+                std::ifstream file;
+                file.open(f_aux_path.string(), std::ios::binary);
+                std::streamsize size = file.tellg();
+                file.seekg(0, std::ios::beg);
 
-                aux = deserialize(aux_bytes);
+                std::vector<char> aux_bytes(size);
+                if (file.read(aux_bytes.data(), size)) {
+                    aux = deserialize(aux_bytes);
+                }
 
-                assert(("Sealed replica does not exist", boost::filesystem::exists(replica)));
+                assert(("Sealed replica does not exist", boost::filesystem::exists(replica.status())));
             }
 
             boost::filesystem::path cache_dir_path() const {
@@ -90,10 +97,6 @@ namespace nil {
                 merkle_tree(sector_size_type sector_size) {
                 std::size_t base_tree_size = get_base_tree_size<MerkleTreeType>(sector_size);
                 std::size_t base_tree_leafs = get_base_tree_leafs<MerkleTreeType>(base_tree_size);
-                trace !("post: base tree size {}, base tree leafs {}, rows_to_discard {}, arities [{}, {}, {}]",
-                        base_tree_size, base_tree_leafs,
-                        default_rows_to_discard(base_tree_leafs, MerkleTreeType::Arity), MerkleTreeType::Arity,
-                        MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity);
 
                 StoreConfg config(cache_dir_path(), std::to_string(cache_key::CommRLastTree),
                                   default_rows_to_discard(base_tree_leafs, MerkleTreeType::Arity));

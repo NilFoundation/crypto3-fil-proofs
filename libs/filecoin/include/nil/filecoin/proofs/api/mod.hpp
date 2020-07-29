@@ -26,6 +26,8 @@
 #ifndef FILECOIN_SEAL_API_MOD_HPP
 #define FILECOIN_SEAL_API_MOD_HPP
 
+#include <string>
+
 #include <nil/filecoin/storage/proofs/core/sector.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
@@ -112,17 +114,17 @@ namespace nil {
             std::size_t base_tree_leafs = get_base_tree_leafs<DefaultBinaryTree>(base_tree_size);
             // MT for original data is always named tree-d, and it will be
             // referenced later in the process as such.
-            let config = StoreConfig::new (
-                cache_path.as_ref(), cache_key::CommDTree.to_string(),
-                default_rows_to_discard(base_tree_leafs, <DefaultBinaryTree as MerkleTreeTrait>::Arity));
-            let pp = public_params(PaddedBytesAmount::from(config), usize::from(PoRepProofPartitions::from(config)),
-                                   config.porep_id);
+            StoreConfig config =
+                StoreConfig(cache_path.as_ref(), cache_key::CommDTree.to_string(),
+                            default_rows_to_discard(base_tree_leafs, <DefaultBinaryTree as MerkleTreeTrait>::Arity));
+            let pp =
+                public_params(PaddedBytesAmount::from(config), PoRepProofPartitions::from(config), config.porep_id);
 
             padded_bytes_amount offset_padded = unpadded_bytes_amount::from(offset);
             padded_bytes_amount num_bytes_padded = num_bytes;
 
             let unsealed_all =
-                StackedDrg<MerkleTreeType, DefaultPieceHasher>::extract_all(&pp, &replica_id, &data, Some(config));
+                StackedDrg<MerkleTreeType, DefaultPieceHasher>::extract_all(pp, replica_id, data, config);
             std::size_t start = offset_padded;
             std::size_t end = start + num_bytes_padded;
             let unsealed = &unsealed_all[start..end];
@@ -130,8 +132,8 @@ namespace nil {
             // If the call to `extract_range` was successful, the `unsealed` vector must
             // have a length which equals `num_bytes_padded`. The byte at its 0-index
             // byte will be the the byte at index `offset_padded` in the sealed sector.
-            let written =
-                write_unpadded(unsealed, &mut unsealed_output, 0, num_bytes.into()).context("write_unpadded failed");
+            std::size_t written =
+                write_unpadded(unsealed, unsealed_output, 0, num_bytes.into()).context("write_unpadded failed");
 
             info !("unseal_range:finish");
             return written;
@@ -194,21 +196,21 @@ namespace nil {
 
             let result = measure_op(
                 Operation::AddPiece, || {
-                    ensure_piece_size(piece_size) ? ;
+                    ensure_piece_size(piece_size);
 
                     let source = std::io::BufReader::new (source);
                     let mut target = std::io::BufWriter::new (target);
 
-                    let written_bytes = crate::pieces::sum_piece_bytes_with_alignment(&piece_lengths);
+                    std::size_t written_bytes = crate::pieces::sum_piece_bytes_with_alignment(&piece_lengths);
                     let piece_alignment = crate::pieces::get_piece_alignment(written_bytes, piece_size);
-                    let fr32_reader = crate::fr32_reader::Fr32Reader::new (source);
+                    Fr32Reader fr32_reader(source);
 
                     // write left alignment
                     for (int i = 0; i < piece_alignment.left_bytes; i++) {
                         target.write_all(&[0u8][..]);
                     }
 
-                    let mut commitment_reader = CommitmentReader::new (fr32_reader);
+                    CommitmentReader commitment_reader(fr32_reader);
                     let n = std::io::copy(&mut commitment_reader, &mut target)
                                 .context("failed to write and preprocess bytes");
 
