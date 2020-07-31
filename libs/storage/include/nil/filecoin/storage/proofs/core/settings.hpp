@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_SETTINGS_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_SETTINGS_HPP
 
+#include <cstdint>
+
 namespace nil {
     namespace filecoin {
         constexpr static const char *settings_path = "config.ini";

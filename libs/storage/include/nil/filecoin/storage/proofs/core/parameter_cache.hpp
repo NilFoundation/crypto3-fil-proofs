@@ -28,7 +28,10 @@
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 
+#include <string>
+
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -51,39 +54,30 @@ namespace nil {
         }
 
         boost::filesystem::path parameter_cache_params_path(const std::string &parameter_set_identifier) {
-            let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
-            dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, GROTH_PARAMETER_EXT))
+            return boost::filesystem::path(
+                (parameter_cache_dir_name() + "/v" + std::to_string(VERSION) + "-" + parameter_set_identifier + ".")
+                    .append(GROTH_PARAMETER_EXT));
         }
 
         boost::filesystem::path parameter_cache_metadata_path(const std::string &parameter_set_identifier) {
-            let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
-            dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, PARAMETER_METADATA_EXT))
+            return boost::filesystem::path(
+                (parameter_cache_dir_name() + "/v" + std::to_string(VERSION) + "-" + parameter_set_identifier + ".")
+                    .append(PARAMETER_METADATA_EXT));
         }
 
         boost::filesystem::path parameter_cache_verifying_key_path(const std::string &parameter_set_identifier) {
-            let dir = Path::new (&parameter_cache_dir_name()).to_path_buf();
-            dir.join(format !("v{}-{}.{}", VERSION, parameter_set_identifier, VERIFYING_KEY_EXT))
+            return boost::filesystem::path(
+                (parameter_cache_dir_name() + "/v" + std::to_string(VERSION) + "-" + parameter_set_identifier + ".")
+                    .append(VERIFYING_KEY_EXT));
         }
 
         boost::filesystem::path ensure_ancestor_dirs_exist(const boost::filesystem::path &cache_entry_path) {
-            info !("ensuring that all ancestor directories for: {:?} exist", cache_entry_path);
-
-            if let
-                Some(parent_dir) = cache_entry_path.parent() {
-                    if let
-                        Err(err) = create_dir_all(&parent_dir) {
-                            match err.kind() {
-                                io::ErrorKind::AlreadyExists = > {
-                                }
-                                _ = > return Err(From::from(err)),
-                            }
-                        }
-                }
-            else {
-                bail !("{:?} has no parent directory", cache_entry_path);
+            boost::filesystem::path parent_dir = cache_entry_path.parent_path();
+            if (boost::filesystem::exists(parent_dir)) {
+                return cache_entry_path;
+            } else {
+                throw std::exception(cache_entry_path.string() + " has no parent directory");
             }
-
-            return cache_entry_path;
         }
 
         struct parameter_set_metadata {
@@ -94,6 +88,55 @@ namespace nil {
         struct cache_entry_metadata {
             std::size_t sector_size;
         };
+
+        cache_entry_metadata read_cached_metadata(const boost::filesystem::path &cache_entry_path) {
+            with_exclusive_read_lock(
+                cache_entry_path, [&](const boost::filesystem::path &file) { return serde_json::from_reader(file); });
+        }
+
+        cache_entry_metadata write_cached_metadata(const boost::filesystem::path &cache_entry_path,
+                                                   cache_entry_metadata value) {
+            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
+                serde_json::to_writer(file, value);
+
+                return value;
+            });
+        }
+
+
+        template<typename Bls12>
+        groth16::mapped_params<Bls12> read_cached_params(const boost::filesystem::path &cache_entry_path) {
+            with_exclusive_read_lock(cache_entry_path, [&]() -> groth16::mapped_params<Bls12> {
+                groth16::mapped_params<Bls12> params = Parameters::build_mapped_parameters(cache_entry_path, false);
+            });
+        }
+
+        template<typename Bls12>
+        groth16::verifying_key<Bls12> read_cached_verifying_key(const boost::filesystem::path &cache_entry_path) {
+            with_exclusive_read_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
+                return groth16::verifying_key<Bls12>::read(file);
+            });
+        }
+
+        template<typename Bls12>
+        groth16::verifying_key<Bls12> write_cached_verifying_key(const boost::filesystem::path &cache_entry_path,
+                                                                 groth16::verifying_key<Bls12>
+                                                                 value) {
+            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
+                value.write(file);
+
+                return value;
+            });
+        }
+
+        template<typename Bls12>
+        groth16::parameters<Bls12>
+        write_cached_params(const boost::filesystem::path &cache_entry_path, groth16::parameters<Bls12> value) {
+            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
+                value.write(file);
+                return value;
+            });
+        }
 
         template<template<typename> class Circuit, typename Bls12,
                  typename ParameterSetMetadata = parameter_set_metadata>
@@ -118,42 +161,27 @@ namespace nil {
                 std::string id = cache_identifier(pub_params);
 
                 // generate (or load) metadata
-                boost::filesystem::path meta_path = ensure_ancestor_dirs_exist(parameter_cache_metadata_path(&id));
-                read_cached_metadata(meta_path)
-                    .or_else(| _ | write_cached_metadata(&meta_path, cache_meta(pub_params)));
+                boost::filesystem::path meta_path = ensure_ancestor_dirs_exist(parameter_cache_metadata_path(id));
+                try {
+                    read_cached_metadata(meta_path);
+                } catch (...) {
+                    write_cached_metadata(meta_path, cache_meta(pub_params));
+                }
             }
 
-            template<typename Bls12, typename UniformRandomGenerator>
-            groth::mapped_params<Bls12> get_groth_params(UniformRandomGenerator &r, const C &circiut,
+            template<typename UniformRandomGenerator>
+            groth::mapped_params<Bls12> get_groth_params(UniformRandomGenerator &r, const C &circuit,
                                                          const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
-                auto generate = [&]() {
-                    if let
-                        Some(rng) = rng {
-                            use std::time::Instant;
+                auto generate = [&]() { return groth16::generate_random_parameters<Bls12>(circuit, r); };
 
-                            info !("Actually generating groth params. (id: {})", &id);
-                            let start = Instant::now();
-                            let parameters = groth16::generate_random_parameters::<Bls12, _, _>(circuit, rng) ? ;
-                            let generation_time = start.elapsed();
-                            info !("groth_parameter_generation_time: {:?} (id: {})", generation_time, &id);
-                            Ok(parameters)
-                        }
-                    else {
-                        bail !("No cached parameters found for {}", id);
-                    }
-                };
+                boost::filesystem::path cache_path = ensure_ancestor_dirs_exist(parameter_cache_params_path(id));
 
-                boost::filesystem::path cache_path = ensure_ancestor_dir_exist(parameter_cache_params_path(id));
-
-                if (read_cached_params(cache_path)) {
-                    Ok(x) = > Ok(x), Err(_) = > {
-                    write_cached_params(&cache_path, generate()?).unwrap_or_else(|e| {
-                        panic!("{}: failed to write generated parameters to cache", e)
-                    });
-                    return read_cached_params(&cache_path);
-                    }
+                try {
+                    return read_cached_params(cache_path);
+                } catch (...) {
+                    return write_cached_params(cache_path, generate());
                 }
             }
 
@@ -168,60 +196,13 @@ namespace nil {
                 };
 
                 boost::filesystem::path cache_path = ensure_ancestor_dirs_exist(parameter_cache_verifying_key_path(id));
-            read_cached_verifying_key(&cache_path)
-                .or_else(|_| write_cached_verifying_key(&cache_path, generate()?));
+                try {
+                    return read_cached_verifying_key(cache_path);
+                } catch (...) {
+                    return write_cached_verifying_key(cache_path, generate());
+                }
             }
         };
-
-        template<typename Bls12>
-        groth16::mapped_params<Bls12> read_cached_params(const boost::filesystem::path &cache_entry_path) {
-            with_exclusive_read_lock(cache_entry_path, [&]() -> groth16::mapped_params<Bls12> {
-                groth16::mapped_params<Bls12> params =
-                    Parameters::build_mapped_parameters(cache_entry_path.to_path_buf(), false);
-                info !("read parameters from cache {:?} ", cache_entry_path);
-            });
-        }
-
-        template<typename Bls12>
-        groth16::verifying_key<Bls12> read_cached_verifying_key(const boost::filesystem &path) {
-            with_exclusive_read_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                return groth16::verifying_key<Bls12>::read(file);
-            });
-        }
-
-        cache_entry_metadata read_cached_metadata(const boost::filesystem::path &cache_entry_path) {
-            with_exclusive_read_lock(
-                cache_entry_path, [&](const boost::filesystem::path &file) { return serde_json::from_reader(file); });
-        }
-
-        cache_entry_metadata write_cached_metadata(const boost::filesystem::path &cache_entry_path,
-                                                   cache_entry_metadata value) {
-            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                serde_json::to_writer(file, value);
-
-                return value;
-            });
-        }
-
-        template<typename Bls12>
-        groth16::verifying_key<Bls12> write_cached_verifying_key(const boost::filesystem::path &cache_entry_path,
-                                                                 groth16::verifying_key<Bls12>
-                                                                     value) {
-            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                value.write(file);
-
-                return value;
-            });
-        }
-
-        template<typename Bls12>
-        groth16::parameters<Bls12> write_cached_params(const boost::filesystem::path &cache_entry_path,
-                                                       groth16::parameters<Bls12> value) {
-            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                value.write(file);
-                return value;
-            });
-        }
     }    // namespace filecoin
 }    // namespace nil
 
