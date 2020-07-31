@@ -26,8 +26,20 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_HASHER_TYPES_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_HASHER_TYPES_HPP
 
+#include <cstdint>
+
 namespace nil {
-    namespace filecoin { }
+    namespace filecoin {
+        constexpr static const std::size_t PoseidonBinaryArity = 2;
+        constexpr static const std::size_t PoseidonQuadArity = 4;
+        constexpr static const std::size_t PoseidonOctArity = 8;
+
+        constexpr static const std::size_t PoseidonMDArity = 36;
+
+        /// Arity to use for hasher implementations (Poseidon) which are specialized at compile time.
+        /// Must match PoseidonArity
+        constexpr static const std::size_t MERKLE_TREE_ARITY = 2;
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif

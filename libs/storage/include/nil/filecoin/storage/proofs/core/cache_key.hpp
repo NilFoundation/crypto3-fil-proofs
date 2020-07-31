@@ -26,6 +26,8 @@
 #ifndef FILECOIN_CACHE_KEY_HPP
 #define FILECOIN_CACHE_KEY_HPP
 
+#include <string>
+
 namespace nil {
     namespace filecoin {
         enum class cache_key { PAux, TAux, CommDTree, CommCTree, CommRLastTree };
@@ -33,21 +35,21 @@ namespace nil {
 }    // namespace nil
 
 namespace std {
-    std::string to_string(const cache_key &key) {
+    std::string to_string(const nil::filecoin::cache_key &key) {
         switch (key) {
-            case cache_key::PAux: {
+            case nil::filecoin::cache_key::PAux: {
                 return "p_aux";
             } break;
-            case cache_key::TAux: {
+            case nil::filecoin::cache_key::TAux: {
                 return "t_aux";
             } break;
-            case cache_key::CommDTree: {
+            case nil::filecoin::cache_key::CommDTree: {
                 return "tree-d";
             } break;
-            case cache_key::CommCTree: {
+            case nil::filecoin::cache_key::CommCTree: {
                 return "tree-c";
             } break;
-            case cache_key::CommRLastTree: {
+            case nil::filecoin::cache_key::CommRLastTree: {
                 return "tree-r-last";
             } break;
         }

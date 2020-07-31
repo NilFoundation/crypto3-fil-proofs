@@ -38,16 +38,17 @@ namespace nil {
                  std::size_t TopTreeArity = PoseidonArity>
         struct MerkleProofTrait {
             typedef Hash hash_type;
-            typedef Arity arity_type;
-            typedef SubTreeArity subtree_arity;
-            typedef TopTreeArity top_tree_arity;
+
+            constexpr static const std::size_t base_arity = BaseArity;
+            constexpr static const std::size_t sub_tree_arity = SubTreeArity;
+            constexpr static const std::size_t top_tree_arity = TopTreeArity;
 
             /// Try to convert a merkletree proof into this structure.
             static MerkleProofTrait<Hash, BaseArity, SubTreeArity, TopTreeArity>
-                try_from_proof(const Proof<typename Hash::digest_type, Arity> &p) {
+                try_from_proof(const Proof<typename Hash::digest_type, BaseArity> &p) {
             }
 
-            std::vector<std::pair<std::vector<Fr>, std::size_t>> as_options(&self) {
+            std::vector<std::pair<std::vector<Fr>, std::size_t>> as_options() {
                 return path()
                     .iter()
                     .map(| v | {(v .0.iter().copied().map(Into::into).map(Some).collect(), Some(v .1), )})
@@ -98,7 +99,12 @@ namespace nil {
             virtual std::vector<std::pair<std::vector<typename Hash::digest_type>, std::size_t>> path() = 0;
 
             std::size_t path_index() {
-                return path().iter().rev().fold(0, | acc, (_, index) | (acc * Self::Arity::to_usize()) + index);
+                return std::accumulate(
+                    path().begin(), path().end(), 0,
+                    [&](std::size_t acc, typename std::vector<std::pair<std::vector<typename Hash::digest_type>,
+                                                                        std::size_t>>::value_type &val) -> std::size_t {
+                        return (acc + BaseArity) + val.second;
+                    });
             }
 
             bool proves_challenge(std::size_t challenge) {
@@ -107,7 +113,7 @@ namespace nil {
 
             /// Calcluates the exected length of the full path, given the number of leaves in the base layer.
             std::size_t expected_len(std::size_t leaves) {
-                compound_path_length::<Self::Arity, Self::SubTreeArity, Self::TopTreeArity>(leaves)
+                compound_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves)
             }
         };
 
@@ -122,7 +128,7 @@ namespace nil {
                 l = leaves;
             }
 
-            return graph_height<A>(leaves) - 1;
+            return graph_height<A>(l) - 1;
         }
 
         template<std::size_t A, std::size_t B, std::size_t C>
@@ -189,15 +195,15 @@ namespace nil {
                 return path.empty();
             }
 
-            std::slice::Iter<PathElement<Hash, Arity>> iter() {
+            std::slice::Iter<PathElement<Hash, BaseArity>> iter() {
                 return path.iter();
             }
 
             std::size_t path_index() {
-                return path.iter().rev().fold(0, | acc, p | (acc * Arity) + p.index);
+                return path.iter().rev().fold(0, | acc, p | (acc * BaseArity) + p.index);
             }
 
-            std::vector < PathElement<Hash, Arity> path;
+            std::vector<PathElement<Hash, BaseArity>> path;
         };
 
         template<typename Hash, std::size_t BaseArity>
@@ -209,8 +215,8 @@ namespace nil {
         template<typename Hash, std::size_t BaseArity>
         struct SingleProof {
             template<template<typename, typename> class Proof>
-            static SingleProof<Hash, Arity> try_from_proof(const Proof<typename Hash::digest_type, Arity> &p) {
-                return proof_to_single(&p, 1);
+            static SingleProof<Hash, BaseArity> try_from_proof(const Proof<typename Hash::digest_type, BaseArity> &p) {
+                return proof_to_single(p, 1);
             }
 
             bool verify() {
@@ -218,7 +224,7 @@ namespace nil {
             }
 
             std::size_t size() {
-                return path.size() * (Arity - 1) + 2;
+                return path.size() * (BaseArity - 1) + 2;
             }
 
             std::vector<std::pair<std::vector<typename Hash::digest_type>, std::size_t>> path() {
@@ -299,10 +305,10 @@ namespace nil {
                 assert(("top arity mismatch", p.top_layer_nodes() == TopTreeArity));
                 assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
 
-                assert(("Cannot generate top proof without a sub-proof", p.sub_tree_proof.is_some()));
+                assert(("Cannot generate top proof without a sub-proof", p.sub_tree_proof));
                 let sub_p = p.sub_tree_proof.as_ref().unwrap();
 
-                ensure !(sub_p.sub_tree_proof.is_some(), "Cannot generate top proof without a base-proof");
+                assert(("Cannot generate top proof without a base-proof", sub_p.sub_tree_proof));
                 let base_p = sub_p.sub_tree_proof.as_ref().unwrap();
 
                 let root = p.root();

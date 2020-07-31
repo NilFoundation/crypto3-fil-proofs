@@ -38,7 +38,7 @@ void test_merklepor() {
 
     let data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
     let porep_id = [3; 32];
-    let graph = BucketGraph::<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
+    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
     let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice()).unwrap();
 
     let pub_inputs = PublicInputs {
@@ -116,7 +116,7 @@ fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
 
     let porep_id = [99; 32];
 
-    let graph = BucketGraph::<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
+    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
     let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice()).unwrap();
 
     let pub_inputs = PublicInputs {
@@ -189,7 +189,7 @@ void test_merklepor_validates_challenge_identity() {
     let data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     let porep_id = [32; 32];
-    let graph = BucketGraph::<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
+    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
     let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice()).unwrap();
 
     let pub_inputs = PublicInputs {

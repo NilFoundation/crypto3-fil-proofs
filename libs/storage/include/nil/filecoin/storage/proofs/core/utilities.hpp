@@ -43,68 +43,7 @@ namespace nil {
 
             assert(offset + NODE_SIZE <= data.size());
 
-            return &data[offset..offset + NODE_SIZE];
-        }
-
-        /// Converts bytes into their bit representation, in little endian format.
-        std::vector<bool> bytes_into_bits(const std::vector<std::uint8_t> &bytes) {
-            return bytes.iter().flat_map(| &byte | (0..8).map(move | i | (byte >> i) & 1u8 == 1u8)).collect();
-        }
-
-        /// Converts bytes into their bit representation, in little endian format.
-        std::vector<bool> bytes_into_bits_opt(const std::vector<std::uint8_t> &bytes) {
-            return bytes.iter().flat_map(| &byte | (0..8).map(move | i | Some((byte >> i) & 1u8 == 1u8))).collect();
-        }
-
-        /// Converts bytes into their bit representation, in big endian format.
-        std::vector<bool> bytes_into_bits_be(const std::vector<std::uint8_t> &bytes) {
-            return bytes.iter().flat_map(| &byte | (0..8).rev().map(move | i | (byte >> i) & 1u8 == 1u8)).collect();
-        }
-
-        /// Converts the bytes into a boolean vector, in little endian format.
-        template<typename EngineType, template<typename = EngineType> class ConstraintSystem>
-        std::tuple<std::vector<bool>, SynthesisError>
-            bytes_into_boolean_vec(ConstraintSystem &cs, const std::vector<std::uint8_t> &value, std::size_t size) {
-            let values = match value {
-                Some(value) = > bytes_into_bits(value).into_iter().map(Some).collect(), None = > vec ![None; size],
-            };
-
-let bits = values
-               .into_iter()
-               .enumerate()
-               .map(|(i, b)| {
-               Ok(Boolean::from(AllocatedBit::alloc(
-                   cs.namespace(|| format!("bit {}", i)),
-    b,
-    )?))
-           })
-.collect::<Result<Vec<_>, SynthesisError>>()?;
-
-Ok(bits)
-        }
-
-        /// Converts the bytes into a boolean vector, in big endian format.
-        pub fn bytes_into_boolean_vec_be<E : Engine, CS : ConstraintSystem<E>>(mut cs
-                                                                               : CS, value
-                                                                               : Option<&[u8]>, size
-                                                                               : usize, )
-            ->Result<Vec<boolean::Boolean>, SynthesisError> {
-            let values = match value {
-                Some(value) = > bytes_into_bits_be(value).into_iter().map(Some).collect(), None = > vec ![None; size],
-            };
-
-let bits = values
-               .into_iter()
-               .enumerate()
-               .map(|(i, b)| {
-               Ok(Boolean::from(AllocatedBit::alloc(
-                   cs.namespace(|| format!("bit {}", i)),
-    b,
-    )?))
-           })
-.collect::<Result<Vec<_>, SynthesisError>>()?;
-
-Ok(bits)
+            return std::vector<std::uint8_t>(data.begin() + offset, data.begin() + offset + NODE_SIZE);
         }
 
         inline std::uint8_t bool_to_u8(bool bit, std::size_t offset) {
@@ -113,29 +52,6 @@ Ok(bits)
             } else {
                 return (std::uint8_t)0;
             }
-        }
-
-        /// Converts a slice of bools into their byte representation, in little endian.
-        std::vector<std::uint8_t> bits_to_bytes(bits : &[bool]) {
-            return bits.chunks(8)
-                .map(| bits |
-                     {bool_to_u8(bits[7], 7) | bool_to_u8(bits[6], 6) | bool_to_u8(bits[5], 5) |
-                      bool_to_u8(bits[4], 4) | bool_to_u8(bits[3], 3) | bool_to_u8(bits[2], 2) |
-                      bool_to_u8(bits[1], 1) | bool_to_u8(bits[0], 0)})
-                .collect();
-        }
-
-        /// Reverse the order of bits within each byte (bit numbering), but without altering the order of bytes
-        /// within the array (endianness) — when bit array is viewed as a flattened sequence of octets.
-        /// Before intra-byte bit reversal begins, zero-bit padding is added so every byte is full.
-        std::vector<bool> reverse_bit_numbering(const std::vector<bool> &bits) {
-            let mut padded_bits = bits;
-            // Pad partial bytes
-            while (padded_bits.size() % CHAR_BIT != 0) {
-                padded_bits.push(boolean::Boolean::Constant(false));
-            }
-
-            return padded_bits.chunks(CHAR_BIT).map(| chunk | chunk.iter().rev()).flatten().cloned().collect();
         }
 
         // If the tree is large enough to use the default value (per-arity), use it.  If it's too small to cache
@@ -163,9 +79,9 @@ Ok(bits)
             // differing by arity) while respecting the max number that
             // the tree can support discarding.
             if (arity == 2) {
-                return std::min(max_rows_to_discard, 7);
+                return std::min(max_rows_to_discard, 7U);
             } else if (arity == 4) {
-                return std::min(max_rows_to_discard, 5);
+                return std::min(max_rows_to_discard, 5U);
             } else {
                 return std::min(max_rows_to_discard, rows_to_discard);
             }
