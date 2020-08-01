@@ -173,6 +173,14 @@ namespace nil {
         struct InclusionPath {
             /// Calculate the root of this path, given the leaf as input.
             typename Hash::digest_type root(const typename Hash::digest_type &leaf) {
+                using namespace nil::crypto3;
+                accumulator_set<Hash> acc;
+                std::accumulate(path.begin(), path.end(), leaf, [&](typename Hash::digest_type acc, typename
+                                                                    std::vector<PathElement<Hash,
+                                                                                            BaseArity>>::value_type
+                                                                                                        &v) {
+
+                });
                 let mut a = H::Function::default();
                 (0..self.path.len())
                     .fold(
@@ -247,9 +255,9 @@ namespace nil {
         struct SubProof {
             static SubProof<Hash, BaseArity, SubTreeArity>
                 try_from_proof(const proof::Proof<typename Hash::digest_type, BaseArity> &p) {
-                ensure !(p.sub_layer_nodes() == SubTreeArity::to_usize(), "sub arity mismatch");
-                ensure !(p.sub_tree_proof.is_some(), "Cannot generate sub proof without a base-proof");
-                let base_p = p.sub_tree_proof.as_ref().unwrap();
+                assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
+                assert(("Cannot generate sub proof without a base-proof", p.sub_tree_proof));
+                let base_p = p.sub_tree_proof;
 
                 // Generate SubProof
                 let root = p.root();
@@ -409,9 +417,15 @@ namespace nil {
         /// index 0 and base proofs start at index 1 (skipping the leaf at the
         /// front)
         template<typename Hash, std::size_t BaseArity, typename LemmaIterator, typename PathIterator>
-        InclusionPath<Hash, Arity> extract_path(LemmaIterator lemma_first, LemmaIterator lemma_last,
-                                                PathIterator path_first, PathIterator path_last,
-                                                std::size_t lemma_start_index) {
+        InclusionPath<Hash, BaseArity> extract_path(const std::vector<typename Hash::digest_type> &lemma,
+                                                    const std::vector<std::size_t> &path,
+                                                    std::size_t lemma_start_index) {
+            std::vector<PathElement> res;
+
+            for (int i = lemma_start_index; i < lemma.size(); i += BaseArity) {
+                for (int j = i; j < BaseArity; j++) {
+                }
+            }
             let path = lemma[lemma_start_index..lemma.len() - 1]
                            .chunks(Arity::to_usize() - 1)
                            .zip(path.iter())
@@ -426,9 +440,10 @@ namespace nil {
         }
 
         /// Converts a merkle_light proof to a SingleProof
-        template<typename Hash, std::size_t BaseArity, typename TargetArity, template<typename, typename> class Proof>
+        template<typename Hash, std::size_t BaseArity, std::size_t TargetArity,
+                 template<typename, typename> class Proof>
         SingleProof<Hash, TargetArity>
-            proof_to_single(const Proof<Hash, Arity> &proof, std::size_t lemma_start_index,
+            proof_to_single(const Proof<Hash, BaseArity> &proof, std::size_t lemma_start_index,
                             typename Hash::digest_type &sub_root = typename Hash::digest_type()) {
             typename Hash::digest_type root = proof.root();
             typename Hash::digest_type leaf = sub_root.emplty() ? sub_root : proof.item();
