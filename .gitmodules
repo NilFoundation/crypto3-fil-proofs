@@ -46,3 +46,6 @@
 [submodule "libs/crypto/stream"]
 	path = libs/crypto/stream
 	url = git@github.com:nilfoundation/stream.git
+[submodule "libs/math"]
+	path = libs/math
+	url = git@github.com:nilfoundation/math.git
