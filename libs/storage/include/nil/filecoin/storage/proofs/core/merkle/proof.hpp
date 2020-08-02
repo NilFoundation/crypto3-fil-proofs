@@ -35,9 +35,62 @@
 
 #include <nil/filecoin/storage/proofs/core/proof/proof.hpp>
 #include <nil/filecoin/storage/proofs/core/crypto/feistel.hpp>
+#include <nil/filecoin/storage/proofs/core/path_element.hpp>
 
 namespace nil {
     namespace filecoin {
+        template<std::size_t A, std::size_t B, std::size_t C>
+        std::size_t base_path_length(std::size_t leaves) {
+            std::size_t l;
+            if (C > 0) {
+                l = leaves / C / B;
+            } else if (B > 0) {
+                l = leaves / B;
+            } else {
+                l = leaves;
+            }
+
+            return graph_height<A>(l) - 1;
+        }
+
+        template<std::size_t A, std::size_t B, std::size_t C>
+        std::size_t compound_path_length(std::size_t leaves) {
+            std::size_t len = base_path_length<A, B, C>(leaves);
+            if (B > 0) {
+                len += 1;
+            }
+
+            if (C > 0) {
+                len += 1;
+            }
+
+            return len;
+        }
+
+        template<std::size_t A, std::size_t B, std::size_t C>
+        std::size_t compound_tree_height(std::size_t leaves) {
+            // base layer
+            std::size_t a = graph_height<A>(leaves) - 1;
+
+            // sub tree layer
+            std::size_t b;
+            if (B > 0) {
+                b = B - 1;
+            } else {
+                b = 0;
+            }
+
+            // top tree layer
+            std::size_t c;
+            if (C > 0) {
+                c = C - 1;
+            } else {
+                c = 0;
+            }
+
+            return a + b + c;
+        }
+
         /// Trait to abstract over the concept of Merkle Proof.
         template<typename Hash, std::size_t BaseArity = PoseidonArity, std::size_t SubTreeArity = PoseidonArity,
                  std::size_t TopTreeArity = PoseidonArity>
@@ -122,70 +175,17 @@ namespace nil {
             }
         };
 
-        template<std::size_t A, std::size_t B, std::size_t C>
-        std::size_t base_path_length(std::size_t leaves) {
-            std::size_t l;
-            if (C > 0) {
-                l = leaves / C / B;
-            } else if (B > 0) {
-                l = leaves / B;
-            } else {
-                l = leaves;
-            }
-
-            return graph_height<A>(l) - 1;
-        }
-
-        template<std::size_t A, std::size_t B, std::size_t C>
-        std::size_t compound_path_length(std::size_t leaves) {
-            std::size_t len = base_path_length<A, B, C>(leaves);
-            if (B > 0) {
-                len += 1;
-            }
-
-            if (C > 0) {
-                len += 1;
-            }
-
-            return len;
-        }
-
-        template<std::size_t A, std::size_t B, std::size_t C>
-        std::size_t compound_tree_height(std::size_t leaves) {
-            // base layer
-            std::size_t a = graph_height<A>(leaves) - 1;
-
-            // sub tree layer
-            std::size_t b;
-            if (B > 0) {
-                b = B - 1;
-            } else {
-                b = 0;
-            }
-
-            // top tree layer
-            std::size_t c;
-            if (C > 0) {
-                c = C - 1;
-            } else {
-                c = 0;
-            }
-
-            return a + b + c;
-        }
-
         template<typename Hash, std::size_t BaseArity = PoseidonArity>
         struct InclusionPath {
             /// Calculate the root of this path, given the leaf as input.
             typename Hash::digest_type root(const typename Hash::digest_type &leaf) {
                 using namespace nil::crypto3;
                 accumulator_set<Hash> acc;
-                std::accumulate(path.begin(), path.end(), leaf, [&](typename Hash::digest_type acc, typename
-                                                                    std::vector<PathElement<Hash,
-                                                                                            BaseArity>>::value_type
-                                                                                                        &v) {
+                std::accumulate(path.begin(), path.end(), leaf,
+                                [&](typename Hash::digest_type acc,
+                                    typename std::vector<PathElement<Hash, BaseArity>>::value_type &v) {
 
-                });
+                                });
                 let mut a = H::Function::default();
                 (0..self.path.len())
                     .fold(
@@ -208,21 +208,15 @@ namespace nil {
                 return path.empty();
             }
 
-            std::slice::Iter<PathElement<Hash, BaseArity>> iter() {
-                return path.iter();
-            }
-
             std::size_t path_index() {
-                return path.iter().rev().fold(0, | acc, p | (acc * BaseArity) + p.index);
+                return std::accumulate(
+                    path.begin(), path.end(), 0,
+                    [&](std::size_t acc, typename std::vector<PathElement<Hash, BaseArity>>::value_type &v) {
+                        return (acc * BaseArity) + v.index;
+                    });
             }
 
             std::vector<PathElement<Hash, BaseArity>> path;
-        };
-
-        template<typename Hash, std::size_t BaseArity>
-        struct PathElement {
-            std::vector<typename Hash::digest_type> &hashes;
-            std::size_t index;
         };
 
         template<typename Hash, std::size_t BaseArity>
@@ -388,7 +382,7 @@ namespace nil {
         struct MerkleProof : public MerkleProofTrait<Hash, BaseArity, SubTreeArity, TopTreeArity> {
             typedef typename Hash::digest_type digest_type;
             MerkleProof(std::size_t n) {
-                let path_elem = PathElement {
+                PathElement path_elem = PathElement {
                 hashes:
                     vec ![Default::default(); BaseArity::to_usize()], index : 0, _arity : Default::default(),
                 };
@@ -400,10 +394,8 @@ namespace nil {
                 return false;
             }
             virtual bool validate(std::size_t node) override {
-                return MerkleProofTrait::validate(node);
             }
             virtual bool validate_data(const digest_type &data) override {
-                return MerkleProofTrait::validate_data(data);
             }
             virtual digest_type leaf() override {
                 return nullptr;
@@ -446,7 +438,7 @@ namespace nil {
 
         /// Converts a merkle_light proof to a SingleProof
         template<typename Hash, std::size_t BaseArity, std::size_t TargetArity,
-                 template<typename, typename> class Proof>
+                 template<typename, std::size_t> class Proof>
         SingleProof<Hash, TargetArity>
             proof_to_single(const Proof<Hash, BaseArity> &proof, std::size_t lemma_start_index,
                             typename Hash::digest_type &sub_root = typename Hash::digest_type()) {

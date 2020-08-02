@@ -93,7 +93,7 @@ namespace nil {
         };
 
         /// Generate `comm_p` from a source and return it as bytes.
-        template<typename Hash, typename Read>
+        template<typename Hash, typename Read, template<typename> class BinaryMerkleTree>
         fr32_array generate_piece_commitment_bytes_from_source(Read &source, std::size_t padded_piece_size) {
             assert(("piece is too small", padded_piece_size > 32));
             assert(("piece is not valid size", padded_piece_size % 32 == 0));
@@ -104,7 +104,7 @@ namespace nil {
             std::size_t parts = std::ceil(static_cast<double>(padded_piece_size) / static_cast<double>(NODE_SIZE));
 
             BinaryMerkleTree<Hash> tree = BinaryMerkleTree<Hash>::try_from_iter((0..parts).map(| _ | {
-                                              source.read_exact(&mut buf) ? ;
+                                              source.read_exact(&mut buf);
                                               <H::Domain as Domain>::try_from_bytes(&buf).context("invalid Fr element")
                                           })).context("failed to build tree");
 
