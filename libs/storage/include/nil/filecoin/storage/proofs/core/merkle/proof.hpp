@@ -26,9 +26,14 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_MERKLE_PROOF_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_MERKLE_PROOF_HPP
 
+#include <algorithm>
 #include <vector>
 
 #include <boost/variant.hpp>
+
+#include <nil/crypto3/hash/algorithm/hash.hpp>
+
+#include <nil/filecoin/storage/proofs/core/proof/proof.hpp>
 #include <nil/filecoin/storage/proofs/core/crypto/feistel.hpp>
 
 namespace nil {
@@ -113,7 +118,7 @@ namespace nil {
 
             /// Calcluates the exected length of the full path, given the number of leaves in the base layer.
             std::size_t expected_len(std::size_t leaves) {
-                compound_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves)
+                return compound_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves);
             }
         };
 
@@ -248,7 +253,7 @@ namespace nil {
             /// The original leaf data for this prof.
             typename Hash::digest_type leaf;
             /// The path from leaf to root.
-            InclusionPath<Hash, Arity> path;
+            InclusionPath<Hash, BaseArity> path;
         };
 
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity>
@@ -314,7 +319,7 @@ namespace nil {
                 assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
 
                 assert(("Cannot generate top proof without a sub-proof", p.sub_tree_proof));
-                let sub_p = p.sub_tree_proof.as_ref().unwrap();
+                let sub_p = p.sub_tree_proof;
 
                 assert(("Cannot generate top proof without a base-proof", sub_p.sub_tree_proof));
                 let base_p = sub_p.sub_tree_proof.as_ref().unwrap();
