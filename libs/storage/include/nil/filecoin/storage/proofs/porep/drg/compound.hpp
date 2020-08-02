@@ -66,6 +66,10 @@ namespace nil {
 
                         assert(("Public input parameter tau must be unset", pub_in.tau.is_none() == pub_params.priv));
 
+                        if (pub_in.tau) {
+
+                        }
+
                         let(comm_r, comm_d) = match pub_in.tau {
                             None = > (None, None),
                             Some(tau) = > (Some(tau.comm_r), Some(tau.comm_d)),

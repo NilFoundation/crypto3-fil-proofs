@@ -76,7 +76,7 @@ namespace nil {
             if (boost::filesystem::exists(parent_dir)) {
                 return cache_entry_path;
             } else {
-                throw std::exception(cache_entry_path.string() + " has no parent directory");
+                throw std::invalid_argument(cache_entry_path.string() + " has no parent directory");
             }
         }
 
@@ -104,23 +104,23 @@ namespace nil {
         }
 
 
-        template<typename Bls12>
-        groth16::mapped_params<Bls12> read_cached_params(const boost::filesystem::path &cache_entry_path) {
-            with_exclusive_read_lock(cache_entry_path, [&]() -> groth16::mapped_params<Bls12> {
-                groth16::mapped_params<Bls12> params = Parameters::build_mapped_parameters(cache_entry_path, false);
+        template<template<typename> class Groth16MappedParams, typename Bls12>
+        Groth16MappedParams<Bls12> read_cached_params(const boost::filesystem::path &cache_entry_path) {
+            with_exclusive_read_lock(cache_entry_path, [&]() -> Groth16MappedParams<Bls12> {
+                Groth16MappedParams<Bls12> params = Parameters::build_mapped_parameters(cache_entry_path, false);
             });
         }
 
-        template<typename Bls12>
-        groth16::verifying_key<Bls12> read_cached_verifying_key(const boost::filesystem::path &cache_entry_path) {
+        template<template<typename> class Groth16VerifyingKey, typename Bls12>
+        Groth16VerifyingKey<Bls12> read_cached_verifying_key(const boost::filesystem::path &cache_entry_path) {
             with_exclusive_read_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                return groth16::verifying_key<Bls12>::read(file);
+                return Groth16VerifyingKey<Bls12>::read(file);
             });
         }
 
-        template<typename Bls12>
-        groth16::verifying_key<Bls12> write_cached_verifying_key(const boost::filesystem::path &cache_entry_path,
-                                                                 groth16::verifying_key<Bls12>
+        template<template<typename> class Groth16VerifyingKey, typename Bls12>
+        Groth16VerifyingKey<Bls12> write_cached_verifying_key(const boost::filesystem::path &cache_entry_path,
+                                                              Groth16VerifyingKey<Bls12>
                                                                  value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);
@@ -129,9 +129,9 @@ namespace nil {
             });
         }
 
-        template<typename Bls12>
-        groth16::parameters<Bls12>
-        write_cached_params(const boost::filesystem::path &cache_entry_path, groth16::parameters<Bls12> value) {
+        template<template<typename> class Groth16Parameters, typename Bls12>
+        Groth16Parameters<Bls12>
+        write_cached_params(const boost::filesystem::path &cache_entry_path, Groth16Parameters<Bls12> value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);
                 return value;
@@ -169,8 +169,8 @@ namespace nil {
                 }
             }
 
-            template<typename UniformRandomGenerator>
-            groth::mapped_params<Bls12> get_groth_params(UniformRandomGenerator &r, const C &circuit,
+            template<template<typename> class Groth16MappedParams, typename UniformRandomGenerator>
+            Groth16MappedParams<Bls12> get_groth_params(UniformRandomGenerator &r, const C &circuit,
                                                          const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
@@ -185,14 +185,13 @@ namespace nil {
                 }
             }
 
-            template<typename Bls12, typename UniformRandomGenerator>
-            groth16::verifying_key<Bls12> get_verifying_key(UniformRandomGenerator &r, const C &circuit,
+            template<template<typename> class Groth16VerifyingKey, typename UniformRandomGenerator>
+            Groth16VerifyingKey<Bls12> get_verifying_key(UniformRandomGenerator &r, const C &circuit,
                                                             const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
-                auto generate = [&]() groth16::verifying_key<Bls12> {
-                    auto groth_params = get_groth_params(rng, circuit, pub_params);
-                    return groth_params.vk;
+                auto generate = [&]() -> Groth16VerifyingKey<Bls12> {
+                    return get_groth_params(r, circuit, pub_params).vk;
                 };
 
                 boost::filesystem::path cache_path = ensure_ancestor_dirs_exist(parameter_cache_verifying_key_path(id));

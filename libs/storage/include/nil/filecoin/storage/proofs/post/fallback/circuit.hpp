@@ -38,18 +38,12 @@ namespace nil {
                 struct Sector {
                     Sector(const PublicSector<typename MerkleTreeType::hash_type::digest_type> &sector,
                            const SectorProof<typename MerkleTreeType::proof_type> &vanilla_proof) {
-                        let leafs = vanilla_proof.leafs().iter().map(| l | Some((*l).into())).collect();
-
-                        let paths = vanilla_proof.as_options().into_iter().map(Into::into).collect();
-
-                        Ok(Sector {
-                            leafs,
-                            id : Some(sector.id.into()),
-                            comm_r : Some(sector.comm_r.into()),
-                            comm_c : Some(vanilla_proof.comm_c.into()),
-                            comm_r_last : Some(vanilla_proof.comm_r_last.into()),
-                            paths,
-                        })
+                        leafs = vanilla_proof.leafs().iter().map(| l | Some((*l).into())).collect();
+                        paths = vanilla_proof.as_options().into_iter().map(Into::into).collect();
+                        id = sector.id;
+                        comm_r = sector.comm_r;
+                        comm_c = vanilla_proof.comm_c;
+                        comm_r_last = vanillaproof.comm_r_last;
                     }
 
                     Sector(const PublicParams &pub_params) {
@@ -57,8 +51,11 @@ namespace nil {
                         std::size_t leaves = pub_params.sector_size / NODE_SIZE;
 
                         por::PublicParams por_params = {leaves, true};
-                        let leafs = vec ![None; challenges_count];
-                        let paths = vec ![AuthPath::blank(por_params.leaves); challenges_count];
+                        std::vector<Fr> leafs(challenges_count);
+                        std::vector<AuthPath<typename MerkleTreeType::hash_type,
+                                    MerkleTreeType::Arity,
+                                    MerkleTreeType::SubTreeArity,
+                        MerkleTreeType::TopTreeArity>> paths = vec ![AuthPath::blank(por_params.leaves); challenges_count];
 
                         return Sector {
                         id:
