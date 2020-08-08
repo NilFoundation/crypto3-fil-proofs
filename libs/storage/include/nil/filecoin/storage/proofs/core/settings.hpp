@@ -33,7 +33,7 @@ namespace nil {
         constexpr static const char *settings_path = "config.ini";
 
         struct configuration {
-            bool maximize_caching = false;
+            bool maximize_caching = true;
             std::uint32_t pedersen_hash_exp_window_size = 16;
             bool use_gpu_column_builder = false;
             std::uint32_t max_gpu_column_batch_size = 400000;
