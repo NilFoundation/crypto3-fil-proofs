@@ -38,8 +38,8 @@ void test_merklepor() {
 
     let data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
     let porep_id = [3; 32];
-    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
-    let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice()).unwrap();
+    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
+    let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     let pub_inputs = PublicInputs {
         challenge : 3,
@@ -47,8 +47,8 @@ void test_merklepor() {
     };
 
     let leaf =
-        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge).unwrap(), )
-            .unwrap();
+        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+            ;
 
     let priv_inputs = PrivateInputs::new (leaf, &tree);
 
@@ -59,44 +59,44 @@ void test_merklepor() {
     assert !(is_valid);
 }
 
-type TestTree<H, U> = MerkleTreeWrapper<H, DiskStore << H as Hasher>::Domain >, U, typenum::U0, typenum::U0 > ;
+type TestTree<H, U> = MerkleTreeWrapper<H, DiskStore << H as Hasher>::Domain >, U, 0, 0> ;
 
 BOOST_AUTO_TEST_CASE(merklepor_pedersen_binary) {
-    test_merklepor::<TestTree<PedersenHasher, typenum::U2>>();
+    test_merklepor<TestTree<PedersenHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_poseidon_binary) {
-    test_merklepor::<TestTree<PoseidonHasher, typenum::U2>>();
+    test_merklepor<TestTree<PoseidonHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_sha256_binary) {
-    test_merklepor::<TestTree<Sha256Hasher, typenum::U2>>();
+    test_merklepor<TestTree<Sha256Hasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_blake2s_binary) {
-    test_merklepor::<TestTree<Blake2sHasher, typenum::U2>>();
+    test_merklepor<TestTree<Blake2sHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_pedersen_quad) {
-    test_merklepor::<TestTree<PedersenHasher, typenum::U4>>();
+    test_merklepor<TestTree<PedersenHasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_poseidon_quad) {
-    test_merklepor::<TestTree<PoseidonHasher, typenum::U4>>();
+    test_merklepor<TestTree<PoseidonHasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_sha256_quad) {
-    test_merklepor::<TestTree<Sha256Hasher, typenum::U4>>();
+    test_merklepor<TestTree<Sha256Hasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_blake2s_quad) {
-    test_merklepor::<TestTree<Blake2sHasher, typenum::U4>>();
+    test_merklepor<TestTree<Blake2sHasher, 4>>();
 }
 
 // Takes a valid proof and breaks it.
 fn make_bogus_proof<Proof : MerkleProofTrait>(rng
                                               : &mut XorShiftRng, mut proof
-                                              : DataProof<Proof>, )
+                                              : DataProof<Proof>)
     ->DataProof<Proof> {
     let bogus_leaf = <Proof::Hasher as Hasher>::Domain::random(rng);
     proof.proof.break_me(bogus_leaf);
@@ -116,8 +116,8 @@ fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
 
     let porep_id = [99; 32];
 
-    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
-    let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice()).unwrap();
+    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
+    let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     let pub_inputs = PublicInputs {
         challenge : 3,
@@ -125,8 +125,8 @@ fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
     };
 
     let leaf =
-        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge).unwrap(), )
-            .unwrap();
+        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+            ;
 
     let priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
 
@@ -144,35 +144,35 @@ fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_sha256_binary) {
-    test_merklepor_validates::<TestTree<Sha256Hasher, typenum::U2>>();
+    test_merklepor_validates<TestTree<Sha256Hasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_blake2s_binary) {
-    test_merklepor_validates::<TestTree<Blake2sHasher, typenum::U2>>();
+    test_merklepor_validates<TestTree<Blake2sHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_pedersen_binary) {
-    test_merklepor_validates::<TestTree<PedersenHasher, typenum::U2>>();
+    test_merklepor_validates<TestTree<PedersenHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_poseidon_binary) {
-    test_merklepor_validates::<TestTree<PoseidonHasher, typenum::U2>>();
+    test_merklepor_validates<TestTree<PoseidonHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_sha256_quad) {
-    test_merklepor_validates::<TestTree<Sha256Hasher, typenum::U4>>();
+    test_merklepor_validates<TestTree<Sha256Hasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_blake2s_quad) {
-    test_merklepor_validates::<TestTree<Blake2sHasher, typenum::U4>>();
+    test_merklepor_validates<TestTree<Blake2sHasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_pedersen_quad) {
-    test_merklepor_validates::<TestTree<PedersenHasher, typenum::U4>>();
+    test_merklepor_validates<TestTree<PedersenHasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_poseidon_quad) {
-    test_merklepor_validates::<TestTree<PoseidonHasher, typenum::U4>>();
+    test_merklepor_validates<TestTree<PoseidonHasher, 4>>();
 }
 
 template<typename MerkleTreeType>
@@ -186,11 +186,11 @@ void test_merklepor_validates_challenge_identity() {
         private : false,
     };
 
-    let data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     let porep_id = [32; 32];
-    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id).unwrap();
-    let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice()).unwrap();
+    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
+    let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     let pub_inputs = PublicInputs {
         challenge : 3,
@@ -198,8 +198,8 @@ void test_merklepor_validates_challenge_identity() {
     };
 
     let leaf =
-        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge).unwrap(), )
-            .unwrap();
+        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+            ;
 
     let priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
 
@@ -217,35 +217,35 @@ void test_merklepor_validates_challenge_identity() {
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_sha256_binary) {
-    test_merklepor_validates_challenge_identity::<TestTree<Sha256Hasher, typenum::U2>>();
+    test_merklepor_validates_challenge_identity<TestTree<Sha256Hasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_blake2s_binary) {
-    test_merklepor_validates_challenge_identity::<TestTree<Blake2sHasher, typenum::U2>>();
+    test_merklepor_validates_challenge_identity<TestTree<Blake2sHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_pedersen_binary) {
-    test_merklepor_validates_challenge_identity::<TestTree<PedersenHasher, typenum::U2>>();
+    test_merklepor_validates_challenge_identity<TestTree<PedersenHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_poseidon_binary) {
-    test_merklepor_validates_challenge_identity::<TestTree<PoseidonHasher, typenum::U2>>();
+    test_merklepor_validates_challenge_identity<TestTree<PoseidonHasher, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_sha256_quad) {
-    test_merklepor_validates_challenge_identity::<TestTree<Sha256Hasher, typenum::U4>>();
+    test_merklepor_validates_challenge_identity<TestTree<Sha256Hasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_blake2s_quad) {
-    test_merklepor_validates_challenge_identity::<TestTree<Blake2sHasher, typenum::U4>>();
+    test_merklepor_validates_challenge_identity<TestTree<Blake2sHasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_pedersen_quad) {
-    test_merklepor_validates_challenge_identity::<TestTree<PedersenHasher, typenum::U4>>();
+    test_merklepor_validates_challenge_identity<TestTree<PedersenHasher, 4>>();
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_poseidon_quad) {
-    test_merklepor_validates_challenge_identity::<TestTree<PoseidonHasher, typenum::U4>>();
+    test_merklepor_validates_challenge_identity<TestTree<PoseidonHasher, 4>>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

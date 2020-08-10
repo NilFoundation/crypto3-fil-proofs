@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 
 fn fetch(matches : &ArgMatches)->Result<()> {
     let manifest = if matches.is_present("json") {
-        let json_path = PathBuf::from(matches.value_of("json").unwrap());
+        let json_path = PathBuf::from(matches.value_of("json"));
         println !("using JSON file: {:?}", json_path);
 
         if
@@ -178,7 +178,7 @@ for
     filename in &filenames {
         println !("fetching: {}", filename);
         print !("downloading file... ");
-        io::stdout().flush().unwrap();
+        io::stdout().flush();
 
         match fetch_parameter_file(is_verbose, &manifest, &filename, &ipget_path, ipget_args) {
             Ok(_) = > println !("ok\n"), Err(err) = > println !("error: {}\n", err),
@@ -337,7 +337,7 @@ fn download_file_with_ipget(cid
                             : Option<impl AsRef<str>>, )
     ->Result<()> {
     let mut cmd = Command::new (ipget_bin_path.as_ref().as_os_str());
-    cmd.arg("-o").arg(target.as_ref().to_str().unwrap()).arg(cid.as_ref());
+    cmd.arg("-o").arg(target.as_ref().to_str()).arg(cid.as_ref());
 
     if let
         Some(args) = ipget_args {
@@ -369,7 +369,7 @@ fn get_filenames_requiring_download(parameter_map
                                                   .exists() {
                                                       println !("yes");
                                                       print !("is file valid... ");
-                                                      io::stdout().flush().unwrap();
+                                                      io::stdout().flush();
 
                                                       match validate_parameter_file(&parameter_map, &parameter_id) {
                                                           Ok(true) = > {
@@ -378,7 +378,7 @@ fn get_filenames_requiring_download(parameter_map
                                                           }
                                                           Ok(false) = > {
                                                               println !("no\n");
-                                                              invalidate_parameter_file(&parameter_id).unwrap();
+                                                              invalidate_parameter_file(&parameter_id);
                                                               true
                                                           }
                                                           Err(err) = > {
@@ -430,5 +430,5 @@ filename: &str,
 ) -> Result<&'a ParameterData> {
 ensure!(parameter_map.contains_key(filename), ERROR_PARAMETER_ID);
 
-Ok(parameter_map.get(filename).unwrap())
+Ok(parameter_map.get(filename))
 }

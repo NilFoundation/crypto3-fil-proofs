@@ -83,10 +83,10 @@ namespace nil {
             let layer_challenges =
                 select_challenges(partitions,
                                   *POREP_MINIMUM_CHALLENGES.read()
-                                       .unwrap()
+
                                        .get(&u64::from(sector_bytes))
                                        .expect("unknown sector size") as usize,
-                                  *LAYERS.read().unwrap().get(&u64::from(sector_bytes)).expect("unknown sector size"));
+                                  *LAYERS.read().get(&u64::from(sector_bytes)).expect("unknown sector size"));
             assert(("sector_bytes must be a multiple of 32", !sector_bytes % 32));
 
             return stacked::vanilla::SetupParams {(sector_bytes / 32), DRG_DEGREE, EXP_DEGREE, porep_id,

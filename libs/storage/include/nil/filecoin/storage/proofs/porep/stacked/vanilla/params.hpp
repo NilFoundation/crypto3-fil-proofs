@@ -121,7 +121,7 @@ namespace nil {
                         StoreConfig config = labels[row_index];
                         assert(config.size.is_some());
 
-                        DiskStore::new_from_disk(config.size.unwrap(), MerkleTreeType::Arity, config);
+                        DiskStore::new_from_disk(config.size, MerkleTreeType::Arity, config);
                     }
 
                     /// Returns label for the last layer.
@@ -141,7 +141,7 @@ namespace nil {
                         for (const StoreConfig &label : labels) {
                             assert(label.size.is_some());
                             DiskStore store =
-                                DiskStore::new_from_disk(label.size.unwrap(), MerkleTreeType::Arity, label);
+                                DiskStore::new_from_disk(label.size, MerkleTreeType::Arity, label);
                             rows.push_back(store.read_at(node));
                         }
 
@@ -376,7 +376,7 @@ namespace nil {
                         std::vector<StoreConfig> configs = split_config(t_aux.tree_c_config.clone(), tree_count);
 
                         // tree_c_size stored in the config is the base tree size
-                        std::size_t tree_c_size = t_aux.tree_c_config.size.unwrap();
+                        std::size_t tree_c_size = t_aux.tree_c_config.size;
                         trace !("Instantiating tree c [count {}] with size {} and arity {}", tree_count, tree_c_size,
                                 MerkleTreeType::Arity);
                         DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
@@ -485,7 +485,7 @@ namespace nil {
                         // Verify replica column openings
                         trace !("verify replica column openings");
                         std::vector<std::uint32_t> parents(graph.degree());
-                        graph.parents(challenge, parents).unwrap();    // FIXME: error handling
+                        graph.parents(challenge, parents);    // FIXME: error handling
                         assert(replica_column_proofs.verify(challenge, parents));
                         assert(verify_final_replica_layer(challenge));
                         assert(verify_labels(replica_id, pub_params.layer_challenges));

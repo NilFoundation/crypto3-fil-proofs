@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(test_position) {
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 8; j++) {
             let position = BitByte {bytes : i, bits : j};
-            assert_eq !(position.total_bits(), bits);
+            BOOST_CHECK_EQUAL(position.total_bits(), bits);
             bits += 1;
         }
     }
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(test_position) {
 // (assumed to be correct).
 BOOST_AUTO_TEST_CASE(test_random_bit_extraction) {
     // Length of the data vector we'll be extracting from.
-    let len = 20;
+    std::size_t len = 20;
 
     let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
     std::vector<std::uint8_t> data = (0..len).map(| _ | rng.gen()).collect();
@@ -96,15 +96,15 @@ BOOST_AUTO_TEST_CASE(test_random_bit_extraction) {
 // Test the `shift_bits` function against the `BitVec<LittleEndian, u8>`
 // implementation of `shr_assign` and `shl_assign`.
 BOOST_AUTO_TEST_CASE(test_bit_shifts) {
-    let len = 5;
+    std::size_t len = 5;
     let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
     for (int amount = 1; amount < 8; amount++) {
-            for
-                left in[true, false].iter() {
-                    let data : Vec<u8> = (0..len).map(| _ | rng.gen()).collect();
+            for (
+                bool left : {true, false}) {
+                    std::vector<std::uint8_t> data = (0..len).map(| _ | rng.gen()).collect();
 
-                    let shifted_bits = shift_bits(&data, amount, *left);
+                    std::size_t shifted_bits = shift_bits(&data, amount, *left);
 
                     let mut bv : BitVec<LittleEndian, u8> = data.into();
                     if (*left) {
@@ -122,19 +122,19 @@ BOOST_AUTO_TEST_CASE(test_bit_shifts) {
 // `write_padded` and `write_unpadded` for 1016 bytes of 1s, check the
 // recovered raw data.
 BOOST_AUTO_TEST_CASE(test_read_write_padded) {
-    let len = 1016;    // Use a multiple of 254.
+    std::size_t len = 1016;    // Use a multiple of 254.
     let data = vec ![255u8; len];
     let mut padded = Vec::new ();
     let mut reader = crate::fr32_reader::Fr32Reader::new (io::Cursor::new (&data));
-    reader.read_to_end(&mut padded).unwrap();
+    reader.read_to_end(&mut padded);
 
-    assert_eq !(padded.len(), FR32_PADDING_MAP.transform_byte_offset(len, true));
+    BOOST_CHECK_EQUAL(padded.len(), FR32_PADDING_MAP.transform_byte_offset(len, true));
 
     let mut unpadded = Vec::new ();
-    let unpadded_written = write_unpadded(&padded, &mut unpadded, 0, len).unwrap();
-    assert_eq !(unpadded_written, len);
-    assert_eq !(data, unpadded);
-    assert_eq !(padded.into_boxed_slice(), bit_vec_padding(data));
+    let unpadded_written = write_unpadded(&padded, &mut unpadded, 0, len);
+    BOOST_CHECK_EQUAL(unpadded_written, len);
+    BOOST_CHECK_EQUAL(data, unpadded);
+    BOOST_CHECK_EQUAL(padded.into_boxed_slice(), bit_vec_padding(data));
 }
 
 // `write_padded` and `write_unpadded` for 1016 bytes of random data, recover
@@ -147,24 +147,24 @@ BOOST_AUTO_TEST_CASE(test_read_write_padded_offset) {
 
     let mut padded = Vec::new ();
     let mut reader = crate::fr32_reader::Fr32Reader::new (io::Cursor::new (&data));
-    reader.read_to_end(&mut padded).unwrap();
+    reader.read_to_end(&mut padded);
 
     {
         let mut unpadded = Vec::new ();
-        write_unpadded(&padded, &mut unpadded, 0, 1016).unwrap();
+        write_unpadded(&padded, &mut unpadded, 0, 1016);
         let expected = &data[0..1016];
 
-        assert_eq !(expected.len(), unpadded.len());
-        assert_eq !(expected, &unpadded[..]);
+        BOOST_CHECK_EQUAL(expected.len(), unpadded.len());
+        BOOST_CHECK_EQUAL(expected, &unpadded[..]);
     }
 
     {
         let mut unpadded = Vec::new ();
-        write_unpadded(&padded, &mut unpadded, 0, 44).unwrap();
+        write_unpadded(&padded, &mut unpadded, 0, 44);
         let expected = &data[0..44];
 
-        assert_eq !(expected.len(), unpadded.len());
-        assert_eq !(expected, &unpadded[..]);
+        BOOST_CHECK_EQUAL(expected.len(), unpadded.len());
+        BOOST_CHECK_EQUAL(expected, &unpadded[..]);
     }
 
     let excessive_len = 35;

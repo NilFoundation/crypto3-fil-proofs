@@ -290,14 +290,14 @@ namespace nil {
 
                 assert(("Missing store file (or associated split paths)", configs.size() == required_configs));
 
-                std::size_t store_len = config.size.unwrap();
+                std::size_t store_len = config.size;
                 for (const StoreConfig &config : configs) {
                     assert(LevelCacheStore<DefaultPieceDomain, std::fs::File>::is_consistent(
                         store_len, MerkleTreeType::Arity, &config));
                 }
             } else {
                 assert(LevelCacheStore<DefaultPieceDomain, std::fs::File>::is_consistent(
-                    config.size.unwrap(), MerkleTreeType::Arity, config));
+                    config.size, MerkleTreeType::Arity, config));
             }
         }
 

@@ -34,7 +34,7 @@
 BOOST_AUTO_TEST_SUITE(filecoin_parameters_test_suite)
 
 BOOST_AUTO_TEST_CASE(partition_layer_challenges_test) {
-    let f = | partitions | {select_challenges(partitions, 12, 11).unwrap().challenges_count_all()};
+    let f = | partitions | {select_challenges(partitions, 12, 11).challenges_count_all()};
     // Update to ensure all supported PoRepProofPartitions options are represented here.
     BOOST_CHECK_EQUAL(6, f(usize::from(crate::PoRepProofPartitions(2))));
 
@@ -44,15 +44,15 @@ BOOST_AUTO_TEST_CASE(partition_layer_challenges_test) {
 }
 
 BOOST_AUTO_TEST_CASE(test_winning_post_params) {
-    let config = PoStConfig {
-        typ : PoStType::Winning,
+        PoStConfig config = {
+        typ : post_type::Winning,
         priority : false,
         challenge_count : 66,
         sector_count : 1,
-        sector_size : 2048u64.into(),
+        sector_size : 2048,
     };
 
-    let params = winning_post_public_params::<DefaultOctLCTree>(&config).unwrap();
+    let params = winning_post_public_params<DefaultOctLCTree>(config);
     BOOST_CHECK_EQUAL(params.sector_count, 66);
     BOOST_CHECK_EQUAL(params.challenge_count, 1);
     BOOST_CHECK_EQUAL(params.sector_size, 2048);

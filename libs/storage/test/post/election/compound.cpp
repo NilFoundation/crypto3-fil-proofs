@@ -45,7 +45,7 @@ void election_post_test_compound() {
     let mut trees = BTreeMap::new ();
 
     // Construct and store an MT using a named store.
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir();
     let temp_path = temp_dir.path();
 
     for (int i = 0; i < 5; i++) {
@@ -58,10 +58,10 @@ void election_post_test_compound() {
 
     let candidates = election::generate_candidates<MerkleTreeType>(&pub_params.vanilla_params, &sectors, &trees,
                                                                    prover_id, randomness)
-                         .unwrap();
+                         ;
 
     let candidate = &candidates[0];
-    let tree = trees.remove(&candidate.sector_id).unwrap();
+    let tree = trees.remove(&candidate.sector_id);
     let comm_r_last = tree.root();
     let comm_c = <Tree::Hasher as Hasher>::Domain::random(rng);
     let comm_r = <Tree::Hasher as Hasher>::Function::hash2(&comm_c, &comm_r_last);
@@ -72,14 +72,14 @@ void election_post_test_compound() {
     election::PrivateInputs::<MerkleTreeType>priv_inputs = {tree, comm_c, comm_r_last};
 
     {
-        let(circuit, inputs) = ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs).unwrap();
+        let(circuit, inputs) = ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
 
         let mut cs = TestConstraintSystem::new ();
 
         circuit.synthesize(&mut cs).expect("failed to synthesize");
 
         if (!cs.is_satisfied()) {
-            panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied().unwrap());
+            panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
         }
         BOOST_CHECK(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
     }
@@ -87,7 +87,7 @@ void election_post_test_compound() {
     // Use this to debug differences between blank and regular circuit generation.
     {
         let(circuit1, _inputs) =
-            ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs).unwrap();
+            ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
         let blank_circuit = ElectionPoStCompound::<Tree>::blank_circuit(&pub_params.vanilla_params);
 
         let mut cs_blank = MetricCS::new ();

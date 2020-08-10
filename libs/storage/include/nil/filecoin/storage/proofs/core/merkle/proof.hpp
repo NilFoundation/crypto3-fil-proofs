@@ -316,7 +316,7 @@ namespace nil {
                 let sub_p = p.sub_tree_proof;
 
                 assert(("Cannot generate top proof without a base-proof", sub_p.sub_tree_proof));
-                let base_p = sub_p.sub_tree_proof.as_ref().unwrap();
+                let base_p = sub_p.sub_tree_proof.as_ref();
 
                 let root = p.root();
                 let leaf = base_p.item();

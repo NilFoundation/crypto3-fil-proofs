@@ -175,7 +175,7 @@ namespace nil {
                     }
 
                     DrgPoRepCircuit<Hash> blank_circuit(const public_params_type &public_params) {
-                        std::size_t depth = public_params.graph.merkle_tree_depth::<typenum::U2>();
+                        std::size_t depth = public_params.graph.merkle_tree_depth<2>();
                         std::size_t degree = public_params.graph.degree();
                         std::size_t arity = 2;
 

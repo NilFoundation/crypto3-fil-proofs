@@ -49,7 +49,7 @@ void rational_post_test_compound() {
     let pub_params = RationalPoStCompound::<Tree>::setup(&setup_params).expect("setup failed");
 
     // Construct and store an MT using a named DiskStore.
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir();
     let temp_path = temp_dir.path();
 
     let(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
@@ -61,7 +61,7 @@ void rational_post_test_compound() {
     sectors.insert(1.into());
 
     let seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults).unwrap();
+    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
 
     let comm_r_lasts_raw = vec ![ tree1.root(), tree2.root() ];
     let comm_r_lasts : Vec<_> = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
@@ -98,7 +98,7 @@ void rational_post_test_compound() {
         RationalPoStCompound::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs, &gparams).expect("proving failed");
 
     let(circuit, inputs) =
-        RationalPoStCompound::<Tree>::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs).unwrap();
+        RationalPoStCompound::<Tree>::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
 
     {
         let mut cs = TestConstraintSystem::new ();

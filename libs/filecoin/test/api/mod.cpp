@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(test_verify_seal_fr32_validation) {
     {
         let result = verify_seal::<DefaultOctLCTree>(PoRepConfig {
             sector_size : SectorSize(SECTOR_SIZE_2_KIB),
-            partitions : PoRepProofPartitions(*POREP_PARTITIONS.read().unwrap().get(&SECTOR_SIZE_2_KIB).unwrap(), ),
+            partitions : PoRepProofPartitions(*POREP_PARTITIONS.read().get(&SECTOR_SIZE_2_KIB), ),
             porep_id : arbitrary_porep_id,
         },
                                                      not_convertible_to_fr_bytes, convertible_to_fr_bytes, [0; 32],
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(test_verify_seal_fr32_validation) {
     {
         let result = verify_seal::<DefaultOctLCTree>(PoRepConfig {
             sector_size : SectorSize(SECTOR_SIZE_2_KIB),
-            partitions : PoRepProofPartitions(*POREP_PARTITIONS.read().unwrap().get(&SECTOR_SIZE_2_KIB).unwrap(), ),
+            partitions : PoRepProofPartitions(*POREP_PARTITIONS.read().get(&SECTOR_SIZE_2_KIB), ),
             porep_id : arbitrary_porep_id,
         },
                                                      convertible_to_fr_bytes, not_convertible_to_fr_bytes, [0; 32],
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(test_random_domain_element) {
         let random_el : DefaultTreeDomain = Fr::random(rng).into();
         let mut randomness = [0u8; 32];
         randomness.copy_from_slice(AsRef::<[u8]>::as_ref(&random_el));
-        let back : DefaultTreeDomain = as_safe_commitment(&randomness, "test").unwrap();
+        let back : DefaultTreeDomain = as_safe_commitment(&randomness, "test");
         assert_eq !(back, random_el);
     }
 }

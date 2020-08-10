@@ -35,14 +35,12 @@ namespace nil {
                 namespace circuit {
                     /// Hash a list of bits.
                     template<template<typename> class ConstraintSystem, typename Bls12>
-                    AllocatedNumber<Bls12> hash_single_column<CS>(ConstraintSystem<Bls12> &cs,
-                                                                  std::vector<AllocatedNumber<Bls12>> &column) {
+                    AllocatedNumber<Bls12> hash_single_column(ConstraintSystem<Bls12> &cs,
+                                                              std::vector<AllocatedNumber<Bls12>> &column) {
                         if (column.size() == 2) {
-                            poseidon_hash::<CS, Bls12, typenum::U2>(
-                                cs, column.to_vec(), &*storage_proofs_core::hasher::types::POSEIDON_CONSTANTS_2);
+                            poseidon_hash<ConstraintSystem, Bls12, 2>(cs, column, POSEIDON_CONSTANTS_2);
                         } else if (column.size() == 11) {
-                            poseidon_hash::<CS, Bls12, typenum::U11>(
-                                cs, column.to_vec(), &*storage_proofs_core::hasher::types::POSEIDON_CONSTANTS_11);
+                            poseidon_hash<ConstraintSystem, Bls12, 11>(cs, column, POSEIDON_CONSTANTS_11);
                         } else {
                             throw "unsupported column size: " + column.size();
                         }

@@ -29,24 +29,24 @@ void cache_porep_params(const porep_config &conig) {
 
     let public_params = public_params(PaddedBytesAmount::from(porep_config),
                                       usize::from(PoRepProofPartitions::from(porep_config)), porep_config.porep_id, )
-                            .unwrap();
+                            ;
 
     {
         let circuit = <StackedCompound<Tree, DefaultPieceHasher>
                            as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
-        let _ = StackedCompound::<Tree, DefaultPieceHasher>::get_param_metadata(circuit, &public_params, );
+        let _ = StackedCompound<Tree, DefaultPieceHasher>::get_param_metadata(circuit, &public_params);
     }
     {
         let circuit = <StackedCompound<Tree, DefaultPieceHasher>
                            as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
-        StackedCompound::<Tree, DefaultPieceHasher>::get_groth_params(Some(&mut OsRng), circuit, &public_params, )
+        StackedCompound<Tree, DefaultPieceHasher>::get_groth_params(Some(&mut OsRng), circuit, &public_params, )
             .expect("failed to get groth params");
     }
     {
         let circuit = <StackedCompound<Tree, DefaultPieceHasher>
                            as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::blank_circuit(&public_params);
 
-        StackedCompound::<Tree, DefaultPieceHasher>::get_verifying_key(Some(&mut OsRng), circuit, &public_params, )
+        StackedCompound<Tree, DefaultPieceHasher>::get_verifying_key(Some(&mut OsRng), circuit, &public_params, )
             .expect("failed to get verifying key");
     }
 }
@@ -55,7 +55,7 @@ template<typename MerkleTreeType>
 void cache_winning_post_params(const post_config &config) {
     info !("Winning PoSt params");
 
-    let post_public_params = winning_post_public_params::<Tree>(post_config).unwrap();
+    let post_public_params = winning_post_public_params::<Tree>(post_config);
 
     {
         let post_circuit
@@ -88,7 +88,7 @@ template<typename MerkleTreeType>
 void cache_window_post_params(const post_config &config) {
     info !("Window PoSt params");
 
-    let post_public_params = window_post_public_params<MerkleTreeType>(config).unwrap();
+    let post_public_params = window_post_public_params<MerkleTreeType>(config);
 
     {
         FallbackPoStCircuit<MerkleTreeType> post_circuit = <FallbackPoStCompound<MerkleTreeType> as CompoundProof<
@@ -130,7 +130,7 @@ void generate_params_post(std::uint64_t sector_size) {
     with_shape !(sector_size, cache_window_post_params, &PoStConfig {
         sector_size : SectorSize(sector_size),
         challenge_count : WINDOW_POST_CHALLENGE_COUNT,
-        sector_count : *WINDOW_POST_SECTOR_COUNT.read().unwrap().get(&sector_size).unwrap(),
+        sector_count : *WINDOW_POST_SECTOR_COUNT.read().get(&sector_size),
         typ : PoStType::Window,
         priority : true,
     });
@@ -143,7 +143,7 @@ void generate_params_porep(std::uint64_t sector_size) {
                 SectorSize(sector_size),
                     partitions
                     : PoRepProofPartitions(
-                          *POREP_PARTITIONS.read().unwrap().get(&sector_size).expect("missing sector size"), ),
+                          *POREP_PARTITIONS.read().get(&sector_size).expect("missing sector size"), ),
                       porep_id : [0; 32],
         });
 }
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
         let sector_sizes = PUBLISHED_SECTOR_SIZES.iter()
                                .map(| sector_size |
                                     {// Right aligning the numbers makes them easier to read
-                                     format !("{: >7}", sector_size.file_size(file_size_opts::BINARY).unwrap(), )})
+                                     format !("{: >7}", sector_size.file_size(file_size_opts::BINARY), )})
                                .collect::<Vec<_>>();
 
         let selected_sector_sizes =
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
                     "Select the sizes that should be generated if not already cached [use space key to select]")
                 .items(&sector_sizes[..])
                 .interact()
-                .unwrap();
+                ;
 
         // Extract the selected sizes
         sizes = PUBLISHED_SECTOR_SIZES.iter()
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
     let only_post = opts.only_post;
 
     for (std::uint64_t sector_size : sizes) {
-        let human_size = sector_size.file_size(file_size_opts::BINARY).unwrap();
+        let human_size = sector_size.file_size(file_size_opts::BINARY);
         let message = format !("Generating sector size: {}", human_size);
         info !("{}", &message);
 

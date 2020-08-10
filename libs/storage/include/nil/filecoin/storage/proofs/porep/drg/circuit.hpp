@@ -70,7 +70,7 @@ namespace nil {
                  * @tparam Hash
                  * @tparam Bls12
                  */
-                template<typename Hash, template<typename> class ConstraintSystem, typename Bls12, typename Fr>
+                template<typename Hash, typename Bls12, typename Fr>
                 struct DrgPoRepCircuit : public crypto3::zk::snark::circuit<Bls12> {
                     typedef Hash hash_type;
 
@@ -86,6 +86,7 @@ namespace nil {
                     Fr replica_id;
                     bool priv;
 
+                    template<template<typename> class ConstraintSystem>
                     void synthesize(ConstraintSystem<Bls12> &cs) {
                         Fr replica_id = replica_id;
                         root<Bls12> replica_root = replica_root;
@@ -194,7 +195,8 @@ namespace nil {
 
                 /// Key derivation function.
                 template<typename ScalarEngine, template<typename> class ConstraintSystem>
-                AllocatedNumber<ScalarEngine> kdf(ConstraintSystem<ScalarEngine> &cs, const std::vector<bool> &id,
+                AllocatedNumber<ScalarEngine> kdf(ConstraintSystem<ScalarEngine> &cs, const
+                                                  std::vector<bool> &id,
                                                   const std::vector<std::vector<bool>> &parents,
                                                   std::uint64_t window_index = 0, std::uint64_t node = 0)
 

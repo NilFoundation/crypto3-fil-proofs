@@ -43,7 +43,7 @@ void test_rational_post() {
     };
 
     // Construct and store an MT using a named store.
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir();
     let temp_path = temp_dir.path();
 
     let(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
@@ -66,12 +66,12 @@ void test_rational_post() {
     trees.insert(891.into(), &tree2);
     // other two faults don't have a tree available
 
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults).unwrap();
+    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
 
     // the only valid sector to challenge is 891
     assert !(challenges.iter().all(| c | c.sector == 891.into()), "invalid challenge generated");
 
-    let comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).unwrap().root()).collect::<Vec<_>>();
+    let comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
     let comm_cs : Vec << Tree::Hasher as Hasher > ::Domain >
         = challenges.iter().map(| _c | <Tree::Hasher as Hasher>::Domain::random(rng)).collect();
@@ -139,7 +139,7 @@ void test_rational_post_validates_challenge_identity() {
     };
 
     // Construct and store an MT using a named store.
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir();
     let temp_path = temp_dir.path();
 
     let(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
@@ -153,8 +153,8 @@ void test_rational_post_validates_challenge_identity() {
     let mut trees = BTreeMap::new ();
     trees.insert(0.into(), &tree);
 
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults).unwrap();
-    let comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).unwrap().root()).collect::<Vec<_>>();
+    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
+    let comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
     let comm_cs : Vec << Tree::Hasher as Hasher > ::Domain >
         = challenges.iter().map(| _c | <Tree::Hasher as Hasher>::Domain::random(rng)).collect();
@@ -180,7 +180,7 @@ void test_rational_post_validates_challenge_identity() {
     let proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
     let seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults).unwrap();
+    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
     let comm_r_lasts = challenges.iter().map(| _c | tree.root()).collect::<Vec<_>>();
 
     let comm_cs : Vec << Tree::Hasher as Hasher > ::Domain >

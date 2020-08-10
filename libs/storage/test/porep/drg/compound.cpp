@@ -42,7 +42,7 @@ void drgporep_test_compound() {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir().unwrap();
+    let cache_dir = tempfile::tempdir();
     let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
@@ -107,7 +107,7 @@ void drgporep_test_compound() {
     {
         let(circuit, inputs) =
             drg_porep_compound<Tree::Hasher, _>::circuit_for_test(&public_params, &public_inputs, &private_inputs, )
-                .unwrap();
+                ;
 
         let mut cs = TestConstraintSystem::new ();
 

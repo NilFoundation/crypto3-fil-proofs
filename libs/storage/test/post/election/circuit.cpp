@@ -43,7 +43,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     let mut trees = BTreeMap::new ();
 
     // Construct and store an MT using a named store.
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir();
     let temp_path = temp_dir.path();
 
     for (int i = 0; i < 5; i++) {
@@ -53,10 +53,10 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     }
 
     let candidates =
-        election::generate_candidates<MerkleTreeType>(&pub_params, &sectors, &trees, prover_id, randomness, ).unwrap();
+        election::generate_candidates<MerkleTreeType>(&pub_params, &sectors, &trees, prover_id, randomness, );
 
     let candidate = &candidates[0];
-    let tree = trees.remove(&candidate.sector_id).unwrap();
+    let tree = trees.remove(&candidate.sector_id);
     let comm_r_last = tree.root();
     let comm_c = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
     let comm_r = <MerkleTreeType::Hasher as Hasher>::Function::hash2(&comm_c, &comm_r_last);
@@ -112,7 +112,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     BOOST_CHECK_EQUAL(cs.get_input(0, "ONE"), Fr::one());
 
     let generated_inputs =
-        ElectionPoStCompound<MerkleTreeType>::generate_public_inputs(&pub_inputs, &pub_params, None).unwrap();
+        ElectionPoStCompound<MerkleTreeType>::generate_public_inputs(&pub_inputs, &pub_params, None);
     let expected_inputs = cs.get_inputs();
 
     for (((input, label), generated_input) : expected_inputs.iter().skip(1).zip(generated_inputs.iter())) {

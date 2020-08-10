@@ -34,7 +34,7 @@ namespace nil {
                 unpadded_bytes_amount size = sector_size;
                 Fr32Reader fr32_reader(EmptySource(size.into()));
                 CommitmentReader commitment_reader(fr32_reader);
-                io::copy(commitment_reader, io::sink()).unwrap();
+                io::copy(commitment_reader, io::sink());
 
                 commitment_type comm;
                 comm.copy_from_slice(commitment_reader.finish().expect("failed to create commitment").as_ref());

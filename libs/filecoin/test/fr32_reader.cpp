@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(test_simple_short) {
     let data = vec ![3u8; 30];
     let mut reader = Fr32Reader::new (io::Cursor::new (&data));
     let mut padded = Vec::new ();
-    reader.read_to_end(&mut padded).unwrap();
+    reader.read_to_end(&mut padded);
     BOOST_CHECK_EQUAL(&data[..], &padded[..]);
 
     BOOST_CHECK_EQUAL(padded.into_boxed_slice(), bit_vec_padding(data));
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(test_simple_single) {
     let data = vec ![255u8; 32];
     let mut padded = Vec::new ();
     let mut reader = Fr32Reader::new (io::Cursor::new (&data));
-    reader.read_to_end(&mut padded).unwrap();
+    reader.read_to_end(&mut padded);
 
     BOOST_CHECK_EQUAL(&padded[0..31], &data[0..31]);
     BOOST_CHECK_EQUAL(padded[31], 0b0011_1111);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(test_simple_127) {
     let data = vec ![255u8; 127];
     let mut padded = Vec::new ();
     let mut reader = Fr32Reader::new (io::Cursor::new (&data));
-    reader.read_to_end(&mut padded).unwrap();
+    reader.read_to_end(&mut padded);
 
     BOOST_CHECK_EQUAL(&padded[0..31], &data[0..31]);
     BOOST_CHECK_EQUAL(padded[31], 0b0011_1111);
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(test_full) {
 
     let mut buf = Vec::new ();
     let mut reader = Fr32Reader::new (io::Cursor::new (&data));
-    reader.read_to_end(&mut buf).unwrap();
+    reader.read_to_end(&mut buf);
 
     BOOST_CHECK_EQUAL(buf.clone().into_boxed_slice(), bit_vec_padding(data));
     validate_fr32(&buf);
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(test_long) {
 
                     let mut buf = Vec::new ();
                     let mut reader = Fr32Reader::new (io::Cursor::new (&data));
-                    reader.read_to_end(&mut buf).unwrap();
+                    reader.read_to_end(&mut buf);
 
                     BOOST_CHECK_EQUAL(buf.clone().into_boxed_slice(), bit_vec_padding(data));
                 }
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(test_exotic) {
 
     let mut buf = Vec::new ();
     let mut reader = Fr32Reader::new (io::Cursor::new (&source));
-    reader.read_to_end(&mut buf).unwrap();
+    reader.read_to_end(&mut buf);
 
     for (i, &byte)
         in buf.iter().enumerate().take(31) {
