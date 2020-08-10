@@ -68,10 +68,10 @@ void publish(ArgMatches &matches) {
         // Make sure there are always three files per parameter ID
         .fold((Vec::new (), 0), | (mut result, mut counter)
               : (std::vec::Vec<String>, u8), filename | {
-                  let parameter_id = filename_to_parameter_id(&filename).unwrap();
+                  let parameter_id = filename_to_parameter_id(&filename);
                   // Check if previous file had the same parameter ID
                   if
-                      !result.is_empty() && &parameter_id == result.last().unwrap() {
+                      !result.is_empty() && &parameter_id == result.last() {
                           counter += 1;
                       }
                   else {
@@ -122,7 +122,7 @@ void publish(ArgMatches &matches) {
             meta_map
                 .keys()
                 // Split off the version of the parameters
-                .map(| parameter_id | parameter_id.split('-').next().unwrap().to_string())
+                .map(| parameter_id | parameter_id.split('-').next().to_string())
                 // Sort by descending order, newest parameter first
                 .sorted_by(| a, b | Ord::cmp(&b, &a))
                 .dedup()
@@ -132,7 +132,7 @@ void publish(ArgMatches &matches) {
                                    .default(0)
                                    .items(&versions[..])
                                    .interact_opt()
-                                   .unwrap();
+                                   ;
         let version = match selected_version {Some(index) = > &versions[index], None = > {println !("Aborted.");
         std::process::exit(1)
     }
@@ -150,7 +150,7 @@ let sector_sizes_iter =
     parameter_ids
         .iter()
         // Get sector size and parameter ID
-        .map(| &parameter_id | {meta_map.get(parameter_id).map(| x | (x.sector_size, parameter_id)).unwrap()})
+        .map(| &parameter_id | {meta_map.get(parameter_id).map(| x | (x.sector_size, parameter_id))})
         // Sort it ascending by sector size
         .sorted_by(| a, b | Ord::cmp(&a .0, &b .0));
 
@@ -163,7 +163,7 @@ let sector_sizes =
         .clone()
         // Format them
         .map(| (sector_size, parameter_id) |
-             {format !("({:?}) {:?}", sector_size.file_size(file_size_opts::BINARY).unwrap(), parameter_id)})
+             {format !("({:?}) {:?}", sector_size.file_size(file_size_opts::BINARY), parameter_id)})
         .collect_vec();
 // Set the default, pre-selected sizes
 let default_sector_sizes =
@@ -173,7 +173,7 @@ let selected_sector_sizes = MultiSelect::with_theme(&ColorfulTheme::default())
                                 .items(&sector_sizes[..])
                                 .defaults(&default_sector_sizes)
                                 .interact()
-                                .unwrap();
+                                ;
 
 if (selected_sector_sizes.empty()) {
     println !("Nothing selected. Abort.");
@@ -222,11 +222,11 @@ if (!filenames.is_empty()) {
 
         println !("publishing: {}", filename);
         print !("publishing to ipfs... ");
-        io::stdout().flush().unwrap();
+        io::stdout().flush();
 
         match publish_parameter_file(&ipfs_bin_path, &filename) {Ok(cid) = > {println !("ok");
         print !("generating digest... ");
-        io::stdout().flush().unwrap();
+        io::stdout().flush();
 
         let digest = get_digest_for_file_within_cache(&filename);
         let data = ParameterData {
@@ -258,20 +258,20 @@ std::vector<std::string> get_filenames_in_cache_dir() {
     if path
         .exists() {
     Ok(read_dir(path)?
-        .map(|f| f.unwrap().path())
+        .map(|f| f.path())
     .filter(|p| p.is_file())
     .map(|p| {
         p.as_path()
             .file_name()
-            .unwrap()
+
             .to_str()
-            .unwrap()
+
             .to_string()
     })
     .collect())
         }
     else {
-        println !("parameter directory '{}' does not exist", path.as_path().to_str().unwrap());
+        println !("parameter directory '{}' does not exist", path.as_path().to_str());
 
         Ok(Vec::new ())
     }

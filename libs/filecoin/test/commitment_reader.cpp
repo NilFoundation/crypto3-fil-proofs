@@ -36,17 +36,17 @@ BOOST_AUTO_TEST_SUITE(filecoin_commitment_reader_test_suite)
 BOOST_AUTO_TEST_CASE(test_commitment_reader) {
     std::size_t piece_size = 127 * 8;
     std::vector<std::size_t> source(255, piece_size);
-    let mut fr32_reader = crate::fr32_reader::Fr32Reader::new (io::Cursor::new (&source));
+    let mut fr32_reader = fr32_reader(io::Cursor::new (&source));
 
-    let commitment1 = generate_piece_commitment_bytes_from_source<DefaultPieceHasher>(
-                          &mut fr32_reader, PaddedBytesAmount::from(UnpaddedBytesAmount(piece_size as u64)).into(), )
-                          .unwrap();
+    typename DefaultPieceHasher::digest_type commitment1 =
+        generate_piece_commitment_bytes_from_source<DefaultPieceHasher>
+        (fr32_reader, piece_size);
 
-    let fr32_reader = crate::fr32_reader::Fr32Reader::new (io::Cursor::new (&source));
-    let mut commitment_reader = CommitmentReader::new (fr32_reader);
-    io::copy(&mut commitment_reader, &mut io::sink()).unwrap();
+    let fr32_reader = fr32_reader(io::Cursor::new (&source));
+        CommitmentReader commitment_reader(fr32_reader);
+    io::copy(&mut commitment_reader, &mut io::sink());
 
-    let commitment2 = commitment_reader.finish().unwrap();
+        typename DefaultPieceHasher::digest_type commitment2 = commitment_reader.finish();
 
     BOOST_CHECK_EQUAL(&commitment1[..], AsRef::<[u8]>::as_ref(&commitment2));
 }

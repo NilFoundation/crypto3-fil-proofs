@@ -41,7 +41,7 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
     };
 
     // Construct and store an MT using a named DiskStore.
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir();
     let temp_path = temp_dir.path();
 
     let(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
@@ -53,7 +53,7 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
     sectors.insert(1.into());
 
     let seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults).unwrap();
+    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
     let comm_r_lasts_raw = vec ![ tree1.root(), tree2.root() ];
     let comm_r_lasts : Vec<_> = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
 
@@ -118,7 +118,7 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
     assert_eq !(cs.num_constraints(), expected_constraints, "wrong number of constraints");
     assert_eq !(cs.get_input(0, "ONE"), Fr::one());
 
-    let generated_inputs = RationalPoStCompound<Tree>::generate_public_inputs(&pub_inputs, &pub_params, None).unwrap();
+    let generated_inputs = RationalPoStCompound<Tree>::generate_public_inputs(&pub_inputs, &pub_params, None);
     let expected_inputs = cs.get_inputs();
 
     for (((input, label), generated_input) : expected_inputs.iter().skip(1).zip(generated_inputs.iter())) {

@@ -77,7 +77,7 @@ std::string get_head_commit() {
                      .output()
                      .expect("failed to execute child process: `git rev-parse --short=7 HEAD`");
 
-    str::from_utf8(&output.stdout).unwrap().trim().to_string()
+    str::from_utf8(&output.stdout).trim().to_string()
 }
 
 std::string params_filename(Proof proof, Hasher hasher, std::uint64_t sector_size, const std::string &head,
@@ -97,7 +97,7 @@ std::string initial_params_filename(Proof proof, Hasher hasher, std::uint64_t se
 /// containing the proof, hasher, sector-size, shortened head commit, and contribution number (e.g.
 /// `(Proof::Porep, Hasher::Poseidon, SECTOR_SIZE_32_GIB, "abcdef1", 0)`).
 std::tuple<Proof, Hashes, sector_size_t, std::string, std::size_t> parse_params_filename(const std::string &path) {
-    std::string filename = path.rsplitn(2, '/').next().unwrap();
+    std::string filename = path.rsplitn(2, '/').next();
     std::vector<std::string> split = filename.split('_').collect();
 
     let proof = match split[0] {
@@ -130,14 +130,14 @@ std::tuple<Proof, Hashes, sector_size_t, std::string, std::size_t> parse_params_
 
 template<typename MerkleTreeType, template<typename, typename> class StackedCircuit>
 StackedCircuit<MerkleTreeType, Sha256Hasher> blank_porep_poseidon_circuit(std::uint64_t sector_size) {
-    let n_partitions = *POREP_PARTITIONS.read().unwrap().get(&sector_size).unwrap();
+    let n_partitions = *POREP_PARTITIONS.read().get(&sector_size);
 
     porep_config config = {sector_size, PoRepProofPartitions(n_partitions), std::array<std::uint8_t, 32>()};
 
     let setup_params = compound_proof::SetupParams {
         vanilla_params : setup_params(PaddedBytesAmount::from(porep_config),
                                       usize::from(PoRepProofPartitions::from(porep_config)), porep_config.porep_id, )
-            .unwrap(),
+            ,
         partitions : Some(usize::from(PoRepProofPartitions::from(porep_config))),
         priority : false,
     };
@@ -145,7 +145,7 @@ StackedCircuit<MerkleTreeType, Sha256Hasher> blank_porep_poseidon_circuit(std::u
     let public_params =
         <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::setup(
             &setup_params)
-            .unwrap();
+            ;
 
     <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::blank_circuit(
         &public_params.vanilla_params)
@@ -155,7 +155,7 @@ StackedCircuit<MerkleTreeType, Sha256Hasher> blank_porep_poseidon_circuit(std::u
 fn blank_porep_sha_pedersen_circuit(
     sector_size: u64,
 ) -> StackedCircuit<'static, PedersenHasher, Sha256Hasher> {
-    let	n_partitions = *POREP_PARTITIONS.read().unwrap().get(&sector_size).unwrap();
+    let	n_partitions = *POREP_PARTITIONS.read().get(&sector_size);
 
     let porep_config = PoRepConfig {
         sector_size: SectorSize(sector_size),
@@ -167,7 +167,7 @@ fn blank_porep_sha_pedersen_circuit(
             PaddedBytesAmount::from(porep_config),
             usize::from(PoRepProofPartitions::from(porep_config)),
         )
-        .unwrap(),
+        ,
         partitions: Some(usize::from(PoRepProofPartitions::from(porep_config))),
         priority: false,
     };
@@ -176,7 +176,7 @@ fn blank_porep_sha_pedersen_circuit(
         <StackedCompound<PedersenHasher, Sha256Hasher> as CompoundProof<_, StackedDrg<PedersenHasher, Sha256Hasher>,
 _>>::setup( &setup_params,
         )
-        .unwrap();
+        ;
 
     <StackedCompound<PedersenHasher, Sha256Hasher> as CompoundProof<
         _,
@@ -191,7 +191,7 @@ FallbackPoStCircuit<MerkleTreeType> blank_winning_post_poseidon_circuit(std::uin
     post_config config = {SectorSize(sector_size), WINNING_POST_CHALLENGE_COUNT, WINNING_POST_SECTOR_COUNT,
                           PoStType::Winning, false};
 
-    let public_params = winning_post_public_params::<Tree>(&post_config).unwrap();
+    let public_params = winning_post_public_params::<Tree>(&post_config);
 
     <FallbackPoStCompound<Tree> as CompoundProof<FallbackPoSt<Tree>, FallbackPoStCircuit<Tree>, >>::blank_circuit(
         &public_params)
@@ -200,10 +200,10 @@ FallbackPoStCircuit<MerkleTreeType> blank_winning_post_poseidon_circuit(std::uin
 template<typename MerkleTreeType>
 FallbackPoStCircuit<MerkleTreeType> blank_window_post_poseidon_circuit(std::uint64_t sector_size) {
     post_config config = {sector_size, WINDOW_POST_CHALLENGE_COUNT,
-                          *WINDOW_POST_SECTOR_COUNT.read().unwrap().get(&sector_size).unwrap(), PoStType::Window,
+                          *WINDOW_POST_SECTOR_COUNT.read().get(&sector_size), PoStType::Window,
                           false};
 
-    let public_params = window_post_public_params::<MerkleTreeType>(&post_config).unwrap();
+    let public_params = window_post_public_params::<MerkleTreeType>(&post_config);
 
     return <FallbackPoStCompound<MerkleTreeType> as CompoundProof<
         FallbackPoSt<MerkleTreeType>, FallbackPoStCircuit<Tree>, >>::blank_circuit(&public_params);
@@ -227,7 +227,7 @@ fn create_initial_params<MerkleTreeType>(proof
            get_head_commit());
 
     let params_path = initial_params_filename(proof, hasher, sector_size);
-    let params_file = File::create(&params_path).unwrap();
+    let params_file = File::create(&params_path);
     let mut params_writer = BufWriter::with_capacity(1024 * 1024, params_file);
 
     let dt_create_circuit : u64;
@@ -237,7 +237,7 @@ fn create_initial_params<MerkleTreeType>(proof
     let circuit = blank_porep_poseidon_circuit::<Tree>(sector_size);
     dt_create_circuit = start.elapsed().as_secs();
     let start = Instant::now();
-    let params = phase2::MPCParameters::new (circuit).unwrap();
+    let params = phase2::MPCParameters::new (circuit);
     dt_create_params = start.elapsed().as_secs();
     params
 }
@@ -247,7 +247,7 @@ fn create_initial_params<MerkleTreeType>(proof
     let circuit = blank_porep_sha_pedersen_circuit(sector_size);
     dt_create_circuit = start.elapsed().as_secs();
     let start = Instant::now();
-    let params = phase2::MPCParameters::new(circuit).unwrap();
+    let params = phase2::MPCParameters::new(circuit);
     dt_create_params = start.elapsed().as_secs();
     params
 }
@@ -257,7 +257,7 @@ fn create_initial_params<MerkleTreeType>(proof
     let circuit = blank_winning_post_poseidon_circuit::<Tree>(sector_size);
     dt_create_circuit = start.elapsed().as_secs();
     let start = Instant::now();
-    let params = phase2::MPCParameters::new (circuit).unwrap();
+    let params = phase2::MPCParameters::new (circuit);
     dt_create_params = start.elapsed().as_secs();
     params
 }
@@ -266,7 +266,7 @@ fn create_initial_params<MerkleTreeType>(proof
     let circuit = blank_window_post_poseidon_circuit::<Tree>(sector_size);
     dt_create_circuit = start.elapsed().as_secs();
     let start = Instant::now();
-    let params = phase2::MPCParameters::new (circuit).unwrap();
+    let params = phase2::MPCParameters::new (circuit);
     dt_create_params = start.elapsed().as_secs();
     params
 } /*(Proof::FallbackPost, Hasher::ShaPedersen) => { ... }
@@ -279,7 +279,7 @@ info !("successfully created initial params for circuit, dt_create_circuit={}s, 
        dt_create_params);
 
 info !("writing initial params to file: {}", params_path);
-params.write(&mut params_writer).unwrap();
+params.write(&mut params_writer);
 
 info !("successfully created initial params for circuit: {} {} {} {}, dt_total={}s",
        proof,
@@ -296,7 +296,7 @@ fn prompt_for_randomness()->[u8; 32] {
     let raw = Password::with_theme(&ColorfulTheme::default())
                   .with_prompt("Please randomly press your keyboard for entropy (press Return/Enter when finished)", )
                   .interact()
-                  .unwrap();
+                  ;
 
     let hashed = blake2b_simd::blake2b(raw.as_bytes());
 
@@ -325,10 +325,10 @@ fn contribute_to_params(path_before
     let mut rng = rand_chacha::ChaChaRng::from_seed(seed);
 
     info !("reading 'before' params from disk: {}", path_before);
-    let file_before = File::open(path_before).unwrap();
+    let file_before = File::open(path_before);
     let mut params_reader = BufReader::with_capacity(1024 * 1024, file_before);
     let start = Instant::now();
-    let mut params = phase2::MPCParameters::read(&mut params_reader, true).unwrap();
+    let mut params = phase2::MPCParameters::read(&mut params_reader, true);
     info !("successfully read 'before' params from disk, dt_read={}s", start.elapsed().as_secs());
 
     info !("making contribution");
@@ -340,9 +340,9 @@ fn contribute_to_params(path_before
 
     let path_after = params_filename(proof, hasher, sector_size, &head, param_number_before + 1);
     info !("writing 'after' params to file: {}", path_after);
-    let file_after = File::create(path_after).unwrap();
+    let file_after = File::create(path_after);
     let mut params_writer = BufWriter::with_capacity(1024 * 1024, file_after);
-    params.write(&mut params_writer).unwrap();
+    params.write(&mut params_writer);
     info !("successfully made contribution, dt_total={}s", start_total.elapsed().as_secs());
 }
 
@@ -376,20 +376,20 @@ fn verify_param_transitions(param_paths : &[&str], contribution_hashes : &[[u8; 
             let params_before =
                 match next_params_before.take() {Some(params_before) = > params_before,
                                                  None = > {info !("reading 'before' params from disk: {}", path_before);
-            let file = File::open(path_before).unwrap();
+            let file = File::open(path_before);
             let mut reader = BufReader::with_capacity(1024 * 1024, file);
             let start = Instant::now();
-            let params_before = phase2::MPCParameters::read(&mut reader, true).unwrap();
+            let params_before = phase2::MPCParameters::read(&mut reader, true);
             info !("successfully read 'before' params from disk, dt_read={}s", start.elapsed().as_secs());
             params_before
         }
 };
 
 let params_after = { info !("reading 'after' params from disk: {}", path_after);
-let file = File::open(path_after).unwrap();
+let file = File::open(path_after);
 let mut reader = BufReader::with_capacity(1024 * 1024, file);
 let start = Instant::now();
-let params_after = phase2::MPCParameters::read(&mut reader, true).unwrap();
+let params_after = phase2::MPCParameters::read(&mut reader, true);
 info !("successfully read 'after' params from disk, dt_read={}s", start.elapsed().as_secs());
 params_after
 }
@@ -430,8 +430,8 @@ fn verify_param_transistions_daemon(proof : Proof, hasher : Hasher, sector_size 
 
     loop {
         let(before_params, before_filename) = if next_before_params.is_some() {
-            let before_params = next_before_params.take().unwrap();
-            let before_filename = next_before_filename.take().unwrap();
+            let before_params = next_before_params.take();
+            let before_filename = next_before_filename.take();
             (before_params, before_filename)
         }
         else {
@@ -447,10 +447,10 @@ fn verify_param_transistions_daemon(proof : Proof, hasher : Hasher, sector_size 
                 }
             info !("found file: {}", before_filename);
             info !("reading params file: {}", before_filename);
-            let file = File::open(&before_path).unwrap();
+            let file = File::open(&before_path);
             let mut reader = BufReader::with_capacity(1024 * 1024, file);
             let read_start = Instant::now();
-            let before_params = MPCParameters::read(&mut reader, true).unwrap();
+            let before_params = MPCParameters::read(&mut reader, true);
             info !("successfully read params, dt_read={}s", read_start.elapsed().as_secs());
             param_number += 1;
             (before_params, before_filename)
@@ -470,10 +470,10 @@ fn verify_param_transistions_daemon(proof : Proof, hasher : Hasher, sector_size 
         info !("found file: {}", after_filename);
 
         let after_params = { info !("reading params file: {}", after_filename);
-        let file = File::open(&after_path).unwrap();
+        let file = File::open(&after_path);
         let mut reader = BufReader::with_capacity(1024 * 1024, file);
         let read_start = Instant::now();
-        let params = MPCParameters::read(&mut reader, true).unwrap();
+        let params = MPCParameters::read(&mut reader, true);
         info !("successfully read params, dt_read={}s", read_start.elapsed().as_secs());
         param_number += 1;
         params
@@ -559,9 +559,9 @@ fn setup_contribute_logger(path_before : &str) {
 /// to stderr, and all logs to the file:
 /// <proof>_<hasher>_<sector-size>_<head>_verify_<first param number>_<last param number>.log
 fn setup_verify_logger(param_paths : &[&str]) {
-    let(proof, hasher, sector_size, head, first_param_number) = parse_params_filename(param_paths.first().unwrap());
+    let(proof, hasher, sector_size, head, first_param_number) = parse_params_filename(param_paths.first());
 
-    let last_param_number = parse_params_filename(param_paths.last().unwrap()) .4;
+    let last_param_number = parse_params_filename(param_paths.last()) .4;
 
     let mut log_filename = format !("{}_{}_{}_{}_verify_{}_{}.log",
                                     proof,
@@ -756,17 +756,17 @@ int main(int argc, char *argv[]) {
                     with_shape !(sector_size, create_initial_params, proof, hasher, sector_size);
                 }
                 "contribute" = > {
-                    let path_before = matches.value_of("path-before").unwrap();
+                    let path_before = matches.value_of("path-before");
                     setup_contribute_logger(path_before);
                     contribute_to_params(path_before);
                 }
                 "verify" = > {
-                    let param_paths : Vec<&str> = matches.values_of("paths").unwrap().collect();
+                    let param_paths : Vec<&str> = matches.values_of("paths").collect();
 
                     let contribution_hashes
                         : Vec<[u8; 64]> =
                               matches.values_of("contributions")
-                                  .unwrap()
+
                                   .map(| hex_str |
                                        {
                                            let mut digest_bytes_arr = [0u8; 64];

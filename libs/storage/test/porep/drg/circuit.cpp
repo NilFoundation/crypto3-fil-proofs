@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir().unwrap();
+    let cache_dir = tempfile::tempdir();
     let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     let data_node
         : Option<Fr> =
               Some(bytes_into_fr(data_at_node(&mmapped_data, challenge).expect("failed to read original data"), )
-                       .unwrap(), );
+                       , );
 
     let sp = drg::SetupParams {
         drg : drg::DrgParams {
@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     let replica_id = Some(replica_id);
 
     assert !(proof_nc.nodes[0].proof.validate(challenge), "failed to verify data commitment");
-    assert !(proof_nc.nodes[0].proof.validate_data(data_node.unwrap().into()),
+    assert !(proof_nc.nodes[0].proof.validate_data(data_node.into()),
              "failed to verify data commitment with data");
 
     let mut cs = TestConstraintSystem::<Bls12>::new ();
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     if
         !cs.is_satisfied() {
-            println !("failed to satisfy: {:?}", cs.which_is_unsatisfied().unwrap());
+            println !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
         }
 
     assert !(cs.is_satisfied(), "constraints not satisfied");
@@ -123,11 +123,11 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     BOOST_CHECK_EQUAL(cs.get_input(0, "ONE"), Fr::one());
 
-    BOOST_CHECK_EQUAL(cs.get_input(1, "drgporep/replica_id/input variable"), replica_id.unwrap());
+    BOOST_CHECK_EQUAL(cs.get_input(1, "drgporep/replica_id/input variable"), replica_id);
 
     let generated_inputs = <drg_porep_compound<_, _> as compound_proof::CompoundProof<_, _>>::generate_public_inputs(
                                &pub_inputs, &pp, None, )
-                               .unwrap();
+                               ;
     let expected_inputs = cs.get_inputs();
 
     for ((input, label), generated_input)
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_num_constraints) {
     // 1 GB
     let n = (1 << 30) / 32;
     let m = BASE_DEGREE;
-    let tree_depth = graph_height::<typenum::U2>(n);
+    let tree_depth = graph_height::<2>(n);
 
     let mut cs = TestConstraintSystem::<Bls12>::new ();
     DrgPoRepCircuit::<PedersenHasher>::synthesize(

@@ -225,7 +225,7 @@ namespace nil {
                 };
 
                 std::string parent_cache_dir_name() {
-                    return settings::SETTINGS.lock().unwrap().parent_cache.clone();
+                    return settings::SETTINGS.lock().parent_cache.clone();
                 }
 
                 template<template<typename, typename> class StackedGraph, typename Hash, typename Graph,

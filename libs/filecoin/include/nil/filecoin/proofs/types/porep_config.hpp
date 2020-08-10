@@ -38,19 +38,19 @@
 namespace nil {
     namespace filecoin {
         struct porep_config {
-            typedef std::uint64_t sector_size;
+            typedef std::uint64_t sector_size_type;
 
-            sector_size ss;
+            sector_size_type sector_size;
             porep_proof_partitions partitions;
             std::array<std::uint8_t, 32> porep_id;
 
             /// Returns the cache identifier as used by `storage_proofs::paramater_cache`.
             template<typename MerkleTreeType>
             std::string get_cache_identifier() {
-                let params = parameters::public_params<MerkleTreeType>(sector_size.into(), partitions.into(), porep_id);
+                let params = parameters::public_params<MerkleTreeType>(sector_size, partitions, porep_id);
 
                 Ok(<StackedCompound<MerkleTreeType, DefaultPieceHasher> as CacheableParameters<
-                       StackedCircuit<Tree, DefaultPieceHasher>, _, >>::cache_identifier(&params));
+                       StackedCircuit<Tree, DefaultPieceHasher>, _, >>::cache_identifier(params));
             }
 
             template<typename MerkleTreeType>

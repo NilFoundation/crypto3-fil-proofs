@@ -114,16 +114,16 @@ namespace nil {
         typedef storage_proofs::merkle::OctMerkleTree<DefaultTreeHasher> DefaultOctTree;
         typedef storage_proofs::merkle::OctLCMerkleTree<DefaultTreeHasher> DefaultOctLCTree;
 
-        typedef LCTree<DefaultTreeHasher, U8, U0, U0> SectorShape2KiB;
-        typedef LCTree<DefaultTreeHasher, U8, U2, U0> SectorShape4KiB;
-        typedef LCTree<DefaultTreeHasher, U8, U8, U0> SectorShape16KiB;
-        typedef LCTree<DefaultTreeHasher, U8, U8, U2> SectorShape32KiB;
-        typedef LCTree<DefaultTreeHasher, U8, U0, U0> SectorShape8MiB;
-        typedef LCTree<DefaultTreeHasher, U8, U2, U0> SectorShape16MiB;
-        typedef LCTree<DefaultTreeHasher, U8, U0, U0> SectorShape512MiB;
-        typedef LCTree<DefaultTreeHasher, U8, U2, U0> SectorShape1GiB;
-        typedef LCTree<DefaultTreeHasher, U8, U8, U0> SectorShape32GiB;
-        typedef LCTree<DefaultTreeHasher, U8, U8, U2> SectorShape64GiB;
+        typedef LCTree<DefaultTreeHasher, 8, 0, 0> SectorShape2KiB;
+        typedef LCTree<DefaultTreeHasher, 8, 2, 0> SectorShape4KiB;
+        typedef LCTree<DefaultTreeHasher, 8, 8, 0> SectorShape16KiB;
+        typedef LCTree<DefaultTreeHasher, 8, 8, 2> SectorShape32KiB;
+        typedef LCTree<DefaultTreeHasher, 8, 0, 0> SectorShape8MiB;
+        typedef LCTree<DefaultTreeHasher, 8, 2, 0> SectorShape16MiB;
+        typedef LCTree<DefaultTreeHasher, 8, 0, 0> SectorShape512MiB;
+        typedef LCTree<DefaultTreeHasher, 8, 2, 0> SectorShape1GiB;
+        typedef LCTree<DefaultTreeHasher, 8, 8, 0> SectorShape32GiB;
+        typedef LCTree<DefaultTreeHasher, 8, 8, 2> SectorShape64GiB;
 
         bool is_sector_shape_base(sector_size_type sector_size) {
             return sector_size == sector_size_2kb || sector_size == sector_size_8mb || sector_size == sector_size_512mb;

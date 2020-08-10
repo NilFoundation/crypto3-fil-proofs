@@ -73,7 +73,7 @@ namespace nil {
 
             // This configurable setting is for a default oct-tree
             // rows_to_discard value, which defaults to 2.
-            std::size_t rows_to_discard = settings::SETTINGS.lock().unwrap().rows_to_discard;
+            std::size_t rows_to_discard = settings::SETTINGS.lock().rows_to_discard;
 
             // Discard at most 'constant value' rows (coded below,
             // differing by arity) while respecting the max number that

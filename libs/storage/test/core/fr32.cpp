@@ -25,25 +25,25 @@
 
 using namespace nil::filecoin;
 
-void bytes_fr_test(const filecoin::fr32_array &bytes, bool expect_success) {
+void bytes_fr_test(const fr32_array &bytes, bool expect_success) {
     let mut b = &bytes[..];
     let fr_result = bytes_into_fr(&mut b);
     if (expect_success) {
         let f = fr_result.expect("Failed to convert bytes to `Fr`");
         let b2 = fr_into_bytes(&f);
 
-        assert_eq !(bytes.to_vec(), b2);
+        BOOST_CHECK_EQUAL(bytes, b2);
     } else {
-        assert !(fr_result.is_err(), "expected a decoding error")
+        BOOST_CHECK(fr_result.is_err(), "expected a decoding error")
     }
 }
 
 void bytes_into_frs_into_bytes_test(const fr32 &bytes) {
     let mut bytes = bytes.clone();
     let frs = bytes_into_frs(&mut bytes).expect("Failed to convert bytes into a `Vec<Fr>`");
-    assert !(frs.len() == 3);
+    BOOST_CHECK(frs.len() == 3);
     let bytes_back = frs_into_bytes(&frs);
-    assert !(bytes.to_vec() == bytes_back);
+    BOOST_CHECK(bytes.to_vec() == bytes_back);
 }
 
 BOOST_AUTO_TEST_SUITE(fr32_test_suite)

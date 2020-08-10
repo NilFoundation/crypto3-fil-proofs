@@ -37,11 +37,11 @@ BOOST_AUTO_TEST_CASE(test_hash2_circuit) {
         let b = Fr::random(rng);
 
         let a_num = { let mut cs = cs.namespace(|| "a");
-        num::AllocatedNumber::alloc(&mut cs, || Ok(a)).unwrap()
+        num::AllocatedNumber::alloc(&mut cs, || Ok(a))
     };
 
     let b_num = { let mut cs = cs.namespace(|| "b");
-    num::AllocatedNumber::alloc(&mut cs, || Ok(b)).unwrap()
+    num::AllocatedNumber::alloc(&mut cs, || Ok(b))
 };
 
 let out = <PedersenHasher as Hasher>::Function::hash2_circuit(cs.namespace(|| "hash2"), &a_num, &b_num, )
@@ -52,7 +52,7 @@ BOOST_CHECK_EQUAL(cs.num_constraints(), 1371);
 
 let expected : Fr = <PedersenHasher as Hasher>::Function::hash2(&a.into(), &b.into()).into();
 
-BOOST_CHECK_EQUAL(expected, out.get_value().unwrap(), "circuit and non circuit do not match");
+BOOST_CHECK_EQUAL(expected, out.get_value(), "circuit and non circuit do not match");
 }
 }
 
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(test_hash_single_column_circuit) {
                     vals.iter()
                         .enumerate()
                         .map(| (i, v) |
-                             {num::AllocatedNumber::alloc(cs.namespace(|| format !("num_{}", i)), || Ok(*v)).unwrap()})
+                             {num::AllocatedNumber::alloc(cs.namespace(|| format !("num_{}", i)), || Ok(*v))})
                         .collect::<Vec<_>>();
 
                 let out = hash_single_column(cs.namespace(|| "hash_single_column"), &vals_opt)
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(test_hash_single_column_circuit) {
 
                 let expected : Fr = vanilla_hash_single_column(&vals);
 
-                assert_eq !(expected, out.get_value().unwrap(), "circuit and non circuit do not match");
+                assert_eq !(expected, out.get_value(), "circuit and non circuit do not match");
             }
 }
 

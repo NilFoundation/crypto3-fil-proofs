@@ -39,7 +39,9 @@ namespace nil {
             }
 
             template<template<typename> class ConstraintSystem, typename Bls12>
-            std::pair<AllocatedNumber<Bls12>, std::vector<bool>> synthesize(ConstraintSystem<Bls12> &cs,
+            std::pair<AllocatedNumber<Bls12>, std::vector<bool>> synthesize
+                (ConstraintSystem<Bls12>
+                &cs,
                                                                             AllocatedNumber<Bls12> &cur) {
                 std::size_t arity = BaseArity;
 
@@ -126,7 +128,7 @@ namespace nil {
                                .collect();
 
                 let top = if has_top {
-                    let(hashes, index) = opts.pop().unwrap();
+                    let(hashes, index) = opts.pop();
                     vec ![PathElement {
                         hashes,
                         index,
@@ -137,7 +139,7 @@ namespace nil {
                 else {Vec::new ()};
 
                 let sub = if has_sub {
-                    let(hashes, index) = opts.pop().unwrap();
+                    let(hashes, index) = opts.pop();
                     vec ![PathElement {
                         hashes,
                         index,

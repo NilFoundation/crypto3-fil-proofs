@@ -23,6 +23,8 @@
 
 #include <nil/filecoin/storage/proofs/core/pieces.hpp>
 
+using namespace nil::filecoin;
+
 BOOST_AUTO_TEST_SUITE(pieces_test_suite)
 
 BOOST_AUTO_TEST_CASE(test_subtree_capacity) {
@@ -46,13 +48,11 @@ BOOST_AUTO_TEST_CASE(test_subtree_capacity) {
 
 BOOST_AUTO_TEST_CASE(test_generate_piece_commitment_bytes_from_source) {
     std::vector<std::uint8_t> some_bytes(0, 64);
-    let mut some_bytes_slice : &[u8] = &some_bytes;
-    generate_piece_commitment_bytes_from_source<PedersenHasher>(&mut some_bytes_slice, 64);
+    generate_piece_commitment_bytes_from_source<PedersenHasher>(some_bytes, 64);
 
     std::vector<std::uint8_t> not_enough_bytes(0, 7);
-    std::vector<std::uint8_t> not_enough_bytes_slice = not_enough_bytes;
     BOOST_CHECK(
-        !generate_piece_commitment_bytes_from_source<PedersenHasher>(&mut not_enough_bytes_slice, 7).is_err());
+        !generate_piece_commitment_bytes_from_source<PedersenHasher>(not_enough_bytes, 7));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

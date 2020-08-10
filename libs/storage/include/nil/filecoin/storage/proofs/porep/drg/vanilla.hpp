@@ -109,7 +109,7 @@ namespace nil {
                 };
 
                 template<typename Hash>
-                using ReplicaParents = std::vector<std::tuple<std::uint32_t, DataProof<Hash, typenum::U2>>>;
+                using ReplicaParents = std::vector<std::tuple<std::uint32_t, DataProof<Hash, 2>>>;
 
                 template<typename Hash>
                 struct Proof {
@@ -118,9 +118,9 @@ namespace nil {
                         nodes({{height}, challenges}) {
                     }
 
-                    Proof(const std::vector<DataProof<Hash, typenum::U2>> &replica_nodes,
+                    Proof(const std::vector<DataProof<Hash, 2>> &replica_nodes,
                           const std::vector<ReplicaParents<Hash>> &replica_parents,
-                          const std::vector<DataProof<Hash, typenum::U2>> &nodes) :
+                          const std::vector<DataProof<Hash, 2>> &nodes) :
                         replica_nodes(replica_nodes),
                         replica_parents(replica_parents), nodes(nodes), data_root(nodes[0].proof.root()),
                         replica_root(replica_nodes[0].proof.root()) {
@@ -128,9 +128,9 @@ namespace nil {
 
                     typename Hash::digest_type data_root;
                     typename Hash::digest_type replica_root;
-                    std::vector<DataProof<Hash, typenum::U2>> replica_nodes;
+                    std::vector<DataProof<Hash, 2>> replica_nodes;
                     std::vector<ReplicaParents<Hash>> replica_parents;
-                    std::vector<DataProof<Hash, typenum::U2>> nodes;
+                    std::vector<DataProof<Hash, 2>> nodes;
                 };
 
                 template<typename Hash, template<typename> class Graph>
@@ -166,7 +166,7 @@ namespace nil {
                         assert(len <= params.challenges_count);
 
                         std::vector<typename Hash::digest_type> replica_nodes(len), replica_parents(len);
-                        std::vector<DataProof<Hash, typenum::U2>> data_nodes(len);
+                        std::vector<DataProof<Hash, 2>> data_nodes(len);
 
                         for (int i = 0; i < len; i++) {
                             std::size_t challenge = inputs.challenges[i] % params.graph.size();
@@ -385,7 +385,7 @@ namespace nil {
                                      .into_par_iter()
                                      .flat_map(| i |
                                                {decode_block<Hash, Graph>(graph, replica_id, data, exp_parents_data, i)
-                                                    .unwrap()
+
                                                     .into_bytes()})
                                      .collect();
 

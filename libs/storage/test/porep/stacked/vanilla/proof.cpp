@@ -44,51 +44,51 @@ BOOST_AUTO_TEST_CASE(test_calculate_fixed_challenges) {
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_pedersen_8) {
-    test_extract_all::<DiskTree<PedersenHasher, typenum::U8, typenum::U0, typenum::U0>>();
+    test_extract_all::<DiskTree<PedersenHasher, 8, 0, 0>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_pedersen_8_2) {
-    test_extract_all::<DiskTree<PedersenHasher, typenum::U8, typenum::U2, typenum::U0>>();
+    test_extract_all::<DiskTree<PedersenHasher, 8, 2, 0>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_pedersen_8_8_2) {
-    test_extract_all::<DiskTree<PedersenHasher, typenum::U8, typenum::U8, typenum::U2>>();
+    test_extract_all::<DiskTree<PedersenHasher, 8, 8, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_sha256_8) {
-    test_extract_all::<DiskTree<Sha256Hasher, typenum::U8, typenum::U0, typenum::U0>>();
+    test_extract_all::<DiskTree<Sha256Hasher, 8, 0, 0>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_sha256_8_8) {
-    test_extract_all::<DiskTree<Sha256Hasher, typenum::U8, typenum::U8, typenum::U0>>();
+    test_extract_all::<DiskTree<Sha256Hasher, 8, 8, 0>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_sha256_8_8_2) {
-    test_extract_all::<DiskTree<Sha256Hasher, typenum::U8, typenum::U8, typenum::U2>>();
+    test_extract_all::<DiskTree<Sha256Hasher, 8, 8, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_blake2s_8) {
-    test_extract_all::<DiskTree<Blake2sHasher, typenum::U8, typenum::U0, typenum::U0>>();
+    test_extract_all::<DiskTree<Blake2sHasher, 8, 0, 0>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_blake2s_8_8) {
-    test_extract_all::<DiskTree<Blake2sHasher, typenum::U8, typenum::U8, typenum::U0>>();
+    test_extract_all::<DiskTree<Blake2sHasher, 8, 8, 0>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_blake2s_8_8_2) {
-    test_extract_all::<DiskTree<Blake2sHasher, typenum::U8, typenum::U8, typenum::U2>>();
+    test_extract_all::<DiskTree<Blake2sHasher, 8, 8, 2>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_poseidon_8) {
-    test_extract_all::<DiskTree<PoseidonHasher, typenum::U8, typenum::U0, typenum::U0>>();
+    test_extract_all::<DiskTree<PoseidonHasher, 8, 0, 0>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_poseidon_8_2) {
-    test_extract_all::<DiskTree<PoseidonHasher, typenum::U8, typenum::U2, typenum::U0>>();
+    test_extract_all::<DiskTree<PoseidonHasher, 8, 2, 0>>();
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_poseidon_8_8_2) {
-    test_extract_all::<DiskTree<PoseidonHasher, typenum::U8, typenum::U8, typenum::U2>>();
+    test_extract_all::<DiskTree<PoseidonHasher, 8, 8, 2>>();
 }
 
 template<typename MerkleTreeType>
@@ -101,7 +101,7 @@ void test_extract_all() {
     let replica_id : <Tree::Hasher as Hasher>::Domain = <Tree::Hasher as Hasher>::Domain::random(rng);
     let nodes = 64 * get_base_tree_count::<Tree>();
 
-    let data : Vec<u8> = (0..nodes)
+    std::vector<std::uint8_t> data = (0..nodes)
                              .flat_map(| _ |
                                        {
                                            let v : <Tree::Hasher as Hasher>::Domain =
@@ -112,7 +112,7 @@ void test_extract_all() {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir().unwrap();
+    let cache_dir = tempfile::tempdir();
     let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
@@ -126,11 +126,10 @@ void test_extract_all() {
         nodes, degree : BASE_DEGREE, expansion_degree : EXP_DEGREE, porep_id : [32; 32], layer_challenges,
     };
 
-    let pp = StackedDrg::<Tree, Blake2sHasher>::setup(&sp).expect("setup failed");
+    let pp = StackedDrg<Tree, Blake2sHasher>::setup(&sp);
 
-    StackedDrg::<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(),
-                                                 replica_path, )
-        .expect("replication failed");
+    StackedDrg<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(),
+                                                 replica_path);
 
     let mut copied = vec ![0; data.len()];
     copied.copy_from_slice(&mmapped_data);
@@ -148,37 +147,37 @@ void test_extract_all() {
 void prove_verify_fixed(std::size_t n) {
     let challenges = LayerChallenges::new (DEFAULT_STACKED_LAYERS, 5);
 
-    test_prove_verify::<DiskTree<PedersenHasher, typenum::U4, typenum::U0, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<PedersenHasher, typenum::U4, typenum::U2, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<PedersenHasher, typenum::U4, typenum::U8, typenum::U2>>(n, challenges.clone(), );
+    test_prove_verify<DiskTree<PedersenHasher, 4, 0, 0>>(n, challenges);
+    test_prove_verify<DiskTree<PedersenHasher, 4, 2, 0>>(n, challenges);
+    test_prove_verify<DiskTree<PedersenHasher, 4, 8, 2>>(n, challenges);
 
-    test_prove_verify::<DiskTree<PedersenHasher, typenum::U8, typenum::U0, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<PedersenHasher, typenum::U8, typenum::U2, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<PedersenHasher, typenum::U8, typenum::U8, typenum::U2>>(n, challenges.clone(), );
+    test_prove_verify<DiskTree<PedersenHasher, 8, 0, 0>>(n, challenges);
+    test_prove_verify<DiskTree<PedersenHasher, 8, 2, 0>>(n, challenges);
+    test_prove_verify<DiskTree<PedersenHasher, 8, 8, 2>>(n, challenges);
 
-    test_prove_verify::<DiskTree<Sha256Hasher, typenum::U8, typenum::U0, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<Sha256Hasher, typenum::U8, typenum::U2, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<Sha256Hasher, typenum::U8, typenum::U8, typenum::U2>>(n, challenges.clone(), );
+    test_prove_verify<DiskTree<Sha256Hasher, 8, 0, 0>>(n, challenges);
+    test_prove_verify<DiskTree<Sha256Hasher, 8, 2, 0>>(n, challenges);
+    test_prove_verify<DiskTree<Sha256Hasher, 8, 8, 2>>(n, challenges);
 
-    test_prove_verify::<DiskTree<Sha256Hasher, typenum::U4, typenum::U0, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<Sha256Hasher, typenum::U4, typenum::U2, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<Sha256Hasher, typenum::U4, typenum::U8, typenum::U2>>(n, challenges.clone(), );
+    test_prove_verify<DiskTree<Sha256Hasher, 4, 0, 0>>(n, challenges);
+    test_prove_verify<DiskTree<Sha256Hasher, 4, 2, 0>>(n, challenges);
+    test_prove_verify<DiskTree<Sha256Hasher, 4, 8, 2>>(n, challenges);
 
-    test_prove_verify::<DiskTree<Blake2sHasher, typenum::U4, typenum::U0, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<Blake2sHasher, typenum::U4, typenum::U2, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<Blake2sHasher, typenum::U4, typenum::U8, typenum::U2>>(n, challenges.clone(), );
+    test_prove_verify<DiskTree<Blake2sHasher, 4, 0, 0>>(n, challenges);
+    test_prove_verify<DiskTree<Blake2sHasher, 4, 2, 0>>(n, challenges);
+    test_prove_verify<DiskTree<Blake2sHasher, 4, 8, 2>>(n, challenges);
 
-    test_prove_verify::<DiskTree<Blake2sHasher, typenum::U8, typenum::U0, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<Blake2sHasher, typenum::U8, typenum::U2, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<Blake2sHasher, typenum::U8, typenum::U8, typenum::U2>>(n, challenges.clone(), );
+    test_prove_verify<DiskTree<Blake2sHasher, 8, 0, 0>>(n, challenges);
+    test_prove_verify<DiskTree<Blake2sHasher, 8, 2, 0>>(n, challenges);
+    test_prove_verify<DiskTree<Blake2sHasher, 8, 8, 2>>(n, challenges);
 
-    test_prove_verify::<DiskTree<PoseidonHasher, typenum::U4, typenum::U0, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<PoseidonHasher, typenum::U4, typenum::U2, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<PoseidonHasher, typenum::U4, typenum::U8, typenum::U2>>(n, challenges.clone(), );
+    test_prove_verify<DiskTree<PoseidonHasher, 4, 0, 0>>(n, challenges);
+    test_prove_verify<DiskTree<PoseidonHasher, 4, 2, 0>>(n, challenges);
+    test_prove_verify<DiskTree<PoseidonHasher, 4, 8, 2>>(n, challenges);
 
-    test_prove_verify::<DiskTree<PoseidonHasher, typenum::U8, typenum::U0, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<PoseidonHasher, typenum::U8, typenum::U2, typenum::U0>>(n, challenges.clone(), );
-    test_prove_verify::<DiskTree<PoseidonHasher, typenum::U8, typenum::U8, typenum::U2>>(n, challenges, );
+    test_prove_verify<DiskTree<PoseidonHasher, 8, 0, 0>>(n, challenges);
+    test_prove_verify<DiskTree<PoseidonHasher, 8, 2, 0>>(n, challenges);
+    test_prove_verify<DiskTree<PoseidonHasher, 8, 8, 2>>(n, challenges);
 }
 
 template<typename MerkleTreeType>
@@ -198,7 +197,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir().unwrap();
+    let cache_dir = tempfile::tempdir();
     let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
@@ -264,18 +263,17 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
 // We are seeing a bug, in which setup never terminates for some sector sizes.
 // This test is to debug that and should remain as a regression teset.
 BOOST_AUTO_TEST_CASE(setup_terminates) {
-    let degree = BASE_DEGREE;
-    let expansion_degree = EXP_DEGREE;
-    let nodes = 1024 * 1024 * 32 * 8;    // This corresponds to 8GiB sectors (32-byte nodes)
-    let layer_challenges = LayerChallenges::new (10, 333);
-    let sp = SetupParams {
+    std::size_t degree = BASE_DEGREE;
+    std::size_t expansion_degree = EXP_DEGREE;
+    std::size_t nodes = 1024 * 1024 * 32 * 8;    // This corresponds to 8GiB sectors (32-byte nodes)
+    LayerChallenges layer_challenges(10, 333);
+    SetupParams sp = {
         nodes, degree, expansion_degree, porep_id : [32; 32], layer_challenges,
     };
 
     // When this fails, the call to setup should panic, but seems to actually hang (i.e. neither return nor panic) for
     // some reason. When working as designed, the call to setup returns without error.
-    let _pp = StackedDrg::<DiskTree<PedersenHasher, typenum::U8, typenum::U0, typenum::U0>, Blake2sHasher, >::setup(&sp)
-                  .expect("setup failed");
+    let _pp = StackedDrg<DiskTree<PedersenHasher, 8, 0, 0>, Blake2sHasher>::setup(sp);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

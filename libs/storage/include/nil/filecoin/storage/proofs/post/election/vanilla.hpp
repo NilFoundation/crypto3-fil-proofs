@@ -153,7 +153,7 @@ namespace nil {
                                             let challenged_leaf_start =
                                                 generate_leaf_challenge(pub_params, pub_inputs.randomness,
                                                                         pub_inputs.sector_challenge_index, n as u64, )
-                                                    .unwrap();
+                                                    ;
                                             (0..pub_params.challenged_nodes)
                                                 .into_par_iter()
                                                 .map(move | i |

@@ -88,7 +88,7 @@ namespace nil {
                         }
 
                         /// Circuit synthesis.
-                        template<template<typename> class ConstraintSystem, typename Bls12>
+                        template<typename Bls12>
                         void synthesize(ConstraintSystem<Bls12> &cs, std::size_t layers, AllocatedNumber<Bls12> &comm_d,
                                         AllocatedNumber<Bls12> &comm_c, AllocatedNumber<Bls12> &comm_r_last,
                                         const std::vector<bool> &replica_id) {

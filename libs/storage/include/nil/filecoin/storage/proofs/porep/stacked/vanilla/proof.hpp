@@ -67,7 +67,7 @@ namespace nil {
 
                         // Sanity checks on restored trees.
                         assert(pub_inputs.tau.is_some());
-                        assert(pub_inputs.tau.as_ref().unwrap().comm_d == t_aux.tree_d.root());
+                        assert(pub_inputs.tau.as_ref().comm_d == t_aux.tree_d.root());
 
                         auto get_drg_parents_columns = [&](std::size_t x) -> std::vector<Column<tree_hash_type>> {
                             std::size_t base_degree = graph.base_graph().degree();
@@ -269,7 +269,7 @@ namespace nil {
                 // NOTE: this means we currently keep 2x sector size around, to improve speed.
                 let mut labels_buffer = vec ![0u8; 2 * layer_size];
 
-                let use_cache = settings::SETTINGS.lock().unwrap().maximize_caching;
+                let use_cache = settings::SETTINGS.lock().maximize_caching;
                 let mut cache = if use_cache {
                             Some(graph.parent_cache()?)
                 }
@@ -341,7 +341,7 @@ namespace nil {
                     MerkleTree::from_par_iter_with_config((0..leafs)
                                                               .into_par_iter()
                                                               // TODO: proper error handling instead of `unwrap()`
-                                                              .map(| i | get_node::<K>(tree_data, i).unwrap()),
+                                                              .map(| i | get_node::<K>(tree_data, i)),
                                                           config);
                 return tree;
             }
@@ -351,7 +351,7 @@ namespace nil {
                      typename tree_type::TopTreeArity>
                 generate_tree_c(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                 const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
-                if (settings ::SETTINGS.lock().unwrap().use_gpu_column_builder) {
+                if (settings ::SETTINGS.lock().use_gpu_column_builder) {
                     Self::generate_tree_c_gpu::<ColumnArity, TreeArity>(layers, nodes_count, tree_count, configs,
                                                                         labels, )
                 } else {
@@ -381,11 +381,11 @@ namespace nil {
                         // FIL_PROOFS_MAX_GPU_COLUMN_BATCH_SIZE, FIL_PROOFS_MAX_GPU_TREE_BATCH_SIZE, and
                         // FIL_PROOFS_COLUMN_WRITE_BATCH_SIZE respectively.
                         let max_gpu_column_batch_size =
-                            settings::SETTINGS.lock().unwrap().max_gpu_column_batch_size as usize;
+                            settings::SETTINGS.lock().max_gpu_column_batch_size as usize;
                         let max_gpu_tree_batch_size =
-                            settings::SETTINGS.lock().unwrap().max_gpu_tree_batch_size as usize;
+                            settings::SETTINGS.lock().max_gpu_tree_batch_size as usize;
                         let column_write_batch_size =
-                            settings::SETTINGS.lock().unwrap().column_write_batch_size as usize;
+                            settings::SETTINGS.lock().column_write_batch_size as usize;
 
                         // This channel will receive batches of columns and add them to the ColumnTreeBuilder.
                         let(builder_tx, builder_rx) = mpsc::sync_channel(0);
@@ -478,7 +478,7 @@ namespace nil {
                                     let tree_len = base_data.len() + tree_data.len();
                                     info !("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len, );
                                     assert_eq !(base_data.len(), nodes_count);
-                                    assert_eq !(tree_len, config.size.unwrap());
+                                    assert_eq !(tree_len, config.size);
 
                                     // Persist the base and tree data to disk based using the current store config.
                                     let tree_c_store =
@@ -520,7 +520,7 @@ namespace nil {
                                     trace !("done flattening tree_c tree data");
 
                                     trace !("writing tree_c store data");
-                                    store.write().expect("failed to access store for sync").sync().unwrap();
+                                    store.write().expect("failed to access store for sync").sync();
                                     trace !("done writing tree_c store data");
 
                                     // Move on to the next config.
@@ -535,7 +535,7 @@ namespace nil {
 
                         create_disk_tree::<
                             DiskTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>, >(
-                            configs[0].size.unwrap(), &configs)
+                            configs[0].size, &configs)
                     })
             }    // namespace stacked
 
@@ -580,7 +580,7 @@ namespace nil {
                                                                                   store
                                                                                       .read_at((i * nodes_count) + j +
                                                                                                chunk * chunk_size)
-                                                                                      .unwrap();
+                                                                                      ;
                                                                         el.into()
                                                                     })
                                                                .collect();
@@ -592,14 +592,14 @@ namespace nil {
                             });
 
                             info !("building base tree_c {}/{}", i + 1, tree_count);
-                            trees.push(DiskTree::<Tree::Hasher, Tree::Arity, typenum::U0, typenum::U0, >::
+                            trees.push(DiskTree<Tree::Hasher, Tree::Arity, 0, 0>::
                                            from_par_iter_with_config(hashes.into_par_iter(), config.clone()));
                         }
 
                         assert(tree_count == trees.len());
                         create_disk_tree::<
                             DiskTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>, >(
-                            configs[0].size.unwrap(), &configs)
+                            configs[0].size, &configs)
                     })
             }
 
@@ -616,9 +616,9 @@ namespace nil {
                 data.ensure_data() ? ;
                 let last_layer_labels = labels.labels_for_last_layer() ? ;
 
-                if (settings ::SETTINGS.lock().unwrap().use_gpu_tree_builder) {
+                if (settings ::SETTINGS.lock().use_gpu_tree_builder) {
                     info !("generating tree r last using the GPU");
-                    let max_gpu_tree_batch_size = settings::SETTINGS.lock().unwrap().max_gpu_tree_batch_size as usize;
+                    let max_gpu_tree_batch_size = settings::SETTINGS.lock().max_gpu_tree_batch_size as usize;
 
                     // This channel will receive batches of leaf nodes and add them to the TreeBuilder.
                     let(builder_tx, builder_rx) = mpsc::sync_channel::<(Vec<Fr>, bool)>(0);
@@ -692,7 +692,7 @@ namespace nil {
                                     let tree_data_len = tree_data.len();
                                     let cache_size =
                                         get_merkle_tree_cache_size(
-                                            get_merkle_tree_leafs(config.size.unwrap(), Tree::Arity::to_usize(), )
+                                            get_merkle_tree_leafs(config.size, Tree::Arity::to_usize(), )
                                                 .expect("failed to get merkle tree leaves"),
                                             Tree::Arity::to_usize(), config.rows_to_discard, )
                                             .expect("failed to get merkle tree cache size");
@@ -746,16 +746,15 @@ namespace nil {
                             });
 
                         info !("building base tree_r_last with CPU {}/{}", i + 1, tree_count);
-                        LCTree::<Tree::Hasher, Tree::Arity, typenum::U0, typenum::U0>::from_par_iter_with_config(
-                            encoded_data, config.clone());
+                        LCTree<Tree::Hasher, Tree::Arity, 0, 0>::from_par_iter_with_config(encoded_data, config.clone());
 
                         start = end;
                         end += size / tree_count;
                     }
                 };
 
-                return create_lc_tree::<LCTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>>(
-                    tree_r_last_config.size.unwrap(), &configs, &replica_config);
+                return create_lc_tree<LCTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>>(
+                    tree_r_last_config.size, &configs, &replica_config);
             }
 
             TransformedLayers<tree_type, hash_type>
@@ -862,7 +861,7 @@ namespace nil {
 
                 }    // namespace stacked
                 tree_d_config.size = Some(tree_d.len());
-                assert_eq !(tree_d_config.size.unwrap(), tree_d.size());
+                assert_eq !(tree_d_config.size, tree_d.size());
                 let tree_d_root = tree_d.root();
                 drop(tree_d);
 

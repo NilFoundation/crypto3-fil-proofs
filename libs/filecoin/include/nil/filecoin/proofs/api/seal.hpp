@@ -48,24 +48,18 @@ namespace nil {
             assert(("out_path must be a file", out_path.is_file()));
             assert(("cache_path must be a directory", cache_path.is_dir()));
 
-            std::size_t sector_bytes = PaddedBytesAmount::from(config);
-            fs::metadata(&in_path).with_context(||
-                                                format !("could not read in_path={:?})", in_path.as_ref().display()));
-
-            fs::metadata(&out_path).with_context(||
-                                                 format !("could not read out_path={:?}", out_path.as_ref().display()));
+            std::size_t sector_bytes = config.sector_size;
+            assert(("could not read in_path", boost::filesystem::exists(in_path.status())));
+            assert(("could not read out_path", boost::filesystem::exists(out_path.status())));
 
             // Copy unsealed data to output location, where it will be sealed in place.
-            fs::copy(&in_path, &out_path)
-                .with_context(|| {format !("could not copy in_path={:?} to out_path={:?}",
-                                           in_path.as_ref().display(),
-                                           out_path.as_ref().display())});
+            boost::filesystem::copy_file(in_path, out_path);
 
             let f_data = OpenOptions::new ().read(true).write(true).open(&out_path).with_context(
                 || format !("could not open out_path={:?}", out_path.as_ref().display()));
 
             // Zero-pad the data to the requested size by extending the underlying file if needed.
-            f_data.set_len(sector_bytes as u64);
+            f_data.set_len(sector_bytes);
 
             let data = unsafe {MmapOptions::new ().map_mut(&f_data).with_context(
                 || format !("could not mmap out_path={:?}", out_path.as_ref().display())) ? };
@@ -391,7 +385,7 @@ namespace nil {
 
             bool result = StackedCompound::verify(compound_public_params, public_inputs, proof, ChallengeRequirements {
                               minimum_challenges : *POREP_MINIMUM_CHALLENGES.read()
-                                  .unwrap()
+
                                   .get(&u64::from(SectorSize::from(porep_config)))
                                   .expect("unknown sector size") as usize,
                           })
@@ -481,7 +475,7 @@ namespace nil {
             let result = StackedCompound<MerkleTreeType, DefaultPieceHasher>::batch_verify(
                              compound_public_params, public_inputs, proofs, ChallengeRequirements {
                                  minimum_challenges : *POREP_MINIMUM_CHALLENGES.read()
-                                     .unwrap()
+
                                      .get(&u64::from(SectorSize::from(porep_config)))
                                      .expect("unknown sector size") as usize,
                              })

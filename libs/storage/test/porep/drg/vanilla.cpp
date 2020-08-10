@@ -37,7 +37,7 @@ void test_extract_all() {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir().unwrap();
+    let cache_dir = tempfile::tempdir();
     let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir().unwrap();
+    let cache_dir = tempfile::tempdir();
     let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
         let decoded_data = DrgPoRep::extract(&pp, &replica_id, &mmapped_data, i, Some(config.clone()))
                                .expect("failed to extract node data from PoRep");
 
-        let original_data = data_at_node(&data, i).unwrap();
+        let original_data = data_at_node(&data, i);
 
         assert_eq !(original_data, decoded_data.as_slice(), "failed to extract data");
     }
@@ -160,7 +160,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
 
         // MT for original data is always named tree-d, and it will be
         // referenced later in the process as such.
-        let cache_dir = tempfile::tempdir().unwrap();
+        let cache_dir = tempfile::tempdir();
         let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                        default_rows_to_discard(nodes, BINARY_ARITY), );
 

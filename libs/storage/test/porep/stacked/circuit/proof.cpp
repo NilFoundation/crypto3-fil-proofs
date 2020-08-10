@@ -42,7 +42,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir().unwrap();
+    let cache_dir = tempfile::tempdir();
     let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
@@ -188,7 +188,7 @@ void stacked_test_compound() {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir().unwrap();
+    let cache_dir = tempfile::tempdir();
     let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
@@ -225,7 +225,7 @@ void stacked_test_compound() {
 
     {
         let(circuit, inputs) =
-            StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs).unwrap();
+            StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
 
         let mut cs = TestConstraintSystem::new ();
 
@@ -233,7 +233,7 @@ void stacked_test_compound() {
 
         if
             !cs.is_satisfied() {
-                panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied().unwrap());
+                panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
             }
         assert !(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
     }
@@ -241,7 +241,7 @@ void stacked_test_compound() {
     // Use this to debug differences between blank and regular circuit generation.
     {
         let(circuit1, _inputs) =
-            StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs).unwrap();
+            StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
         let blank_circuit =
             <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::blank_circuit(
                 &public_params.vanilla_params);
