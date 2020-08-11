@@ -40,6 +40,7 @@
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/encoding_proof.hpp>
 
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
+#include <nil/filecoin/storage/proofs/core/merkle/builders.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -130,7 +131,7 @@ namespace nil {
                     }
 
                     /// How many layers are available.
-                    std::size_t layers() {
+                    std::size_t layers() const {
                         return labels.size();
                     }
 
@@ -140,8 +141,7 @@ namespace nil {
 
                         for (const StoreConfig &label : labels) {
                             assert(label.size.is_some());
-                            DiskStore store =
-                                DiskStore::new_from_disk(label.size, MerkleTreeType::base_arity, label);
+                            DiskStore store = DiskStore::new_from_disk(label.size, MerkleTreeType::base_arity, label);
                             rows.push_back(store.read_at(node));
                         }
 
@@ -192,20 +192,15 @@ namespace nil {
                         auto delete_tree_c_store = [&](const StoreConfig &config, std::size_t tree_c_size) {
                             DiskStore<typename MerkleTreeType::hash_type::digest_type> tree_c_store =
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::new_from_disk(
-                                    tree_c_size, MerkleTreeType::base_arity, config)
-                                    .context("tree_c");
+                                    tree_c_size, MerkleTreeType::base_arity, config);
                             // Note: from_data_store requires the base tree leaf count
                             DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                                      MerkleTreeType::top_tree_arity>
-                                tree_c =
-                                    DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity,
-                                             MerkleTreeType::sub_tree_arity,
-                                             MerkleTreeType::top_tree_arity>::from_data_store(tree_c_store,
-                                                                                            get_merkle_tree_leafs(
-                                                                                                tree_c_size,
-                                                                                                MerkleTreeType::base_arity))
-                                        .context("tree_c");
-                            tree_c.delete(config.clone()).context("tree_c");
+                                tree_c = DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity,
+                                                  MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>::
+                                    from_data_store(tree_c_store,
+                                                    get_merkle_tree_leafs(tree_c_size, MerkleTreeType::base_arity));
+                            tree_c.erase(config.clone());
                         };
 
                         if (cached(&t_aux.tree_d_config)) {
@@ -214,17 +209,15 @@ namespace nil {
                                 DiskStore::new_from_disk(tree_d_size, BINARY_ARITY, &t_aux.tree_d_config)
                                     .context("tree_d");
                             // Note: from_data_store requires the base tree leaf count
-                            BinaryMerkleTree<Hash> tree_d =
-                                BinaryMerkleTree<Hash>::from_data_store(
-                                    tree_d_store, get_merkle_tree_leafs(tree_d_size, BINARY_ARITY))
-                                    .context("tree_d");
+                            BinaryMerkleTree<Hash> tree_d = BinaryMerkleTree<Hash>::from_data_store(
+                                tree_d_store, get_merkle_tree_leafs(tree_d_size, BINARY_ARITY));
 
-                            tree_d.delete(t_aux.tree_d_config).context("tree_d");
+                            tree_d.erase(t_aux.tree_d_config);
                             trace !("tree d deleted");
                         }
 
                         std::size_t tree_count = get_base_tree_count<MerkleTreeType>();
-                        std::size_t tree_c_size = t_aux.tree_c_config.size.context("tree_c config has no size");
+                        std::size_t tree_c_size = t_aux.tree_c_config.size;
                         let configs = split_config(t_aux.tree_c_config.clone(), tree_count);
 
                         if (cached(&t_aux.tree_c_config)) {
@@ -236,8 +229,7 @@ namespace nil {
                                 // light.  For now, we manually remove each on disk tree file since we know where they
                                 // are here.
                                 boost::filesystem::path tree_c_path = StoreConfig::data_path(config.path, config.id);
-                                remove_file(tree_c_path)
-                                    .with_context(|| format !("Failed to delete {:?}", tree_c_path));
+                                remove_file(tree_c_path);
                             }
                         }
                         trace !("tree c deleted");
@@ -264,9 +256,8 @@ namespace nil {
                     typedef std::size_t challenge_type;
 
                     std::vector<std::size_t> challenges(const LayerChallenges &layer_challenges, std::size_t leaves,
-                                                        std::size_t partition_k) {
-                        std::size_t k = partition_k.unwrap_or(0);
-
+                                                        std::size_t partition_k = 0) {
+                        k = partition_k;
                         return layer_challenges.derive<T>(leaves, replica_id, seed, k);
                     }
 
@@ -381,19 +372,19 @@ namespace nil {
                                 MerkleTreeType::base_arity);
                         DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
                                  MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
-                            tree_c =
-                                create_disk_tree<DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
-                                                          MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>(
-                                    tree_c_size, configs);
+                            tree_c = create_disk_tree<
+                                DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                         MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>(tree_c_size,
+                                                                                                          configs);
 
                         // tree_r_last_size stored in the config is the base tree size
                         std::size_t tree_r_last_size = t_aux.tree_r_last_config.size;
                         std::size_t tree_r_last_config_rows_to_discard = t_aux.tree_r_last_config.rows_to_discard;
-                        let(configs, replica_config) =
-                            split_config_and_replica(t_aux.tree_r_last_config.clone(),
-                                                     replica_path.clone(),
-                                                     get_merkle_tree_leafs(tree_r_last_size, MerkleTreeType::base_arity),
-                                                     tree_count);
+                        let(configs, replica_config) = split_config_and_replica(
+                            t_aux.tree_r_last_config,
+                            replica_path,
+                            get_merkle_tree_leafs(tree_r_last_size, MerkleTreeType::base_arity),
+                            tree_count);
 
                         trace !("Instantiating tree r last [count {}] with size {} and arity {}, {}, {}", tree_count,
                                 tree_r_last_size, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
@@ -446,8 +437,8 @@ namespace nil {
                     MerkleProof<tree_hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                                 MerkleTreeType::top_tree_arity>
                         comm_r_last_proof;
-                    ReplicaColumnProof<MerkleProof<tree_hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
-                                                   MerkleTreeType::top_tree_arity>>
+                    ReplicaColumnProof<MerkleProof<tree_hash_type, MerkleTreeType::base_arity,
+                                                   MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>
                         replica_column_proofs;
 
                     /// Indexed by layer in 1..layers.
@@ -492,7 +483,8 @@ namespace nil {
 
                         trace !("verify encoding");
 
-                        assert(encoding_proof.verify<Hash>(replica_id, comm_r_last_proof.leaf(), comm_d_proofs.leaf()));
+                        assert(encoding_proof.template verify<Hash>(replica_id, comm_r_last_proof.leaf(),
+                                                                    comm_d_proofs.leaf()));
 
                         return result;
                     }
