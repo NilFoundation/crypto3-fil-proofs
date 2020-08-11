@@ -35,7 +35,7 @@ namespace nil {
         template<typename Hash, std::size_t BaseArity>
         struct PathElement {
             std::vector<Fr> hashes = std::vector<Fr>(BaseArity);
-            size_t index;
+            size_t index = 0;
         };
     }    // namespace filecoin
 }    // namespace nil

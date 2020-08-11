@@ -26,9 +26,7 @@
 #ifndef FILECOIN_UTILITIES_API_HPP
 #define FILECOIN_UTILITIES_API_HPP
 
-#include <nil/crypto3/algebra/fp.hpp>
-
-#include <nil/filecoin/storage/proofs/core/sector.hpp>
+#include <nil/filecoin/storage/proofs/core/merkle/builders.hpp>
 
 #include <nil/filecoin/proofs/types/mod.hpp>
 
@@ -49,19 +47,6 @@ namespace nil {
                 commitment[i] = *b;
             }
             return commitment;
-        }
-
-        template<typename MerkleTreeType>
-        inline std::size_t get_base_tree_size(sector_size_type sector_size) {
-            std::uint64_t base_tree_leaves =
-                sector_size / MerkleTreeType::hash_type::digest_bits / get_base_tree_count<MerkleTreeType>();
-
-            return get_merkle_tree_len(base_tree_leaves, MerkleTreeType::Arity);
-        }
-
-        template<typename MerkleTreeType>
-        inline std::size_t get_base_tree_leafs(std::size_t base_tree_size) {
-            return get_merkle_tree_leafs(base_tree_size, MerkleTreeType::Arity);
         }
     }    // namespace filecoin
 }    // namespace nil

@@ -92,14 +92,14 @@ namespace nil {
             }
 
             /// Generate the merkle tree of this particular replica.
-            MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::Arity,
-                              MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>
+            MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity,
+                              MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
                 merkle_tree(sector_size_type sector_size) {
                 std::size_t base_tree_size = get_base_tree_size<MerkleTreeType>(sector_size);
                 std::size_t base_tree_leafs = get_base_tree_leafs<MerkleTreeType>(base_tree_size);
 
                 StoreConfg config(cache_dir_path(), std::to_string(cache_key::CommRLastTree),
-                                  default_rows_to_discard(base_tree_leafs, MerkleTreeType::Arity));
+                                  default_rows_to_discard(base_tree_leafs, MerkleTreeType::base_arity));
                 config.size = base_tree_size;
 
                 std::size_t tree_count = get_base_tree_count<MerkleTreeType>();

@@ -121,7 +121,7 @@ namespace nil {
                         StoreConfig config = labels[row_index];
                         assert(config.size.is_some());
 
-                        DiskStore::new_from_disk(config.size, MerkleTreeType::Arity, config);
+                        DiskStore::new_from_disk(config.size, MerkleTreeType::base_arity, config);
                     }
 
                     /// Returns label for the last layer.
@@ -141,7 +141,7 @@ namespace nil {
                         for (const StoreConfig &label : labels) {
                             assert(label.size.is_some());
                             DiskStore store =
-                                DiskStore::new_from_disk(label.size, MerkleTreeType::Arity, label);
+                                DiskStore::new_from_disk(label.size, MerkleTreeType::base_arity, label);
                             rows.push_back(store.read_at(node));
                         }
 
@@ -192,18 +192,18 @@ namespace nil {
                         auto delete_tree_c_store = [&](const StoreConfig &config, std::size_t tree_c_size) {
                             DiskStore<typename MerkleTreeType::hash_type::digest_type> tree_c_store =
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::new_from_disk(
-                                    tree_c_size, MerkleTreeType::Arity, config)
+                                    tree_c_size, MerkleTreeType::base_arity, config)
                                     .context("tree_c");
                             // Note: from_data_store requires the base tree leaf count
-                            DiskTree<MerkleTreeType::Hasher, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                                     MerkleTreeType::TopTreeArity>
+                            DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                                     MerkleTreeType::top_tree_arity>
                                 tree_c =
-                                    DiskTree<MerkleTreeType::Hasher, MerkleTreeType::Arity,
-                                             MerkleTreeType::SubTreeArity,
-                                             MerkleTreeType::TopTreeArity>::from_data_store(tree_c_store,
+                                    DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity,
+                                             MerkleTreeType::sub_tree_arity,
+                                             MerkleTreeType::top_tree_arity>::from_data_store(tree_c_store,
                                                                                             get_merkle_tree_leafs(
                                                                                                 tree_c_size,
-                                                                                                MerkleTreeType::Arity))
+                                                                                                MerkleTreeType::base_arity))
                                         .context("tree_c");
                             tree_c.delete(config.clone()).context("tree_c");
                         };
@@ -378,12 +378,12 @@ namespace nil {
                         // tree_c_size stored in the config is the base tree size
                         std::size_t tree_c_size = t_aux.tree_c_config.size;
                         trace !("Instantiating tree c [count {}] with size {} and arity {}", tree_count, tree_c_size,
-                                MerkleTreeType::Arity);
-                        DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
-                                 MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>
+                                MerkleTreeType::base_arity);
+                        DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                 MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
                             tree_c =
-                                create_disk_tree<DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
-                                                          MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>>(
+                                create_disk_tree<DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                                          MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>(
                                     tree_c_size, configs);
 
                         // tree_r_last_size stored in the config is the base tree size
@@ -392,17 +392,17 @@ namespace nil {
                         let(configs, replica_config) =
                             split_config_and_replica(t_aux.tree_r_last_config.clone(),
                                                      replica_path.clone(),
-                                                     get_merkle_tree_leafs(tree_r_last_size, MerkleTreeType::Arity),
+                                                     get_merkle_tree_leafs(tree_r_last_size, MerkleTreeType::base_arity),
                                                      tree_count);
 
                         trace !("Instantiating tree r last [count {}] with size {} and arity {}, {}, {}", tree_count,
-                                tree_r_last_size, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                                MerkleTreeType::TopTreeArity);
-                        LCTree<MerkleTreeType::Hasher, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                               MerkleTreeType::TopTreeArity>
+                                tree_r_last_size, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                                MerkleTreeType::top_tree_arity);
+                        LCTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                               MerkleTreeType::top_tree_arity>
                             tree_r_last =
-                                create_lc_tree<LCTree<MerkleTreeType::Hasher, MerkleTreeType::Arity,
-                                                      MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>>(
+                                create_lc_tree<LCTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity,
+                                                      MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>(
                                     tree_r_last_size, configs, replica_config);
 
                         return {{(&t_aux.labels).context("labels_cache")},
@@ -440,14 +440,14 @@ namespace nil {
                     typedef MerkleTreeType tree_type;
                     typedef typename tree_type::hash_type tree_hash_type;
 
-                    MerkleProof<hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                                MerkleTreeType::TopTreeArity>
+                    MerkleProof<hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                                MerkleTreeType::top_tree_arity>
                         comm_d_proofs;
-                    MerkleProof<tree_hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                                MerkleTreeType::TopTreeArity>
+                    MerkleProof<tree_hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                                MerkleTreeType::top_tree_arity>
                         comm_r_last_proof;
-                    ReplicaColumnProof<MerkleProof<tree_hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                                                   MerkleTreeType::TopTreeArity>>
+                    ReplicaColumnProof<MerkleProof<tree_hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                                                   MerkleTreeType::top_tree_arity>>
                         replica_column_proofs;
 
                     /// Indexed by layer in 1..layers.

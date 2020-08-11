@@ -38,8 +38,8 @@ void test_election_post() {
 
     PublicParams pub_params = {sector_size, 40, 1};
 
-    let randomness = <Tree::Hasher as Hasher>::Domain::random(rng);
-    let prover_id = <Tree::Hasher as Hasher>::Domain::random(rng);
+    let randomness = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let prover_id = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
 
     let mut sectors : Vec<SectorId> = Vec::new ();
     let mut trees = BTreeMap::new ();
@@ -60,8 +60,8 @@ void test_election_post() {
     let candidate = &candidates[0];
     let tree = trees.remove(&candidate.sector_id);
     let comm_r_last = tree.root();
-    let comm_c = <Tree::Hasher as Hasher>::Domain::random(rng);
-    let comm_r = <Tree::Hasher as Hasher>::Function::hash2(&comm_c, &comm_r_last);
+    let comm_c = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let comm_r = <MerkleTreeType::Hasher as Hasher>::Function::hash2(&comm_c, &comm_r_last);
 
     PublicInputs pub_inputs = {randomness, candidate.sector_id, prover_id, comm_r, candidate.partial_ticket, 0};
 

@@ -80,8 +80,8 @@ namespace nil {
                 struct PrivateInputs {
                     btree::map<sector_id_type,
                                MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store,
-                                                 MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                                                 MerkleTreeType::TopTreeArity>>
+                                                 MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                                                 MerkleTreeType::top_tree_arity>>
                         trees;
                     std::vector<typename MerkleTreeType::hash_type::digest_type> comm_cs;
                     std::vector<typename MerkleTreeType::hash_type::digest_type> comm_r_lasts;
@@ -183,7 +183,7 @@ namespace nil {
                             // comm_r_last is the root of the proof
                             let comm_r_last = merkle_proof.root();
 
-                            if (AsRef::<[u8]>::as_ref(&<Tree::Hasher as Hasher>::Function::hash2(
+                            if (AsRef::<[u8]>::as_ref(&<MerkleTreeType::Hasher as Hasher>::Function::hash2(
                                     comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(&comm_r)) {
                                 return false;
                             }

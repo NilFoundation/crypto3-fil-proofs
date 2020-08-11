@@ -85,8 +85,8 @@ namespace nil {
 
                 template<typename MerkleTreeType>
                 struct PrivateSector {
-                    MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::Arity,
-                                      MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>
+                    MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity,
+                                      MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
                         tree;
                     typename MerkleTreeType::hash_type::digest_type comm_c;
                     typename MerkleTreeType::hash_type::digest_type comm_r_last;
@@ -187,7 +187,7 @@ namespace nil {
                                 let tree_leafs = tree.leafs();
 
                                 trace !("Generating proof for tree leafs {} and arity {}", tree_leafs,
-                                        Tree::Arity::to_usize(), );
+                                        MerkleTreeType::base_arity, );
 
                                 let inclusion_proofs =
                                     (0..pub_params.challenge_count)
@@ -250,7 +250,7 @@ namespace nil {
                                 // comm_r_last is the root of the proof
                                 let comm_r_last = inclusion_proofs[0].root();
 
-                                if (AsRef ::<[u8]>::as_ref(&<Tree::Hasher as Hasher>::Function::hash2(
+                                if (AsRef ::<[u8]>::as_ref(&<MerkleTreeType::Hasher as Hasher>::Function::hash2(
                                         &comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(comm_r)) {
                                     return false;
                                 }

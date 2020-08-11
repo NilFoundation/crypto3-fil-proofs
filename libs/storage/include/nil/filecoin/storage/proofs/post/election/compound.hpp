@@ -43,7 +43,7 @@ namespace nil {
                       public compound_proof<ElectionPoSt<MerkleTreeType>,
                                             ElectionPoStCircuit<MerkleTreeType, Bls12, Circuit>> {
                     virtual std::string cache_prefix() const override {
-                        return "proof-of-spacetime-election-" + Tree::display();
+                        return "proof-of-spacetime-election-" + MerkleTreeType::display();
                     }
                 };
             }    // namespace election

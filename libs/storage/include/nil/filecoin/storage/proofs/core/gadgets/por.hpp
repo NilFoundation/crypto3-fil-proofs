@@ -39,9 +39,7 @@ namespace nil {
             }
 
             template<template<typename> class ConstraintSystem, typename Bls12>
-            std::pair<AllocatedNumber<Bls12>, std::vector<bool>> synthesize
-                (ConstraintSystem<Bls12>
-                &cs,
+            std::pair<AllocatedNumber<Bls12>, std::vector<bool>> synthesize(ConstraintSystem<Bls12> &cs,
                                                                             AllocatedNumber<Bls12> &cur) {
                 std::size_t arity = BaseArity;
 
@@ -175,14 +173,14 @@ namespace nil {
             template<template<typename> class ConstraintSystem>
             void synthesize(ConstraintSystem<Bls12> &cs) {
                 root<Bls12> value = value;
-                AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                         MerkleTreeType::TopTreeArity>
+                AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                         MerkleTreeType::top_tree_arity>
                     auth_path = auth_path;
                 root<Bls12> root = root;
 
-                std::size_t base_arity = MerkleTreeType::Arity;
-                std::size_t sub_arity = MerkleTreeType::SubTreeArity;
-                std::size_t top_arity = MerkleTreeType::TopTreeArity;
+                std::size_t base_arity = MerkleTreeType::base_arity;
+                std::size_t sub_arity = MerkleTreeType::sub_tree_arity;
+                std::size_t top_arity = MerkleTreeType::top_tree_arity;
 
                 // All arities must be powers of two or circuits cannot be generated.
                 assert(("base arity must be power of two", 1 == base_arity.count_ones()));
@@ -229,8 +227,8 @@ namespace nil {
 
             template<template<typename> class ConstraintSystem>
             void synthesize(ConstraintSystem<Bls12> &cs, const root<Bls12> &value,
-                            const AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
-                                           MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity> &auth_path,
+                            const AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                           MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity> &auth_path,
                             root<Bls12> root, bool priv) {
                 this->value = value;
                 this->auth_path = auth_path;
@@ -241,8 +239,8 @@ namespace nil {
             }
 
             root<Bls12> value;
-            AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity, MerkleTreeType::SubTreeArity,
-                     MerkleTreeType::TopTreeArity>
+            AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                     MerkleTreeType::top_tree_arity>
                 auth_path;
             root<Bls12> root;
             bool priv;

@@ -38,7 +38,7 @@ void test_merklepor() {
 
     let data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
     let porep_id = [3; 32];
-    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
+    let graph = BucketGraph<MerkleTreeType::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
     let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     let pub_inputs = PublicInputs {
@@ -47,7 +47,7 @@ void test_merklepor() {
     };
 
     let leaf =
-        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        <MerkleTreeType::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     let priv_inputs = PrivateInputs::new (leaf, &tree);
@@ -116,7 +116,7 @@ fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
 
     let porep_id = [99; 32];
 
-    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
+    let graph = BucketGraph<MerkleTreeType::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
     let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     let pub_inputs = PublicInputs {
@@ -125,7 +125,7 @@ fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
     };
 
     let leaf =
-        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        <MerkleTreeType::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     let priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
@@ -135,7 +135,7 @@ fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
     let verified = PoR::<Tree>::verify(&pub_params, &pub_inputs, &good_proof).expect("verification failed");
     assert !(verified);
 
-    let bad_proof = make_bogus_proof::<Tree::Proof>(rng, good_proof);
+    let bad_proof = make_bogus_proof::<MerkleTreeType::Proof>(rng, good_proof);
 
     let verified = PoR::<Tree>::verify(&pub_params, &pub_inputs, &bad_proof).expect("verification failed");
 
@@ -189,7 +189,7 @@ void test_merklepor_validates_challenge_identity() {
     std::vector<std::uint8_t> data = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     let porep_id = [32; 32];
-    let graph = BucketGraph<Tree::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
+    let graph = BucketGraph<MerkleTreeType::Hasher>::new (leaves, BASE_DEGREE, 0, porep_id);
     let tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     let pub_inputs = PublicInputs {
@@ -198,7 +198,7 @@ void test_merklepor_validates_challenge_identity() {
     };
 
     let leaf =
-        <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        <MerkleTreeType::Hasher as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     let priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);

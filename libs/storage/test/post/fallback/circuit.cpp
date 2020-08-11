@@ -34,8 +34,8 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
     std::size_t leaves = 64 * get_base_tree_count<Tree>();
     std::size_t sector_size = leaves * NODE_SIZE;
 
-    let randomness = <Tree::Hasher as Hasher>::Domain::random(rng);
-    let prover_id = <Tree::Hasher as Hasher>::Domain::random(rng);
+    let randomness = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let prover_id = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
 
     let pub_params = fallback::PublicParams {
         sector_size : sector_size as u64,
@@ -62,8 +62,8 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
     let candidate = &candidates[0];
     let tree = trees.remove(&candidate.sector_id);
     let comm_r_last = tree.root();
-    let comm_c = <Tree::Hasher as Hasher>::Domain::random(rng);
-    let comm_r = <Tree::Hasher as Hasher>::Function::hash2(&comm_c, &comm_r_last);
+    let comm_c = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let comm_r = <MerkleTreeType::Hasher as Hasher>::Function::hash2(&comm_c, &comm_r_last);
 
     let pub_inputs = fallback::PublicInputs {
         randomness,
