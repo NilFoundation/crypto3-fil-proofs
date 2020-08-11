@@ -34,6 +34,7 @@
 #include <nil/crypto3/detail/pack_numeric.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
 
 namespace nil {
     namespace filecoin {
