@@ -71,8 +71,8 @@ namespace nil {
 
                 template<typename MerkleTreeType>
                 struct PrivateInputs {
-                    MerkleTreeWrapper<MerkleTreeType::Hasher, MerkleTreeType::Store, MerkleTreeType::Arity,
-                                      MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>
+                    MerkleTreeWrapper<MerkleTreeType::Hasher, MerkleTreeType::Store, MerkleTreeType::base_arity,
+                                      MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
                         tree;
                     typename MerkleTreeType::hash_type::digest_type comm_c;
                     typename MerkleTreeType::hash_type::digest_type comm_r_last;
@@ -175,7 +175,7 @@ namespace nil {
                         let comm_c = pr.comm_c;
                         let comm_r = &pub_inputs.comm_r;
 
-                        if (AsRef ::<[u8]>::as_ref(&<Tree::Hasher as Hasher>::Function::hash2(
+                        if (AsRef ::<[u8]>::as_ref(&<MerkleTreeType::Hasher as Hasher>::Function::hash2(
                                 &comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(comm_r)) {
                             return false;
                         }
@@ -215,7 +215,7 @@ namespace nil {
                     const btree::map<sector_id_type,
                                      MerkleTreeWrapper<typename MerkleTreeType::hash_type,
                                                        typename MerkleTreeType::store_type, MerkleTreeType::BaseArity,
-                                                       MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>>
+                                                       MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>
                         &trees,
                     const typename MerkleTreeType::hash_type::digest_type &prover_id,
                     const typename MerkleTreeType::hash_type::digest_type &randomness) {
@@ -238,8 +238,8 @@ namespace nil {
                 Candidate generate_candidate(
                     const PublicParams &pub_params,
                     const MerkleTreeWrapper<typename MerkleTreeType::hash_type, typename MerkleTreeType::store_type,
-                                            MerkleTreeType::BaseArity, MerkleTreeType::SubTreeArity,
-                                            MerkleTreeType::TopTreeArity> &tree,
+                                            MerkleTreeType::BaseArity, MerkleTreeType::sub_tree_arity,
+                                            MerkleTreeType::top_tree_arity> &tree,
                     const typename MerkleTreeType::hash_type::digest_type &prover_id, sector_id_type sector_id,
                     const typename MerkleTreeType::hash_type::digest_type &randomness,
                     std::uint64_t sector_challenge_index) {

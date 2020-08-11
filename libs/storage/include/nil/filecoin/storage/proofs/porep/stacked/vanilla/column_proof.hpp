@@ -66,9 +66,9 @@ namespace nil {
                                   typename = StoreType<typename hash_type::digest_type> class MerkleTreeType>
                          ColumnProof make_proof(const Column &columnself, tree_c
                                                 : &Tree, )
-                             ->Result<ColumnProof<Tree::Proof>> {
+                             ->Result<ColumnProof<MerkleTreeType::Proof>> {
                     let inclusion_proof = tree_c.gen_proof(self.index() as usize) ? ;
-                    ColumnProof::<Tree::Proof>::from_column(self, inclusion_proof)
+                    ColumnProof::<MerkleTreeType::Proof>::from_column(self, inclusion_proof)
                 }
             }    // namespace vanilla
         }        // namespace stacked

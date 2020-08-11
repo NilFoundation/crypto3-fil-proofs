@@ -53,9 +53,9 @@ namespace nil {
                         por::PublicParams por_params = {leaves, true};
                         std::vector<Fr> leafs(challenges_count);
                         std::vector<AuthPath<typename MerkleTreeType::hash_type,
-                                    MerkleTreeType::Arity,
-                                    MerkleTreeType::SubTreeArity,
-                        MerkleTreeType::TopTreeArity>> paths = vec ![AuthPath::blank(por_params.leaves); challenges_count];
+                                    MerkleTreeType::base_arity,
+                                    MerkleTreeType::sub_tree_arity,
+                        MerkleTreeType::top_tree_arity>> paths = vec ![AuthPath::blank(por_params.leaves); challenges_count];
 
                         return Sector {
                         id:
@@ -68,9 +68,9 @@ namespace nil {
                     Fr comm_r_last;
                     std::vector<Fr> leafs;
                     std::vector<AuthPath<typename MerkleTreeType::hash_type,
-                                         MerkleTreeType::Arity,
-                                         MerkleTreeType::SubTreeArity,
-                                         MerkleTreeType::TopTreeArity>>
+                                         MerkleTreeType::base_arity,
+                                         MerkleTreeType::sub_tree_arity,
+                                         MerkleTreeType::top_tree_arity>>
                         paths;
                     Fr id;
                 };

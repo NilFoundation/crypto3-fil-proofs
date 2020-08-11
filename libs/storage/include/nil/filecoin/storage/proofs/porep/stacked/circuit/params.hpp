@@ -39,12 +39,12 @@ namespace nil {
                 namespace circuit {
 
                     template<typename MerkleTreeType>
-                    using TreeAuthPath = AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
-                                                  MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>;
+                    using TreeAuthPath = AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                                  MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>;
 
                     template<typename MerkleTreeType>
-                    using TreeColumnProof = ColumnProof<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
-                                                        MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>;
+                    using TreeColumnProof = ColumnProof<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                                        MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>;
 
                     /// Proof for a single challenge.
                     template<typename MerkleTreeType, typename Hash>

@@ -68,7 +68,7 @@ namespace nil {
 
                         // Verify H(Comm_C || comm_r_last) == comm_r
                         {
-                            let hash_num = <Tree::Hasher as Hasher>::Function::hash2_circuit(
+                            let hash_num = <MerkleTreeType::Hasher as Hasher>::Function::hash2_circuit(
                                 cs.namespace(|| "H_comm_c_comm_r_last"), &comm_c_num, &comm_r_last_num, ) ?
                                 ;
 

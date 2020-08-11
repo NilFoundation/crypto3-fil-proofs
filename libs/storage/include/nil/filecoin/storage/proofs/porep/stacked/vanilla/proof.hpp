@@ -198,7 +198,7 @@ namespace nil {
                                 chunk.copy_from_slice(&parents_data[..chunk.size()]);
                             }
 
-                            let proof = LabelingProof::<Tree::Hasher>::new (layer as u32, challenge as u64,
+                            let proof = LabelingProof::<MerkleTreeType::Hasher>::new (layer as u32, challenge as u64,
                                                                             parents_data_full.clone(), );
 
                             {
@@ -246,8 +246,8 @@ namespace nil {
 
                 for ((key, encoded_node_bytes)
                     : last_layer_labels.read_range(0..size) ?.into_iter().zip(data.chunks_mut(NODE_SIZE))) {
-                    let encoded_node = <Tree::Hasher as Hasher>::Domain::try_from_bytes(encoded_node_bytes) ? ;
-                    let data_node = decode:: << Tree::Hasher as Hasher > ::Domain > (key, encoded_node);
+                    let encoded_node = <MerkleTreeType::Hasher as Hasher>::Domain::try_from_bytes(encoded_node_bytes) ? ;
+                    let data_node = decode:: << MerkleTreeType::Hasher as Hasher > ::Domain > (key, encoded_node);
 
                     // store result in the data
                     encoded_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&data_node));
@@ -262,7 +262,7 @@ namespace nil {
 
                 let layers = layer_challenges.layers();
                 // For now, we require it due to changes in encodings structure.
-                let mut labels : Vec<DiskStore << Tree::Hasher as Hasher>::Domain >> = Vec::with_capacity(layers);
+                let mut labels : Vec<DiskStore << MerkleTreeType::Hasher as Hasher>::Domain >> = Vec::with_capacity(layers);
                 let mut label_configs : Vec<StoreConfig> = Vec::with_capacity(layers);
 
                 let layer_size = graph.size() * NODE_SIZE;
@@ -311,7 +311,7 @@ namespace nil {
                             info !("  storing labels on disk");
                             // Construct and persist the layer data.
                             DiskStore<typename tree_hash_type::digest_type> layer_store =
-                                DiskStore::new_from_slice_with_config(graph.size(), Tree::Arity::to_usize(),
+                                DiskStore::new_from_slice_with_config(graph.size(), MerkleTreeType::base_arity,
                                                                       &labels_buffer[..layer_size],
                                                                       layer_config.clone());
                             info !("  generated layer {} store with id {}", layer, layer_config.id);
@@ -424,7 +424,7 @@ namespace nil {
                                                     let store = labels.labels_for_layer(layer_index + 1);
                                                     let start = (i * nodes_count) + node_index;
                                                     let end = start + chunked_nodes_count;
-                                                    let elements : Vec << Tree::Hasher as Hasher > ::Domain >
+                                                    let elements : Vec << MerkleTreeType::Hasher as Hasher > ::Domain >
                                                         = store.read_range(std::ops::Range {start, end})
                                                               .expect("failed to read store range");
                                                     layer_elements.extend(elements.into_iter().map(Into::into));
@@ -482,8 +482,8 @@ namespace nil {
 
                                     // Persist the base and tree data to disk based using the current store config.
                                     let tree_c_store =
-                                        DiskStore:: << Tree::Hasher as Hasher > ::Domain >
-                                        ::new_with_config(tree_len, Tree::Arity::to_usize(), config.clone(), )
+                                        DiskStore:: << MerkleTreeType::Hasher as Hasher > ::Domain >
+                                        ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone(), )
                                             .expect("failed to create DiskStore for base tree data");
 
                                     let store = Arc::new (RwLock::new (tree_c_store));
@@ -534,7 +534,7 @@ namespace nil {
                         });
 
                         create_disk_tree::<
-                            DiskTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>, >(
+                            DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>, >(
                             configs[0].size, &configs)
                     })
             }    // namespace stacked
@@ -551,8 +551,8 @@ namespace nil {
 
                         let mut trees = Vec::with_capacity(tree_count);
                         for ((i, config) : configs.iter().enumerate()) {
-                            let mut hashes : Vec << Tree::Hasher as Hasher > ::Domain >
-                                = vec ![<Tree::Hasher as Hasher>::Domain::default(); nodes_count];
+                            let mut hashes : Vec << MerkleTreeType::Hasher as Hasher > ::Domain >
+                                = vec ![<MerkleTreeType::Hasher as Hasher>::Domain::default(); nodes_count];
 
                             rayon::scope(| s | {
                                 let n = num_cpus::get();
@@ -576,7 +576,7 @@ namespace nil {
                                                                     {
                                                                         let store = labels.labels_for_layer(layer);
                                                                         let el
-                                                                            : <Tree::Hasher as Hasher>::Domain =
+                                                                            : <MerkleTreeType::Hasher as Hasher>::Domain =
                                                                                   store
                                                                                       .read_at((i * nodes_count) + j +
                                                                                                chunk * chunk_size)
@@ -592,13 +592,13 @@ namespace nil {
                             });
 
                             info !("building base tree_c {}/{}", i + 1, tree_count);
-                            trees.push(DiskTree<Tree::Hasher, Tree::Arity, 0, 0>::
+                            trees.push(DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, 0, 0>::
                                            from_par_iter_with_config(hashes.into_par_iter(), config.clone()));
                         }
 
                         assert(tree_count == trees.len());
                         create_disk_tree::<
-                            DiskTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>, >(
+                            DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>, >(
                             configs[0].size, &configs)
                     })
             }
@@ -644,10 +644,10 @@ namespace nil {
                                                      NODE_SIZE), )
                                             .map(| (key, data_node_bytes) | {
                                                 let data_node =
-                                                    <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_node_bytes, )
+                                                    <MerkleTreeType::Hasher as Hasher>::Domain::try_from_bytes(data_node_bytes, )
                                                         .expect("try_from_bytes failed");
                                                 let encoded_node =
-                                                    encode:: << Tree::Hasher as Hasher > ::Domain > (key, data_node);
+                                                    encode:: << MerkleTreeType::Hasher as Hasher > ::Domain > (key, data_node);
                                                 data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
 
                                                 encoded_node
@@ -667,7 +667,7 @@ namespace nil {
                         {
                             let tree_r_last_config = &tree_r_last_config;
                             s.spawn(move | _ | {
-                                let mut tree_builder = TreeBuilder::<Tree::Arity>::new (
+                                let mut tree_builder = TreeBuilder::<MerkleTreeType::base_arity>::new (
                                                            Some(BatcherType::GPU), nodes_count, max_gpu_tree_batch_size,
                                                            tree_r_last_config.rows_to_discard, )
                                                            .expect("failed to create TreeBuilder");
@@ -692,9 +692,9 @@ namespace nil {
                                     let tree_data_len = tree_data.len();
                                     let cache_size =
                                         get_merkle_tree_cache_size(
-                                            get_merkle_tree_leafs(config.size, Tree::Arity::to_usize(), )
+                                            get_merkle_tree_leafs(config.size, MerkleTreeType::base_arity, )
                                                 .expect("failed to get merkle tree leaves"),
-                                            Tree::Arity::to_usize(), config.rows_to_discard, )
+                                            MerkleTreeType::base_arity, config.rows_to_discard, )
                                             .expect("failed to get merkle tree cache size");
                                     assert_eq !(tree_data_len, cache_size);
 
@@ -737,23 +737,23 @@ namespace nil {
                             .into_par_iter()
                             .zip(data.as_mut()[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE), )
                             .map(| (key, data_node_bytes) | {
-                                let data_node = <Tree::Hasher as Hasher>::Domain::try_from_bytes(data_node_bytes)
+                                let data_node = <MerkleTreeType::Hasher as Hasher>::Domain::try_from_bytes(data_node_bytes)
                                                     .expect("try from bytes failed");
-                                let encoded_node = encode:: << Tree::Hasher as Hasher > ::Domain > (key, data_node);
+                                let encoded_node = encode:: << MerkleTreeType::Hasher as Hasher > ::Domain > (key, data_node);
                                 data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
 
                                 encoded_node
                             });
 
                         info !("building base tree_r_last with CPU {}/{}", i + 1, tree_count);
-                        LCTree<Tree::Hasher, Tree::Arity, 0, 0>::from_par_iter_with_config(encoded_data, config.clone());
+                        LCTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, 0, 0>::from_par_iter_with_config(encoded_data, config.clone());
 
                         start = end;
                         end += size / tree_count;
                     }
                 };
 
-                return create_lc_tree<LCTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>>(
+                return create_lc_tree<LCTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>(
                     tree_r_last_config.size, &configs, &replica_config);
             }
 
@@ -789,9 +789,9 @@ namespace nil {
 
                 // Ensure that the node count will work for binary and oct arities.
                 bool binary_arity_valid = is_merkle_tree_size_valid(nodes_count, BINARY_ARITY);
-                bool other_arity_valid = is_merkle_tree_size_valid(nodes_count, Tree::Arity::to_usize());
+                bool other_arity_valid = is_merkle_tree_size_valid(nodes_count, MerkleTreeType::base_arity);
                 trace !("is_merkle_tree_size_valid({}, BINARY_ARITY) = {}", nodes_count, binary_arity_valid);
-                trace !("is_merkle_tree_size_valid({}, {}) = {}", nodes_count, Tree::Arity::to_usize(),
+                trace !("is_merkle_tree_size_valid({}, {}) = {}", nodes_count, MerkleTreeType::base_arity,
                         other_arity_valid);
                 assert(binary_arity_valid);
                 assert(other_arity_valid);
@@ -808,20 +808,20 @@ namespace nil {
                 StoreConfig tree_r_last_config =
                     StoreConfig::from_config(config,
                                              cache_key::CommRLastTree.to_string(),
-                                             get_merkle_tree_len(nodes_count, Tree::Arity::to_usize()));
+                                             get_merkle_tree_len(nodes_count, MerkleTreeType::base_arity));
 
                 // A default 'rows_to_discard' value will be chosen for tree_r_last, unless the user overrides this
                 // value via the environment setting (FIL_PROOFS_ROWS_TO_DISCARD).  If this value is specified, no
                 // checking is done on it and it may result in a broken configuration.  Use with caution.
-                tree_r_last_config.rows_to_discard = default_rows_to_discard(nodes_count, Tree::Arity::to_usize());
+                tree_r_last_config.rows_to_discard = default_rows_to_discard(nodes_count, MerkleTreeType::base_arity);
                 trace !("tree_r_last using rows_to_discard={}", tree_r_last_config.rows_to_discard);
 
                 StoreConfig mut tree_c_config = StoreConfig::from_config(
                         &config,
                         cache_key::CommCTree.to_string(),
-                        Some(get_merkle_tree_len(nodes_count, Tree::Arity::to_usize())?),
+                        Some(get_merkle_tree_len(nodes_count, MerkleTreeType::base_arity)?),
                     );
-                tree_c_config.rows_to_discard = default_rows_to_discard(nodes_count, Tree::Arity::to_usize());
+                tree_c_config.rows_to_discard = default_rows_to_discard(nodes_count, MerkleTreeType::base_arity);
 
                 LabelsCache<tree_type> labels(&label_configs);
                 let configs = split_config(tree_c_config.clone(), tree_count) ? ;
@@ -829,17 +829,17 @@ namespace nil {
                 typename tree_hash_type::digest_type tree_c_root;
                 if (layers == 2) {
                     let tree_c =
-                        Self::generate_tree_c::<U2, Tree::Arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
+                        Self::generate_tree_c::<U2, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
                         ;
                     tree_c_root = tree_c.root();
                 } else if (layers == 8) {
                     let tree_c =
-                        Self::generate_tree_c::<U8, Tree::Arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
+                        Self::generate_tree_c::<U8, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
                         ;
                     tree_c_root = tree_c.root();
                 } else if (layers == 11) {
                     let tree_c =
-                        Self::generate_tree_c::<U11, Tree::Arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
+                        Self::generate_tree_c::<U11, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
                         ;
                     tree_c_root = tree_c.root();
                 } else {
@@ -868,7 +868,7 @@ namespace nil {
                 // Encode original data into the last layer.
                 info !("building tree_r_last");
                 let tree_r_last = measure_op(GenerateTreeRLast,
-                                             || {Self::generate_tree_r_last::<Tree::Arity>(
+                                             || {Self::generate_tree_r_last::<MerkleTreeType::base_arity>(
                                                     &mut data, nodes_count, tree_count, tree_r_last_config.clone(),
                                                     replica_path.clone(), &labels, )}) ?
                     ;
@@ -880,8 +880,8 @@ namespace nil {
                 data.drop_data();
 
                 // comm_r = H(comm_c || comm_r_last)
-                let comm_r : <Tree::Hasher as Hasher>::Domain =
-                                 <Tree::Hasher as Hasher>::Function::hash2(&tree_c_root, &tree_r_last_root);
+                let comm_r : <MerkleTreeType::Hasher as Hasher>::Domain =
+                                 <MerkleTreeType::Hasher as Hasher>::Function::hash2(&tree_c_root, &tree_r_last_root);
 
                 Ok((Tau {
                     comm_d : tree_d_root,
@@ -914,7 +914,7 @@ namespace nil {
                 return labels;
             }
 
-            std::tuple << Self as PoRep<'a, Tree::Hasher, G>>::Tau, < Self as PoRep <' a, Tree::Hasher, G> >
+            std::tuple << Self as PoRep<'a, MerkleTreeType::Hasher, G>>::Tau, < Self as PoRep <' a, MerkleTreeType::Hasher, G> >
                 ::ProverAux > replicate_phase2(const PublicParams<tree_type> &pp, const Labels<tree_type> &labels,
                                                const Data &data, const BinaryMerkleTree<hash_type> &data_tree,
                                                const StoreConfig &config, const boost::filesystem::path &replica_path) {

@@ -34,8 +34,8 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
     std::size_t sector_size = leaves * NODE_SIZE;
 
-    let randomness = <Tree::Hasher as Hasher>::Domain::random(rng);
-    let prover_id = <Tree::Hasher as Hasher>::Domain::random(rng);
+    let randomness = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let prover_id = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
 
     election::PublicParams pub_params = {sector_size, 20, 1};
 

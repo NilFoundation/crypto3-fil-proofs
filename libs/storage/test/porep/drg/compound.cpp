@@ -66,15 +66,15 @@ void drgporep_test_compound() {
     };
 
     let public_params =
-        drg_porep_compound<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
+        drg_porep_compound<MerkleTreeType::Hasher, BucketGraph<MerkleTreeType::Hasher>>::setup(&setup_params).expect("setup failed");
 
-    let data_tree : Option<BinaryMerkleTree<Tree::Hasher>> = None;
-    let(tau, aux) = drg::DrgPoRep::<Tree::Hasher, BucketGraph<_>>::replicate(
+    let data_tree : Option<BinaryMerkleTree<MerkleTreeType::Hasher>> = None;
+    let(tau, aux) = drg::DrgPoRep::<MerkleTreeType::Hasher, BucketGraph<_>>::replicate(
                         &public_params.vanilla_params, &replica_id.into(), (mmapped_data.as_mut()).into(), data_tree,
                         config, replica_path.clone(), )
                         .expect("failed to replicate");
 
-    let public_inputs = drg::PublicInputs:: << Tree::Hasher as Hasher > ::Domain > {
+    let public_inputs = drg::PublicInputs:: << MerkleTreeType::Hasher as Hasher > ::Domain > {
         replica_id : Some(replica_id.into()),
         challenges,
         tau : Some(tau),
@@ -102,11 +102,11 @@ void drgporep_test_compound() {
     };
 
     let public_params =
-        drg_porep_compound<Tree::Hasher, BucketGraph<Tree::Hasher>>::setup(&setup_params).expect("setup failed");
+        drg_porep_compound<MerkleTreeType::Hasher, BucketGraph<MerkleTreeType::Hasher>>::setup(&setup_params).expect("setup failed");
 
     {
         let(circuit, inputs) =
-            drg_porep_compound<Tree::Hasher, _>::circuit_for_test(&public_params, &public_inputs, &private_inputs, )
+            drg_porep_compound<MerkleTreeType::Hasher, _>::circuit_for_test(&public_params, &public_inputs, &private_inputs, )
                 ;
 
         let mut cs = TestConstraintSystem::new ();
@@ -131,13 +131,13 @@ void drgporep_test_compound() {
     }
 
     {
-        let gparams = drg_porep_compound<Tree::Hasher>::groth_params(Some(rng), &public_params.vanilla_params, )
+        let gparams = drg_porep_compound<MerkleTreeType::Hasher>::groth_params(Some(rng), &public_params.vanilla_params, )
                           .expect("failed to get groth params");
 
-        let proof = drg_porep_compound<Tree::Hasher>::prove(&public_params, &public_inputs, &private_inputs, &gparams, )
+        let proof = drg_porep_compound<MerkleTreeType::Hasher>::prove(&public_params, &public_inputs, &private_inputs, &gparams, )
                         .expect("failed while proving");
 
-        let verified = drg_porep_compound<Tree::Hasher>::verify(&public_params, &public_inputs, &proof, &NoRequirements, )
+        let verified = drg_porep_compound<MerkleTreeType::Hasher>::verify(&public_params, &public_inputs, &proof, &NoRequirements, )
                            .expect("failed while verifying");
 
         assert(verified);

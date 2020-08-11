@@ -47,7 +47,7 @@ void merklepath() {
 
         assert !(proof.validate(i), "failed to validate valid merkle path");
         let data_slice = &data[i * node_size..(i + 1) * node_size].to_vec();
-        assert !(proof.validate_data(<Tree::Hasher as Hasher>::Domain::try_from_bytes(data_slice)),
+        assert !(proof.validate_data(<MerkleTreeType::Hasher as Hasher>::Domain::try_from_bytes(data_slice)),
                  "failed to validate valid data");
     }
 }

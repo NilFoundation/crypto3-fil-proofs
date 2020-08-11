@@ -293,11 +293,11 @@ namespace nil {
                 std::size_t store_len = config.size;
                 for (const StoreConfig &config : configs) {
                     assert(LevelCacheStore<DefaultPieceDomain, std::fs::File>::is_consistent(
-                        store_len, MerkleTreeType::Arity, &config));
+                        store_len, MerkleTreeType::base_arity, &config));
                 }
             } else {
                 assert(LevelCacheStore<DefaultPieceDomain, std::fs::File>::is_consistent(
-                    config.size, MerkleTreeType::Arity, config));
+                    config.size, MerkleTreeType::base_arity, config));
             }
         }
 
@@ -322,7 +322,7 @@ namespace nil {
             config.path = cache_path;
 
             seal_precommit_phase1_output result =
-                verify_store(config, DefaultBinaryTree::Arity, get_base_tree_count<MerkleTreeType>());
+                verify_store(config, DefaultBinaryMerkleTreeType::base_arity, get_base_tree_count<MerkleTreeType>());
 
             info !("validate_cache_for_precommit_phase2:finish");
             return result;
@@ -367,8 +367,8 @@ namespace nil {
             t_aux.labels.verify_stores(verify_store, cache);
 
             // Verify each tree disk store.
-            verify_store(t_aux.tree_d_config, DefaultBinaryTree::Arity, get_base_tree_count<MerkleTreeType>());
-            verify_store(t_aux.tree_c_config, DefaultOctTree::Arity, get_base_tree_count<MerkleTreeType>());
+            verify_store(t_aux.tree_d_config, DefaultBinaryMerkleTreeType::base_arity, get_base_tree_count<MerkleTreeType>());
+            verify_store(t_aux.tree_c_config, DefaultOctMerkleTreeType::base_arity, get_base_tree_count<MerkleTreeType>());
             verify_level_cache_store<DefaultOctTree>(t_aux.tree_r_last_config);
 
             info !("validate_cache_for_precommit:finish");
