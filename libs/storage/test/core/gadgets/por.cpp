@@ -210,7 +210,7 @@ for
 
         // -- Circuit
 
-        let mut cs = TestConstraintSystem::<Bls12>::new ();
+        let mut cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
         let por = PoRCircuit::<ResTree<MerkleTreeType>> {
             value : Root::Val(Some(proof.data.into())),
             auth_path : proof.proof.as_options().into(),
@@ -422,7 +422,7 @@ for
 
         // -- Circuit
 
-        let mut cs = TestConstraintSystem::<Bls12>::new ();
+        let mut cs = TestConstraintSystem::<algebra::curves::bls12<381>>::new ();
 
         let por = PoRCircuit<MerkleTreeType> {
             value : Root::Val(Some(proof.data.into())),
@@ -439,7 +439,7 @@ for
         assert_eq !(cs.num_constraints(), num_constraints, "wrong number of constraints");
 
         let auth_path_bits = challenge_into_auth_path_bits(pub_inputs.challenge, pub_params.leaves);
-        let packed_auth_path = multipack::compute_multipacking::<Bls12>(&auth_path_bits);
+        let packed_auth_path = multipack::compute_multipacking::<algebra::curves::bls12<381>>(&auth_path_bits);
 
         let mut expected_inputs = Vec::new ();
         expected_inputs.extend(packed_auth_path);

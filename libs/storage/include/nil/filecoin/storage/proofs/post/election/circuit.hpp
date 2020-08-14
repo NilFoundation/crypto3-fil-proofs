@@ -31,10 +31,10 @@ namespace nil {
         namespace post {
             namespace election {
                 /// This is the `ElectionPoSt` circuit.
-                template<typename MerkleTreeType, typename Bls12, template<typename> class Circuit>
-                struct ElectionPoStCircuit : public Circuit<Bls12> {
+                template<typename MerkleTreeType, template<typename> class Circuit>
+                struct ElectionPoStCircuit : public Circuit<algebra::curves::bls12<381>> {
                     template<template<typename> class ConstraintSystem>
-                    void synthesize(ConstraintSystem<Bls12> &cs) {
+                    void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
                         let comm_r = self.comm_r;
                         let comm_c = self.comm_c;
                         let comm_r_last = self.comm_r_last;

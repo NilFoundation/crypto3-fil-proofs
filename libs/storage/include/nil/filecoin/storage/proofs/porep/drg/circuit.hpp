@@ -68,29 +68,28 @@ namespace nil {
                  * `replica_id` - The id of the replica.
 
                  * @tparam Hash
-                 * @tparam Bls12
                  */
-                template<typename Hash, typename Bls12, typename Fr>
-                struct DrgPoRepCircuit : public crypto3::zk::snark::circuit<Bls12> {
+                template<typename Hash, typename Fr>
+                struct DrgPoRepCircuit : public crypto3::zk::snark::circuit<algebra::curves::bls12<381>> {
                     typedef Hash hash_type;
 
                     std::vector<Fr> replica_nodes;
                     std::vector<std::vector<std::pair<Fr, std::size_t>>> replica_nodes_paths;
-                    root<Bls12> replica_root;
+                    root<algebra::curves::bls12<381>> replica_root;
                     std::vector<std::vector<Fr>> replica_parents;
                     std::vector<std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>>>
                         replica_parents_paths;
                     std::vector<Fr> data_nodes;
                     std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> data_nodes_paths;
-                    root<Bls12> data_root;
+                    root<algebra::curves::bls12<381>> data_root;
                     Fr replica_id;
                     bool priv;
 
                     template<template<typename> class ConstraintSystem>
-                    void synthesize(ConstraintSystem<Bls12> &cs) {
+                    void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
                         Fr replica_id = replica_id;
-                        root<Bls12> replica_root = replica_root;
-                        root<Bls12> data_root = data_root;
+                        root<algebra::curves::bls12<381>> replica_root = replica_root;
+                        root<algebra::curves::bls12<381>> data_root = data_root;
 
                         std::size_t nodes = data_nodes.size();
 

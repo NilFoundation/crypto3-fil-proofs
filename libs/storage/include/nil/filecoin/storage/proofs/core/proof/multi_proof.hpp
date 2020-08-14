@@ -28,14 +28,17 @@
 
 #include <vector>
 
+#include <nil/algebra/curves/bls12_381.hpp>
+
+#include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
+
 namespace nil {
     namespace filecoin {
-        template<template<typename> class Groth16Proof, template<typename> class Groth16VerifyingKey, typename Bls12>
         struct multi_proof {
-            std::vector<Groth16Proof<Bls12>> circuit_proofs;
-            std::vector<Groth16VerifyingKey<Bls12>> verifying_key;
+            std::vector<r1cs_ppzksnark_proof<algebra::curves::bls12<381>>> circuit_proofs;
+            std::vector<r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>>> verifying_key;
 
-            multi_proof(const Groth16Proof<Bls12> &proof, const Groth16VerifyingKey<Bls12> &key) :
+            multi_proof(const r1cs_ppzksnark_proof<algebra::curves::bls12<381>> &proof, const r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> &key) :
                 circuit_proofs(proof), verifying_key(key) {
             }
 

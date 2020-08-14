@@ -64,7 +64,7 @@ namespace nil {
         /// See documentation at proof::ProofScheme for details.
         /// Implementations should generally only need to supply circuit and generate_public_inputs.
         /// The remaining trait methods are used internally and implement the necessary plumbing.
-        template<typename ProofScheme, template<typename> class Circuit, typename Bls12>
+        template<typename ProofScheme, template<typename> class Circuit>
         struct compound_proof {
             typedef ProofScheme proof_scheme_type;
             typedef typename proof_scheme_type::public_inputs_type public_inputs_type;
@@ -82,16 +82,16 @@ namespace nil {
                 return pp.partitions == -1 ? 1 : (!pp.partitions ? -1 : pp.partitions);
             }
 
-            virtual multi_proof<groth16::mapped_parameters<Bls12>>
+            virtual multi_proof<groth16::mapped_parameters<algebra::curves::bls12<381>>>
                 prove(const public_params_type &pp, const public_inputs_type &pub_in,
-                      const private_inputs_type &priv_in, const groth16::mapped_parameters<Bls12> &groth_parameters) {
+                      const private_inputs_type &priv_in, const groth16::mapped_parameters<algebra::curves::bls12<381>> &groth_parameters) {
                 std::size_t pc = partition_count(pp);
 
                 assert(("There must be partitions", pc > 0));
             }
 
             virtual bool verify(const public_params_type &pp, const public_inputs_type &pi,
-                                const groth16::mapped_parameters<Bls12> &mproof,
+                                const groth16::mapped_parameters<algebra::curves::bls12<381>> &mproof,
                                 const requirements_type &requirements) {
                 assert(("Inconsistent inputs", mproof.circuit_proofs.size() == partition_count(pp)));
             }
@@ -115,15 +115,14 @@ namespace nil {
              * groth proof from it. It returns a groth proof. circuit_proof is used internally and should neither be
              * called nor implemented outside of default trait methods.
              *
-             * @tparam Bls12
              * @tparam ProofIterator
              */
             template<typename ProofIterator>
             std::enable_if<std::is_same<typename std::iterator_traits<ProofIterator>::value_type, proof_type>::value,
-                           groth16::proof<Bls12>>::type
+                           groth16::proof<algebra::curves::bls12<381>>>::type
                 circuit_proofs(const public_inputs_type &pub_in, ProofIterator vanilla_proof_first,
                                ProofIterator vanilla_proof_last, const public_params_type &pp,
-                               const groth16::mapped_params<Bls12> &groth_params, bool priority) {
+                               const groth16::mapped_params<algebra::curves::bls12<381>> &groth_params, bool priority) {
                 assert(("Cannot create a circuit proof over missing vanilla proofs",
                         std::distance(vanilla_proof_first, vanilla_proof_last)));
             }
@@ -153,12 +152,12 @@ namespace nil {
              * @param partition_k
              * @return
              */
-            virtual Circuit<Bls12> circuit(const public_inputs_type &public_inputs,
+            virtual Circuit<algebra::curves::bls12<381>> circuit(const public_inputs_type &public_inputs,
                                            const ComponentsPrivateInputs &components_private_inputs,
                                            const proof_type &vanilla_proof, const public_params_type &public_param,
                                            std::size_t partition_k) = 0;
 
-            virtual Circuit<Bls12> blank_circuit(const public_params_type &pp) = 0;
+            virtual Circuit<algebra::curves::bls12<381>> blank_circuit(const public_params_type &pp) = 0;
 
             /*!
              * @brief If the rng option argument is set, parameters will be
@@ -172,7 +171,7 @@ namespace nil {
              * @return
              */
             template<typename UniformRandomGenerator, template<typename> class Groth16MappedParams>
-            virtual Groth16MappedParams<Bls12> groth_params(UniformRandomGenerator &rng, const public_params_type &pp) {
+            virtual Groth16MappedParams<algebra::curves::bls12<381>> groth_params(UniformRandomGenerator &rng, const public_params_type &pp) {
                 return get_groth_params(rng, blank_circuit(pp), pp);
             }
 
@@ -188,7 +187,7 @@ namespace nil {
              * @return
              */
             template<typename UniformRandomGenerator, template<typename> class Groth16VerifyingKey>
-            virtual Groth16VerifyingKey<Bls12> verifying_key(UniformRandomGenerator &rng,
+            virtual Groth16VerifyingKey<algebra::curves::bls12<381>> verifying_key(UniformRandomGenerator &rng,
                                                              const public_params_type &pp) {
                 return get_verifying_key(rng, blank_circuit(pp), pp);
             }

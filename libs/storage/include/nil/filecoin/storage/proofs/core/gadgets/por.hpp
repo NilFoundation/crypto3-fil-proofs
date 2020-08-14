@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_GADGETS_POR_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_GADGETS_POR_HPP
 
+#include <nil/algebra/curves/bls12_381.hpp>
+
 #include <nil/filecoin/storage/proofs/core/proof/compound_proof.hpp>
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 #include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
@@ -38,9 +40,9 @@ namespace nil {
             SubPath(std::size_t capacity) : path(capacity) {
             }
 
-            template<template<typename> class ConstraintSystem, typename Bls12>
-            std::pair<AllocatedNumber<Bls12>, std::vector<bool>> synthesize(ConstraintSystem<Bls12> &cs,
-                                                                            AllocatedNumber<Bls12> &cur) {
+            template<template<typename> class ConstraintSystem>
+            std::pair<AllocatedNumber<algebra::curves::bls12<381>>, std::vector<bool>> synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
+                                                                            AllocatedNumber<algebra::curves::bls12<381>> &cur) {
                 std::size_t arity = BaseArity;
 
                 if (arity == 0) {
@@ -157,8 +159,8 @@ namespace nil {
             SubPath<Hash, TopTreeArity> top;
         };
 
-        template<typename MerkleTreeType, template<typename> class Circuit, typename Bls12>
-        struct PoRCircuit : public cacheable_parameters<Circuit<Bls12>, ParameterSetMetadata>, public Circuit<Bls12> {
+        template<typename MerkleTreeType, template<typename> class Circuit>
+        struct PoRCircuit : public cacheable_parameters<Circuit<algebra::curves::bls12<381>>, ParameterSetMetadata>, public Circuit<algebra::curves::bls12<381>> {
             /// # Public Inputs
             ///
             /// This circuit expects the following public inputs.
@@ -171,12 +173,12 @@ namespace nil {
             ///
             /// Note: All public inputs must be provided as `E::Fr`.
             template<template<typename> class ConstraintSystem>
-            void synthesize(ConstraintSystem<Bls12> &cs) {
-                root<Bls12> value = value;
+            void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
+                root<algebra::curves::bls12<381>> value = value;
                 AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                          MerkleTreeType::top_tree_arity>
                     auth_path = auth_path;
-                root<Bls12> root = root;
+                root<algebra::curves::bls12<381>> root = root;
 
                 std::size_t base_arity = MerkleTreeType::base_arity;
                 std::size_t sub_arity = MerkleTreeType::sub_tree_arity;
@@ -226,10 +228,10 @@ namespace nil {
             }
 
             template<template<typename> class ConstraintSystem>
-            void synthesize(ConstraintSystem<Bls12> &cs, const root<Bls12> &value,
+            void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs, const root<algebra::curves::bls12<381>> &value,
                             const AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
                                            MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity> &auth_path,
-                            root<Bls12> root, bool priv) {
+                            root<algebra::curves::bls12<381>> root, bool priv) {
                 this->value = value;
                 this->auth_path = auth_path;
                 this->root = root;
@@ -238,11 +240,11 @@ namespace nil {
                 synthesize(cs);
             }
 
-            root<Bls12> value;
+            root<algebra::curves::bls12<381>> value;
             AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                      MerkleTreeType::top_tree_arity>
                 auth_path;
-            root<Bls12> root;
+            root<algebra::curves::bls12<381>> root;
             bool priv;
         };
     }    // namespace filecoin
