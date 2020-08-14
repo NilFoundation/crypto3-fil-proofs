@@ -88,7 +88,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
                     .collect();
     let leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
 
-    let mut cs = TestConstraintSystem::<Bls12>::new ();
+    let mut cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
 
     let instance = ElectionPoStCircuit<MerkleTreeType> {
         leafs,

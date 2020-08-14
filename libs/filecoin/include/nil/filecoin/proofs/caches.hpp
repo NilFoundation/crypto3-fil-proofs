@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include <nil/algebra/curves/bls12_381.hpp>
+
 #include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
 
 #include <nil/filecoin/proofs/parameters.hpp>
@@ -36,10 +38,8 @@ namespace nil {
     namespace filecoin {
         using namespace crypto3::zk::snark;
 
-        template<typename Bls12>
-        using Bls12GrothParams = groth16::MappedParameters<Bls12>;
-        template<typename Bls12>
-        using Bls12VerifyingKey = r1cs_ppzksnark_verification_key<Bls12>;
+        typedef groth16::MappedParameters<algebra::curves::bls12<381>> Bls12GrothParams;
+        typedef r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> Bls12VerifyingKey;
 
         template<typename T>
         using cache_type = std::unordered_map<std::string, T>;

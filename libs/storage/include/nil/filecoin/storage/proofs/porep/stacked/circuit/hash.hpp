@@ -34,13 +34,16 @@ namespace nil {
             namespace stacked {
                 namespace circuit {
                     /// Hash a list of bits.
-                    template<template<typename> class ConstraintSystem, typename Bls12>
-                    AllocatedNumber<Bls12> hash_single_column(ConstraintSystem<Bls12> &cs,
-                                                              std::vector<AllocatedNumber<Bls12>> &column) {
+                    template<template<typename> class ConstraintSystem>
+                    AllocatedNumber<algebra::curves::bls12<381>>
+                        hash_single_column(ConstraintSystem<algebra::curves::bls12<381>> &cs,
+                                           std::vector<AllocatedNumber<algebra::curves::bls12<381>>> &column) {
                         if (column.size() == 2) {
-                            poseidon_hash<ConstraintSystem, Bls12, 2>(cs, column, POSEIDON_CONSTANTS_2);
+                            poseidon_hash<ConstraintSystem, algebra::curves::bls12<381>, 2>(
+                                cs, column, POSEIDON_CONSTANTS_2);
                         } else if (column.size() == 11) {
-                            poseidon_hash<ConstraintSystem, Bls12, 11>(cs, column, POSEIDON_CONSTANTS_11);
+                            poseidon_hash<ConstraintSystem, algebra::curves::bls12<381>, 11>(
+                                cs, column, POSEIDON_CONSTANTS_11);
                         } else {
                             throw "unsupported column size: " + column.size();
                         }

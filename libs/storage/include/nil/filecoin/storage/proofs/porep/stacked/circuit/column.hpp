@@ -34,20 +34,20 @@ namespace nil {
     namespace filecoin {
         namespace stacked {
             namespace circuit {
-                template<template<typename> class AllocatedNumber, typename Bls12>
+                template<template<typename> class AllocatedNumber>
                 struct AllocatedColumn {
                     template<template<typename> class ConstraintSystem>
-                    AllocatedNumber<Bls12> hash(const ConstraintSystem<Bls12> &cs) {
+                    AllocatedNumber<algebra::curves::bls12<381>> hash(const ConstraintSystem<algebra::curves::bls12<381>> &cs) {
                         hash_single_column(cs, rows);
                     }
 
-                    AllocatedNumber<Bls12> get_value(std::size_t layer) {
+                    AllocatedNumber<algebra::curves::bls12<381>> get_value(std::size_t layer) {
                         assert(("layers are 1 indexed", layer > 0));
                         assert(layer <= self.rows.len(), "layer {} out of range: 1..={}", layer, rows.size());
                         return rows[layer - 1];
                     }
 
-                    std::vector<AllocatedNumber<Bls12>> rows;
+                    std::vector<AllocatedNumber<algebra::curves::bls12<381>>> rows;
                 };
 
                 struct Column {
@@ -62,8 +62,8 @@ namespace nil {
                     }
 
                     /// Consume this column, and allocate its values in the circuit.
-                    template<template<typename> class ConstraintSystem, typename Bls12>
-                    AllocatedColumn alloc(ConstraintSystem<Bls12> &cs) {
+                    template<template<typename> class ConstraintSystem>
+                    AllocatedColumn alloc(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
                         let Self {rows} = self;
 
                         let rows = rows.into_iter()

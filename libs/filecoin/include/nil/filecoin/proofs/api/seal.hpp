@@ -296,7 +296,7 @@ namespace nil {
                      as CompoundProof<StackedDrg<Tree, DefaultPieceHasher>, _, >>::setup(&compound_setup_params);
 
             info !("snark_proof:start");
-            std::vector<Proof<Bls12>> groth_proofs =
+            std::vector<Proof<algebra::curves::bls12<381>>> groth_proofs =
                 StackedCompound<MerkleTreeType, DefaultPieceHasher>::circuit_proofs(
                     public_inputs, vanilla_proofs, compound_public_params.vanilla_params, groth_params,
                     compound_public_params.priority);

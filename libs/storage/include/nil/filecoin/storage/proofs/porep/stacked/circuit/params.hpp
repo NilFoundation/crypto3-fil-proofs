@@ -88,9 +88,8 @@ namespace nil {
                         }
 
                         /// Circuit synthesis.
-                        template<typename Bls12>
-                        void synthesize(ConstraintSystem<Bls12> &cs, std::size_t layers, AllocatedNumber<Bls12> &comm_d,
-                                        AllocatedNumber<Bls12> &comm_c, AllocatedNumber<Bls12> &comm_r_last,
+                        void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs, std::size_t layers, AllocatedNumber<algebra::curves::bls12<381>> &comm_d,
+                                        AllocatedNumber<algebra::curves::bls12<381>> &comm_c, AllocatedNumber<algebra::curves::bls12<381>> &comm_r_last,
                                         const std::vector<bool> &replica_id) {
                             let Proof {comm_d_path, data_leaf,          challenge,          comm_r_last_path,
                                        comm_c_path, drg_parents_proofs, exp_parents_proofs, ..} = self;
@@ -258,11 +257,11 @@ namespace nil {
 
                     /// Enforce the inclusion of the given path, to the given leaf and the root.
                     template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
-                             template<typename> class ConstraintSystem, typename Bls12>
-                    void enforce_inclusion(const ConstraintSystem<Bls12> &cs,
+                             template<typename> class ConstraintSystem>
+                    void enforce_inclusion(const ConstraintSystem<algebra::curves::bls12<381>> &cs,
                                            const AuthPath<Hash, BaseArity, SubTreeArity, TopTreeArity> &path,
-                                           const AllocatedNumber<Bls12> &root,
-                                           const AllocatedNumber<Bls12> &leaf) {
+                                           const AllocatedNumber<algebra::curves::bls12<381>> &root,
+                                           const AllocatedNumber<algebra::curves::bls12<381>> &leaf) {
                         let root = Root::from_allocated::<CS>(root.clone());
                         let leaf = Root::from_allocated::<CS>(leaf.clone());
 

@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     assert !(proof_nc.nodes[0].proof.validate_data(data_node.into()),
              "failed to verify data commitment with data");
 
-    let mut cs = TestConstraintSystem::<Bls12>::new ();
+    let mut cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
     DrgPoRepCircuit::<PedersenHasher>::synthesize(
         cs.namespace(|| "drgporep"), vec ![replica_node], vec ![replica_node_path], replica_root, replica_parents,
         replica_parents_paths, vec ![data_node], vec ![data_node_path], data_root, replica_id, false, )
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_num_constraints) {
     let m = BASE_DEGREE;
     let tree_depth = graph_height::<2>(n);
 
-    let mut cs = TestConstraintSystem::<Bls12>::new ();
+    let mut cs = TestConstraintSystem::<algebra::curves::bls12<381>>::new ();
     DrgPoRepCircuit::<PedersenHasher>::synthesize(
         cs.namespace(|| "drgporep"), vec ![Some(Fr::random(rng)); 1],
         vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; 1], Root::Val(Some(Fr::random(rng))),
