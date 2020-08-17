@@ -194,9 +194,9 @@ namespace nil {
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::new_from_disk(
                                     tree_c_size, MerkleTreeType::base_arity, config);
                             // Note: from_data_store requires the base tree leaf count
-                            DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                            DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                                      MerkleTreeType::top_tree_arity>
-                                tree_c = DiskTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity,
+                                tree_c = DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
                                                   MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>::
                                     from_data_store(tree_c_store,
                                                     get_merkle_tree_leafs(tree_c_size, MerkleTreeType::base_arity));
@@ -389,10 +389,10 @@ namespace nil {
                         trace !("Instantiating tree r last [count {}] with size {} and arity {}, {}, {}", tree_count,
                                 tree_r_last_size, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                                 MerkleTreeType::top_tree_arity);
-                        LCTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                        LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                                MerkleTreeType::top_tree_arity>
                             tree_r_last =
-                                create_lc_tree<LCTree<MerkleTreeType::Hasher, MerkleTreeType::base_arity,
+                                create_lc_tree<LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
                                                       MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>(
                                     tree_r_last_size, configs, replica_config);
 

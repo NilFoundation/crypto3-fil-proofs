@@ -26,23 +26,26 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_GADGETS_POR_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_GADGETS_POR_HPP
 
-#include <nil/algebra/curves/bls12_381.hpp>
+#include <nil/algebra/curves/bls12.hpp>
 
+#include <nil/filecoin/storage/proofs/core/path_element.hpp>
 #include <nil/filecoin/storage/proofs/core/proof/compound_proof.hpp>
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 #include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
-#include <nil/filecoin/storage/proofs/core/path_element.hpp>
 
 namespace nil {
     namespace filecoin {
         template<typename Hash, std::size_t BaseArity>
         struct SubPath {
+            std::vector<PathElement<Hash, BaseArity>> path;
+
             SubPath(std::size_t capacity) : path(capacity) {
             }
 
             template<template<typename> class ConstraintSystem>
-            std::pair<AllocatedNumber<algebra::curves::bls12<381>>, std::vector<bool>> synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
-                                                                            AllocatedNumber<algebra::curves::bls12<381>> &cur) {
+            std::pair<AllocatedNumber<algebra::curves::bls12<381>>, std::vector<bool>>
+                synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
+                           AllocatedNumber<algebra::curves::bls12<381>> &cur) {
                 std::size_t arity = BaseArity;
 
                 if (arity == 0) {
@@ -92,8 +95,6 @@ namespace nil {
 
                 return std::make_pair(cur, auth_path_bits);
             }
-
-            std::vector<PathElement<Hash, BaseArity>> path;
         };
 
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
@@ -160,7 +161,8 @@ namespace nil {
         };
 
         template<typename MerkleTreeType, template<typename> class Circuit>
-        struct PoRCircuit : public cacheable_parameters<Circuit<algebra::curves::bls12<381>>, ParameterSetMetadata>, public Circuit<algebra::curves::bls12<381>> {
+        struct PoRCircuit : public cacheable_parameters<Circuit<algebra::curves::bls12<381>>, parameter_set_metadata>,
+                            public Circuit<algebra::curves::bls12<381>> {
             /// # Public Inputs
             ///
             /// This circuit expects the following public inputs.
@@ -228,7 +230,8 @@ namespace nil {
             }
 
             template<template<typename> class ConstraintSystem>
-            void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs, const root<algebra::curves::bls12<381>> &value,
+            void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
+                            const root<algebra::curves::bls12<381>> &value,
                             const AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
                                            MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity> &auth_path,
                             root<algebra::curves::bls12<381>> root, bool priv) {

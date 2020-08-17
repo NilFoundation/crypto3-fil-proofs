@@ -31,7 +31,7 @@ template<typename MerkleTreeType>
 void test_extract_all() {
     let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let replica_id : <MerkleTreeType::Hasher as Hasher>::Domain = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let replica_id : <typename MerkleTreeType::hash_type as Hasher>::Domain = <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng);
     let nodes = 4;
     let data = vec ![2u8; 32 * nodes];
 
@@ -56,7 +56,7 @@ void test_extract_all() {
         challenges_count : 1,
     };
 
-    let pp : PublicParams<MerkleTreeType::Hasher, BucketGraph<MerkleTreeType::Hasher>> = DrgPoRep::setup(&sp).expect("setup failed");
+    let pp : PublicParams<typename MerkleTreeType::hash_type, BucketGraph<typename MerkleTreeType::hash_type>> = DrgPoRep::setup(&sp).expect("setup failed");
 
     DrgPoRep::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(), replica_path.clone(), )
         .expect("replication failed");
@@ -66,7 +66,7 @@ void test_extract_all() {
     assert_ne !(data, copied, "replication did not change data");
 
     let decoded_data =
-        DrgPoRep::<MerkleTreeType::Hasher, _>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config.clone()), )
+        DrgPoRep::<typename MerkleTreeType::hash_type, _>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config.clone()), )
             .unwrap_or_else(| e | { panic !("Failed to extract data from `DrgPoRep`: {}", e); });
 
     assert_eq !(data, decoded_data.as_slice(), "failed to extract data");
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(extract_all_blake2s) {
 BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
     let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let replica_id : <MerkleTreeType::Hasher as Hasher>::Domain = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let replica_id : <typename MerkleTreeType::hash_type as Hasher>::Domain = <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng);
     let nodes = 4;
     let data = vec ![2u8; 32 * nodes];
 
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
         challenges_count : 1,
     };
 
-    let pp = DrgPoRep::<MerkleTreeType::Hasher, BucketGraph<MerkleTreeType::Hasher>>::setup(&sp).expect("setup failed");
+    let pp = DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<typename MerkleTreeType::hash_type>>::setup(&sp).expect("setup failed");
 
     DrgPoRep::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(), replica_path.clone(), )
         .expect("replication failed");
@@ -155,7 +155,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         let degree = BASE_DEGREE;
         let expansion_degree = 0;
 
-        let replica_id : <MerkleTreeType::Hasher as Hasher>::Domain = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+        let replica_id : <typename MerkleTreeType::hash_type as Hasher>::Domain = <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng);
         let data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
         // MT for original data is always named tree-d, and it will be
@@ -181,9 +181,9 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
             challenges_count : 2,
         };
 
-        let pp = DrgPoRep::<MerkleTreeType::Hasher, BucketGraph<_>>::setup(&sp).expect("setup failed");
+        let pp = DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<_>>::setup(&sp).expect("setup failed");
 
-        let(tau, aux) = DrgPoRep::<MerkleTreeType::Hasher, _>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None,
+        let(tau, aux) = DrgPoRep::<typename MerkleTreeType::hash_type, _>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None,
                                                                config, replica_path.clone(), )
                             .expect("replication failed");
 
@@ -191,19 +191,19 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         copied.copy_from_slice(&mmapped_data);
         assert_ne !(data, copied, "replication did not change data");
 
-        let pub_inputs = PublicInputs:: << MerkleTreeType::Hasher as Hasher > ::Domain > {
+        let pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type as Hasher > ::Domain > {
             replica_id : Some(replica_id),
             challenges : vec ![ challenge, challenge ],
             tau : Some(tau.clone().into()),
         };
 
-        let priv_inputs = PrivateInputs::<MerkleTreeType::Hasher> {
+        let priv_inputs = PrivateInputs::<typename MerkleTreeType::hash_type> {
             tree_d : &aux.tree_d,
             tree_r : &aux.tree_r,
             tree_r_config_rows_to_discard : default_rows_to_discard(nodes, BINARY_ARITY),
         };
 
-        let real_proof = DrgPoRep::<MerkleTreeType::Hasher, _>::prove(&pp, &pub_inputs, &priv_inputs).expect("proving failed");
+        let real_proof = DrgPoRep::<typename MerkleTreeType::hash_type, _>::prove(&pp, &pub_inputs, &priv_inputs).expect("proving failed");
 
         if use_wrong_parents {
             // Only one 'wrong' option will be tested at a time.
@@ -257,7 +257,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
 
             let proof2 = Proof::new (real_proof.replica_nodes, fake_proof_parents, real_proof.nodes.into(), );
 
-            assert !(!DrgPoRep::<MerkleTreeType::Hasher, _>::verify(&pp, &pub_inputs, &proof2)
+            assert !(!DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs, &proof2)
                           .unwrap_or_else(| e | { panic !("Verification failed: {}", e); }),
                      "verified in error -- with wrong parent proofs");
 
@@ -267,16 +267,16 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         let proof = real_proof;
 
         if use_wrong_challenge {
-            let pub_inputs_with_wrong_challenge_for_proof = PublicInputs:: << MerkleTreeType::Hasher as Hasher > ::Domain > {
+            let pub_inputs_with_wrong_challenge_for_proof = PublicInputs:: << typename MerkleTreeType::hash_type as Hasher > ::Domain > {
             replica_id:
                 Some(replica_id), challenges : vec ![if challenge == 1 { 2 } else {1}], tau : Some(tau.into()),
             };
             let verified =
-                DrgPoRep::<MerkleTreeType::Hasher, _>::verify(&pp, &pub_inputs_with_wrong_challenge_for_proof, &proof, )
+                DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs_with_wrong_challenge_for_proof, &proof, )
                     .expect("Verification failed");
             assert !(!verified, "wrongly verified proof which does not match challenge in public input");
         } else {
-            assert !(DrgPoRep::<MerkleTreeType::Hasher, _>::verify(&pp, &pub_inputs, &proof).expect("verification failed"),
+            assert !(DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs, &proof).expect("verification failed"),
                      "failed to verify");
         }
 

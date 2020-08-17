@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include <nil/algebra/curves/bls12_381.hpp>
+#include <nil/algebra/curves/bls12.hpp>
 
 #include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
 

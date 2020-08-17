@@ -63,9 +63,10 @@ namespace nil {
                         current_row = next_row;
                         next_row.clear();
                     }
+
                     assert(current_row.size() == 1);
 
-                    return current_row;
+                    return current_row[0];
                 }
 
                 void read(std::vector<std::uint8_t> &buf) {
