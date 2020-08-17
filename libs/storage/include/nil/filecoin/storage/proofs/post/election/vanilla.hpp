@@ -71,7 +71,7 @@ namespace nil {
 
                 template<typename MerkleTreeType>
                 struct PrivateInputs {
-                    MerkleTreeWrapper<MerkleTreeType::Hasher, MerkleTreeType::Store, MerkleTreeType::base_arity,
+                    MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity,
                                       MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
                         tree;
                     typename MerkleTreeType::hash_type::digest_type comm_c;
@@ -175,7 +175,7 @@ namespace nil {
                         let comm_c = pr.comm_c;
                         let comm_r = &pub_inputs.comm_r;
 
-                        if (AsRef ::<[u8]>::as_ref(&<MerkleTreeType::Hasher as Hasher>::Function::hash2(
+                        if (AsRef ::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type as Hasher>::Function::hash2(
                                 &comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(comm_r)) {
                             return false;
                         }

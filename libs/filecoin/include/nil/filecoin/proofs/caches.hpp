@@ -28,7 +28,7 @@
 
 #include <unordered_map>
 
-#include <nil/algebra/curves/bls12_381.hpp>
+#include <nil/algebra/curves/bls12.hpp>
 
 #include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
 
@@ -44,11 +44,13 @@ namespace nil {
         template<typename T>
         using cache_type = std::unordered_map<std::string, T>;
 
-        typedef Cache<Bls12GrothParams> GrothMemCache;
-        typedef Cache<Bls12VerifyingKey> VerifyingKeyMemCache;
+        typedef cache_type<Bls12GrothParams> GrothMemCache;
+        typedef cache_type<Bls12VerifyingKey> VerifyingKeyMemCache;
 
-        static std::mutex<GrothMemCache> GROTH_PARAM_MEMORY_CACHE;
-        static std::mutex<VerifyingKeyMemCache> VERIFYING_KEY_MEMORY_CACHE;
+        static std::mutex GrothMemCacheMutex;
+            static GrothMemCache GROTH_PARAM_MEMORY_CACHE;
+        static std::mutex VerifyingKeyMemCacheMutex;
+        static VerifyingKeyMemCache VERIFYING_KEY_MEMORY_CACHE;
 
         template<typename CacheType, typename UnaryPredicate>
         inline typename std::enable_if<std::is_same<typename UnaryPredicate::result_type, Bls12GrothParams>::value,
@@ -67,7 +69,7 @@ namespace nil {
         inline typename std::enable_if<std::is_same<typename UnaryPredicate::result_type, Bls12GrothParams>::value,
                                        Bls12GrothParams>::type
             lookup_verifying_key(const std::string &identifier, UnaryPredicate generator) {
-            std::strgin vk_identifier = identifier + "-verifying-key";
+            std::string vk_identifier = identifier + "-verifying-key";
             cache_lookup(VERIFYING_KEY_MEMORY_CACHE, vk_identifier, generator)
         }
 

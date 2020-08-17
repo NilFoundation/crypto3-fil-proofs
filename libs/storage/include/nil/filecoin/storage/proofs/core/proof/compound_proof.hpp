@@ -84,7 +84,8 @@ namespace nil {
 
             virtual multi_proof<groth16::mapped_parameters<algebra::curves::bls12<381>>>
                 prove(const public_params_type &pp, const public_inputs_type &pub_in,
-                      const private_inputs_type &priv_in, const groth16::mapped_parameters<algebra::curves::bls12<381>> &groth_parameters) {
+                      const private_inputs_type &priv_in,
+                      const groth16::mapped_parameters<algebra::curves::bls12<381>> &groth_parameters) {
                 std::size_t pc = partition_count(pp);
 
                 assert(("There must be partitions", pc > 0));
@@ -119,7 +120,7 @@ namespace nil {
              */
             template<typename ProofIterator>
             std::enable_if<std::is_same<typename std::iterator_traits<ProofIterator>::value_type, proof_type>::value,
-                           groth16::proof<algebra::curves::bls12<381>>>::type
+                           r1cs_ppzksnark_proof<algebra::curves::bls12<381>>>::type
                 circuit_proofs(const public_inputs_type &pub_in, ProofIterator vanilla_proof_first,
                                ProofIterator vanilla_proof_last, const public_params_type &pp,
                                const groth16::mapped_params<algebra::curves::bls12<381>> &groth_params, bool priority) {
@@ -152,10 +153,10 @@ namespace nil {
              * @param partition_k
              * @return
              */
-            virtual Circuit<algebra::curves::bls12<381>> circuit(const public_inputs_type &public_inputs,
-                                           const ComponentsPrivateInputs &components_private_inputs,
-                                           const proof_type &vanilla_proof, const public_params_type &public_param,
-                                           std::size_t partition_k) = 0;
+            virtual Circuit<algebra::curves::bls12<381>>
+                circuit(const public_inputs_type &public_inputs,
+                        const ComponentsPrivateInputs &components_private_inputs, const proof_type &vanilla_proof,
+                        const public_params_type &public_param, std::size_t partition_k) = 0;
 
             virtual Circuit<algebra::curves::bls12<381>> blank_circuit(const public_params_type &pp) = 0;
 
@@ -171,7 +172,8 @@ namespace nil {
              * @return
              */
             template<typename UniformRandomGenerator, template<typename> class Groth16MappedParams>
-            virtual Groth16MappedParams<algebra::curves::bls12<381>> groth_params(UniformRandomGenerator &rng, const public_params_type &pp) {
+            virtual Groth16MappedParams<algebra::curves::bls12<381>> groth_params(UniformRandomGenerator &rng,
+                                                                                  const public_params_type &pp) {
                 return get_groth_params(rng, blank_circuit(pp), pp);
             }
 
@@ -186,9 +188,9 @@ namespace nil {
              * @param pp
              * @return
              */
-            template<typename UniformRandomGenerator, template<typename> class Groth16VerifyingKey>
-            virtual Groth16VerifyingKey<algebra::curves::bls12<381>> verifying_key(UniformRandomGenerator &rng,
-                                                             const public_params_type &pp) {
+            template<typename UniformRandomGenerator>
+            virtual r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> verifying_key(UniformRandomGenerator &rng,
+                                                                                   const public_params_type &pp) {
                 return get_verifying_key(rng, blank_circuit(pp), pp);
             }
         };

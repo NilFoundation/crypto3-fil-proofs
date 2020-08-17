@@ -98,14 +98,14 @@ void test_extract_all() {
     //     .ok();
 
     let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
-    let replica_id : <MerkleTreeType::Hasher as Hasher>::Domain = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let replica_id : <typename MerkleTreeType::hash_type as Hasher>::Domain = <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng);
     let nodes = 64 * get_base_tree_count::<Tree>();
 
     std::vector<std::uint8_t> data = (0..nodes)
                              .flat_map(| _ |
                                        {
-                                           let v : <MerkleTreeType::Hasher as Hasher>::Domain =
-                                                       <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+                                           let v : <typename MerkleTreeType::hash_type as Hasher>::Domain =
+                                                       <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng);
                                            v.into_bytes()
                                        })
                              .collect();
@@ -192,7 +192,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
 
     let degree = BASE_DEGREE;
     let expansion_degree = EXP_DEGREE;
-    let replica_id : <MerkleTreeType::Hasher as Hasher>::Domain = <MerkleTreeType::Hasher as Hasher>::Domain::random(rng);
+    let replica_id : <typename MerkleTreeType::hash_type as Hasher>::Domain = <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng);
     let data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
@@ -227,7 +227,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     assert_ne !(data, copied, "replication did not change data");
 
     let seed = rng.gen();
-    let pub_inputs = PublicInputs:: << MerkleTreeType::Hasher as Hasher > ::Domain, <Blake2sHasher as Hasher>::Domain > {
+    let pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type as Hasher > ::Domain, <Blake2sHasher as Hasher>::Domain > {
         replica_id,
         seed,
         tau : Some(tau),

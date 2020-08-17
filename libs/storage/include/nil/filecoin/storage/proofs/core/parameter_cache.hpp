@@ -73,7 +73,7 @@ namespace nil {
 
         boost::filesystem::path ensure_ancestor_dirs_exist(const boost::filesystem::path &cache_entry_path) {
             boost::filesystem::path parent_dir = cache_entry_path.parent_path();
-            if (boost::filesystem::exists(parent_dir)) {
+            if (boost::filesystem::exists(parent_dir.status())) {
                 return cache_entry_path;
             } else {
                 throw std::invalid_argument(cache_entry_path.string() + " has no parent directory");
@@ -103,25 +103,25 @@ namespace nil {
             });
         }
 
-
         template<template<typename> class Groth16MappedParams>
-        Groth16MappedParams<algebra::curves::bls12<381>> read_cached_params(const boost::filesystem::path &cache_entry_path) {
+        Groth16MappedParams<algebra::curves::bls12<381>>
+            read_cached_params(const boost::filesystem::path &cache_entry_path) {
             with_exclusive_read_lock(cache_entry_path, [&]() -> Groth16MappedParams<algebra::curves::bls12<381>> {
-                Groth16MappedParams<algebra::curves::bls12<381>> params = Parameters::build_mapped_parameters(cache_entry_path, false);
+                Groth16MappedParams<algebra::curves::bls12<381>> params =
+                    Parameters::build_mapped_parameters(cache_entry_path, false);
             });
         }
 
-        template<template<typename> class Groth16VerifyingKey>
-        Groth16VerifyingKey<algebra::curves::bls12<381>> read_cached_verifying_key(const boost::filesystem::path &cache_entry_path) {
+        r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>>
+            read_cached_verifying_key(const boost::filesystem::path &cache_entry_path) {
             with_exclusive_read_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                return Groth16VerifyingKey<algebra::curves::bls12<381>>::read(file);
+                return r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>>::read(file);
             });
         }
 
-        template<template<typename> class Groth16VerifyingKey>
-        Groth16VerifyingKey<algebra::curves::bls12<381>> write_cached_verifying_key(const boost::filesystem::path &cache_entry_path,
-                                                              Groth16VerifyingKey<algebra::curves::bls12<381>>
-                                                                 value) {
+        r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>>
+            write_cached_verifying_key(const boost::filesystem::path &cache_entry_path,
+                                       const r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> &value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);
 
@@ -131,15 +131,15 @@ namespace nil {
 
         template<template<typename> class Groth16Parameters>
         Groth16Parameters<algebra::curves::bls12<381>>
-        write_cached_params(const boost::filesystem::path &cache_entry_path, Groth16Parameters<algebra::curves::bls12<381>> value) {
+            write_cached_params(const boost::filesystem::path &cache_entry_path,
+                                Groth16Parameters<algebra::curves::bls12<381>> value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);
                 return value;
             });
         }
 
-        template<template<typename> class Circuit,
-                 typename ParameterSetMetadata = parameter_set_metadata>
+        template<template<typename> class Circuit, typename ParameterSetMetadata = parameter_set_metadata>
         struct cacheable_parameters {
             typedef Circuit<algebra::curves::bls12<381>> C;
             typedef ParameterSetMetadata P;
@@ -170,11 +170,13 @@ namespace nil {
             }
 
             template<template<typename> class Groth16MappedParams, typename UniformRandomGenerator>
-            Groth16MappedParams<algebra::curves::bls12<381>> get_groth_params(UniformRandomGenerator &r, const C &circuit,
-                                                         const P &pub_params) {
+            Groth16MappedParams<algebra::curves::bls12<381>> get_groth_params(UniformRandomGenerator &r,
+                                                                              const C &circuit, const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
-                auto generate = [&]() { return groth16::generate_random_parameters<algebra::curves::bls12<381>>(circuit, r); };
+                auto generate = [&]() {
+                    return groth16::generate_random_parameters<algebra::curves::bls12<381>>(circuit, r);
+                };
 
                 boost::filesystem::path cache_path = ensure_ancestor_dirs_exist(parameter_cache_params_path(id));
 
@@ -185,12 +187,12 @@ namespace nil {
                 }
             }
 
-            template<template<typename> class Groth16VerifyingKey, typename UniformRandomGenerator>
-            Groth16VerifyingKey<algebra::curves::bls12<381>> get_verifying_key(UniformRandomGenerator &r, const C &circuit,
-                                                            const P &pub_params) {
+            template<typename UniformRandomGenerator>
+            r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>>
+                get_verifying_key(UniformRandomGenerator &r, const C &circuit, const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
-                auto generate = [&]() -> Groth16VerifyingKey<algebra::curves::bls12<381>> {
+                auto generate = [&]() -> r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> {
                     return get_groth_params(r, circuit, pub_params).vk;
                 };
 

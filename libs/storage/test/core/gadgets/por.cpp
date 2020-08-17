@@ -190,12 +190,12 @@ for
             leaves,
             private : false,
         };
-        let pub_inputs = por::PublicInputs:: << MerkleTreeType::Hasher as Hasher > ::Domain > {
+        let pub_inputs = por::PublicInputs:: << typename MerkleTreeType::hash_type as Hasher > ::Domain > {
             challenge : i,
             commitment : Some(tree.root()),
         };
         let leaf = data_at_node(data.as_slice(), pub_inputs.challenge);
-        let leaf_element = <MerkleTreeType::Hasher as Hasher>::Domain::try_from_bytes(leaf);
+        let leaf_element = <typename MerkleTreeType::hash_type as Hasher>::Domain::try_from_bytes(leaf);
         let priv_inputs = por::PrivateInputs::<ResTree<MerkleTreeType>>::new (leaf_element, &tree);
         let p = tree.gen_proof(i);
         assert !(p.verify());

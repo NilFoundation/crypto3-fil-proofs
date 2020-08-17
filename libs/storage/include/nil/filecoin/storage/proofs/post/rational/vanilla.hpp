@@ -183,7 +183,7 @@ namespace nil {
                             // comm_r_last is the root of the proof
                             let comm_r_last = merkle_proof.root();
 
-                            if (AsRef::<[u8]>::as_ref(&<MerkleTreeType::Hasher as Hasher>::Function::hash2(
+                            if (AsRef::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type as Hasher>::Function::hash2(
                                     comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(&comm_r)) {
                                 return false;
                             }
