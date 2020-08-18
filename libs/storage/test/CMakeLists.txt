@@ -69,6 +69,7 @@ set(TESTS_NAMES
     "core/crypto/feistel"
 
     "core/gadgets/por"
+    "core/gadgets/pedersen"
 
     "core/merkle/proof"
 

@@ -37,18 +37,53 @@ namespace nil {
         namespace gadgets {
             template<typename FieldType>
             struct pedersen_compression_function_gadget : public crypto3::zk::snark::gadget<FieldType> {
+                pedersen_compression_function_gadget(crypto3::zk::snark::protoboard<FieldType> &pb) :
+                    crypto3::zk::snark::gadget<FieldType>(pb) {
+                }
+
+                void generate_r1cs_constraints() {
+                }
+                void generate_r1cs_witness() {
+                }
             };
 
             template<typename FieldType>
-            struct pedersen_compression_num_gedget : public crypto3::zk::snark::gadget<FieldType> {
-                void generate_r1cs_constraints();
-                void generate_r1cs_witness();
+            struct pedersen_compression_num_gadget : public crypto3::zk::snark::gadget<FieldType> {
+                pedersen_compression_num_gadget(crypto3::zk::snark::protoboard<FieldType> &pb) : crypto3::zk::snark::gadget<FieldType>(pb) {
+                }
+                void generate_r1cs_constraints() {
+                }
+                void generate_r1cs_witness() {
+                }
             };
 
             template<typename FieldType>
             struct pedersen_md_no_padding_gadget : public crypto3::zk::snark::gadget<FieldType> {
-                void generate_r1cs_constraints();
-                void generate_r1cs_witness();
+                pedersen_md_no_padding_gadget(crypto3::zk::snark::protoboard<FieldType> &pb) : crypto3::zk::snark::gadget<FieldType>(pb) {
+                }
+
+                std::shared_ptr<pedersen_compression_num_gadget<FieldType>> num_compression;
+                std::shared_ptr<pedersen_compression_function_gadget<FieldType>> compression;
+
+                void generate_r1cs_constraints() {
+
+                }
+                void generate_r1cs_witness() {
+
+                }
+            };
+
+            template<typename FieldType>
+            struct pedersen_hash_gadget : public crypto3::zk::snark::gadget<FieldType> {
+                pedersen_hash_gadget(crypto3::zk::snark::protoboard<FieldType> &pb) : crypto3::zk::snark::gadget<FieldType>(pb) {
+                }
+
+                void generate_r1cs_constraints() {
+
+                }
+                void generate_r1cs_witness() {
+
+                }
             };
         }    // namespace gadgets
     }        // namespace filecoin
