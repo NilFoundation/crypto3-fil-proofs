@@ -28,18 +28,31 @@
 
 #include <nil/algebra/curves/bls12.hpp>
 
+#include <nil/crypto3/zk/snark/gadgets/basic_gadgets.hpp>
+
 #include <nil/filecoin/storage/proofs/core/path_element.hpp>
+#include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
+#include <nil/filecoin/storage/proofs/core/por.hpp>
+
 #include <nil/filecoin/storage/proofs/core/proof/compound_proof.hpp>
+
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
+
 #include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
 
 namespace nil {
     namespace filecoin {
-        template<typename Hash, std::size_t BaseArity>
-        struct SubPath {
+        template<typename Hash, std::size_t BaseArity, typename FieldType = algebra::curves::bls12<381>>
+        struct SubPath : public crypto3::zk::snark::gadget<FieldType> {
             std::vector<PathElement<Hash, BaseArity>> path;
 
-            SubPath(std::size_t capacity) : path(capacity) {
+            SubPath(crypto3::zk::snark::protoboard<FieldType> &pb, std::size_t capacity) :
+                path(capacity), crypto3::zk::snark::gadget<FieldType>(pb) {
+            }
+
+            void generate_r1cs_constraints() {
+            }
+            void generate_r1cs_witness() {
             }
 
             template<template<typename> class ConstraintSystem>
@@ -250,6 +263,10 @@ namespace nil {
             root<algebra::curves::bls12<381>> root;
             bool priv;
         };
+
+        template<typename MerkleTreeType, template<typename> class Circuit>
+        struct PoRCompound : public PoRCircuit<MerkleTreeType, Circuit<algebra::curves::bls12<381>>>,
+                             public CompoundProof<PoR<MerkleTreeType>, PoRCircuit<MerkleTreeType>> { };
     }    // namespace filecoin
 }    // namespace nil
 
