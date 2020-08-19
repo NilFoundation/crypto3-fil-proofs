@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_HPP
 
+#include <nil/algebra/
+
 #include <nil/crypto3/zk/snark/relations/constraint_satisfaction_problems/r1cs/r1cs.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>

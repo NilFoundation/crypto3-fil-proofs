@@ -28,17 +28,28 @@
 
 #include <boost/variant.hpp>
 
+#include <nil/crypto3/zk/snark/gadgets/basic_gadgets.hpp>
+
 namespace nil {
     namespace filecoin {
         template<typename E>
         struct AllocatedNumber { };
 
-        /// Root represents a root commitment which may be either a raw value or an already-allocated number.
-        /// This allows subcomponents to depend on roots which may optionally be shared with their parent
-        /// or sibling components.
-        template<typename Engine>
-        using root = boost::variant<AllocatedNumber<Engine>, typename Engine::Fr>;
+        /*!
+         * @brief Root represents a root commitment which may be either a raw value or an already-allocated number.
+         * This allows subcomponents to depend on roots which may optionally be shared with their parent
+         * or sibling components.
+         *
+         * @tparam FieldType
+         */
+        template<typename FieldType>
+        struct root_gadget : public crypto3::zk::snark::gadget<FieldType> {
+            typedef boost::variant<crypto3::zk::snark::pb_variable<FieldType>, typename FieldType::value_type>
+                value_type;
 
+            root_gadget(crypto3::zk::snark::protoboard<FieldType> &pb) : crypto3::zk::snark::gadget<FieldType>(pb) {
+            }
+        };
     }    // namespace filecoin
 }    // namespace nil
 

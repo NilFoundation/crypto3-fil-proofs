@@ -58,7 +58,7 @@ namespace nil {
             template<template<typename> class ConstraintSystem>
             std::pair<AllocatedNumber<algebra::curves::bls12<381>>, std::vector<bool>>
                 synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
-                           AllocatedNumber<algebra::curves::bls12<381>> &cur) {
+                           crypto3::zk::snark::pb_variable<algebra::curves::bls12<381>> &cur) {
                 std::size_t arity = BaseArity;
 
                 if (arity == 0) {
@@ -110,8 +110,9 @@ namespace nil {
             }
         };
 
-        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
-        struct AuthPath {
+        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
+                 typename FieldType = algebra::curves::bls12<381>>
+        struct AuthPath : public crypto3::zk::snark::gadget<FieldType> {
             AuthPath(std::size_t leaves) :
                 base(SubPath<Hash, BaseArity>(base_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves))) {
             }
