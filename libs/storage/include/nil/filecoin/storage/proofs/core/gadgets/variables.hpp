@@ -32,9 +32,6 @@
 
 namespace nil {
     namespace filecoin {
-        template<typename E>
-        struct AllocatedNumber { };
-
         /*!
          * @brief Root represents a root commitment which may be either a raw value or an already-allocated number.
          * This allows subcomponents to depend on roots which may optionally be shared with their parent

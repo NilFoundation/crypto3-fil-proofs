@@ -42,7 +42,7 @@
 
 namespace nil {
     namespace filecoin {
-        template<typename Hash, std::size_t BaseArity, typename FieldType = algebra::curves::bls12<381>>
+        template<typename Hash, std::size_t BaseArity, typename FieldType>
         struct SubPath : public crypto3::zk::snark::gadget<FieldType> {
             std::vector<PathElement<Hash, BaseArity>> path;
 
@@ -111,10 +111,19 @@ namespace nil {
         };
 
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
-                 typename FieldType = algebra::curves::bls12<381>>
+                 typename FieldType>
         struct AuthPath : public crypto3::zk::snark::gadget<FieldType> {
-            AuthPath(std::size_t leaves) :
-                base(SubPath<Hash, BaseArity>(base_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves))) {
+            SubPath(crypto3::zk::snark::protoboard<FieldType> &pb, std::size_t capacity) :
+                path(capacity), crypto3::zk::snark::gadget<FieldType>(pb) {
+            }
+
+            void generate_r1cs_constraints() {
+            }
+            void generate_r1cs_witness() {
+            }
+
+            AuthPath(crypto3::zk::snark::protoboard<FieldType> &pb, std::size_t leaves) :
+                base(SubPath<Hash, BaseArity>(pb, base_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves))) {
             }
 
             AuthPath(const std::vector<std::pair<std::vector<Fr>, std::size_t>> &base_opts) {

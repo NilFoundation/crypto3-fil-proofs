@@ -29,6 +29,8 @@
 #include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
 #include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
 
+#include <nil/crypto3/zk/snark/gadgets/basic_gadgets.hpp>
+
 #include <nil/crypto3/hash/hash_state.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
 
@@ -69,8 +71,8 @@ namespace nil {
 
                  * @tparam Hash
                  */
-                template<typename Hash, typename Fr>
-                struct DrgPoRepCircuit : public crypto3::zk::snark::circuit<algebra::curves::bls12<381>> {
+                template<typename Hash, typename FieldType>
+                struct DrgPoRepCircuit : public crypto3::zk::snark::gadget<algebra::curves::bls12<381>> {
                     typedef Hash hash_type;
 
                     std::vector<Fr> replica_nodes;
@@ -84,6 +86,9 @@ namespace nil {
                     root<algebra::curves::bls12<381>> data_root;
                     Fr replica_id;
                     bool priv;
+
+                    DrgPoRepCircuit(crypto3::zk::snark::protoboard<algebra::curves::bls12<381>> &pb) : gadget<algebra::curves::bls12<381>>(pb) {
+                    }
 
                     template<template<typename> class ConstraintSystem>
                     void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {

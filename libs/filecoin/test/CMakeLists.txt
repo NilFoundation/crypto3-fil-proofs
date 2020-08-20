@@ -31,8 +31,11 @@ endif()
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
 
+                       crypto3::algebra
                        crypto3::block
+                       crypto3::codec
                        crypto3::hash
+                       crypto3::zk
 
                        ${CMAKE_WORKSPACE_NAME}::storage_proofs
 
