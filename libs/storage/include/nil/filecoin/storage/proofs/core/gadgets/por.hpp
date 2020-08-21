@@ -44,10 +44,24 @@ namespace nil {
     namespace filecoin {
         template<typename Hash, std::size_t BaseArity, typename FieldType>
         struct SubPath : public crypto3::zk::snark::gadget<FieldType> {
-            std::vector<PathElement<Hash, BaseArity>> path;
+            std::vector<PathElement<Hash, FieldType, BaseArity>> path;
 
-            SubPath(crypto3::zk::snark::protoboard<FieldType> &pb, std::size_t capacity) :
-                path(capacity), crypto3::zk::snark::gadget<FieldType>(pb) {
+            SubPath(crypto3::zk::snark::protoboard<FieldType> &pb, crypto3::zk::snark::pb_variable<FieldType> cur,
+                    std::size_t capacity) :
+                path(capacity),
+                crypto3::zk::snark::gadget<FieldType>(pb) {
+                std::size_t arity = BaseArity;
+
+                if (arity == 0) {
+                    // Nothing to do here.
+                    assert(path.empty());
+                    return std::make_pair(cur, std::vector<bool>());
+                }
+
+                assert(("arity must be a power of two", std::ceil(std::log2(arity)) == std::floor(std::log2(arity))));
+                std::size_t index_bit_count = arity.trailing_zeros();
+
+                std::vector<bool> auth_path_bits(path.size());
             }
 
             void generate_r1cs_constraints() {
@@ -67,7 +81,7 @@ namespace nil {
                     return std::make_pair(cur, std::vector<bool>());
                 }
 
-                assert(("arity must be a power of two", 1 == arity.count_ones()));
+                assert(("arity must be a power of two", std::ceil(std::log2(arity)) == std::floor(std::log2(arity))));
                 std::size_t index_bit_count = arity.trailing_zeros();
 
                 std::vector<bool> auth_path_bits(path.size());

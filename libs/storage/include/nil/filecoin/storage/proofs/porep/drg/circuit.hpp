@@ -26,23 +26,15 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_DRG_CIRCUIT_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_DRG_CIRCUIT_HPP
 
-#include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
-#include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
-
-#include <nil/crypto3/zk/snark/gadgets/basic_gadgets.hpp>
-
 #include <nil/crypto3/hash/hash_state.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
 
+#include <nil/crypto3/zk/snark/gadgets/basic_gadgets.hpp>
+
+#include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
+#include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
+
 namespace nil {
-    namespace crypto3 {
-        namespace zk {
-            namespace snark {
-                template<typename ScalarEngine>
-                struct circuit;
-            }
-        }    // namespace zk
-    }        // namespace crypto3
     namespace filecoin {
         namespace porep {
             namespace drg {
@@ -71,30 +63,33 @@ namespace nil {
 
                  * @tparam Hash
                  */
-                template<typename Hash, typename FieldType>
-                struct DrgPoRepCircuit : public crypto3::zk::snark::gadget<algebra::curves::bls12<381>> {
+                template<typename Hash, typename CurveType = algebra::curves::bls12<381>>
+                struct DrgPoRepCircuit : public crypto3::zk::snark::gadget<typename CurveType::scalar_field_type> {
                     typedef Hash hash_type;
+                    typedef CurveType curve_type;
+                    typedef typename curve_type::scalar_field_type fr_type;
+                    typedef typename fr_type::value_type fr_value_type;
 
-                    std::vector<Fr> replica_nodes;
-                    std::vector<std::vector<std::pair<Fr, std::size_t>>> replica_nodes_paths;
-                    root<algebra::curves::bls12<381>> replica_root;
-                    std::vector<std::vector<Fr>> replica_parents;
-                    std::vector<std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>>>
+                    std::vector<fr_value_type> replica_nodes;
+                    std::vector<std::vector<std::pair<fr_value_type, std::size_t>>> replica_nodes_paths;
+                    root<fr_type> replica_root;
+                    std::vector<std::vector<fr_value_type>> replica_parents;
+                    std::vector<std::vector<std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>>>
                         replica_parents_paths;
-                    std::vector<Fr> data_nodes;
-                    std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> data_nodes_paths;
-                    root<algebra::curves::bls12<381>> data_root;
-                    Fr replica_id;
+                    std::vector<fr_value_type> data_nodes;
+                    std::vector<std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>> data_nodes_paths;
+                    root<fr_type> data_root;
+                    fr_value_type replica_id;
                     bool priv;
 
-                    DrgPoRepCircuit(crypto3::zk::snark::protoboard<algebra::curves::bls12<381>> &pb) : gadget<algebra::curves::bls12<381>>(pb) {
+                    DrgPoRepCircuit(crypto3::zk::snark::protoboard<fr_type> &pb) : crypto3::zk::snark::gadget<fr_type>(pb) {
                     }
 
                     template<template<typename> class ConstraintSystem>
                     void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
-                        Fr replica_id = replica_id;
-                        root<algebra::curves::bls12<381>> replica_root = replica_root;
-                        root<algebra::curves::bls12<381>> data_root = data_root;
+                        fr_value_type replica_id = replica_id;
+                        root<fr_type> replica_root = replica_root;
+                        root<fr_type> data_root = data_root;
 
                         std::size_t nodes = data_nodes.size();
 

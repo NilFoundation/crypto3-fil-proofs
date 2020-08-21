@@ -95,7 +95,7 @@ namespace nil {
                     std::size_t challenges_count;
                 };
 
-                template<typename Hash, typename PoseidonArity, template<typename, typename> class MerkleProof>
+                template<typename Hash, std::size_t PoseidonArity>
                 struct DataProof {
                     /// proves_challenge returns true if this self.proof corresponds to challenge.
                     /// This is useful for verifying that a supplied proof is actually relevant to a given

@@ -28,7 +28,7 @@
 
 #include <boost/variant.hpp>
 
-#include <nil/crypto3/zk/snark/gadgets/basic_gadgets.hpp>
+#include <nil/crypto3/zk/snark/pb_variable.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -40,12 +40,11 @@ namespace nil {
          * @tparam FieldType
          */
         template<typename FieldType>
-        struct root_gadget : public crypto3::zk::snark::gadget<FieldType> {
-            typedef boost::variant<crypto3::zk::snark::pb_variable<FieldType>, typename FieldType::value_type>
-                value_type;
+        struct root {
+            typedef FieldType field_type;
 
-            root_gadget(crypto3::zk::snark::protoboard<FieldType> &pb) : crypto3::zk::snark::gadget<FieldType>(pb) {
-            }
+            typedef boost::variant<crypto3::zk::snark::pb_variable<field_type>, typename field_type::value_type>
+                value_type;
         };
     }    // namespace filecoin
 }    // namespace nil

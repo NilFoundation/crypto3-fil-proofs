@@ -100,7 +100,7 @@ namespace nil {
                 template<typename MerkleProofType>
                 struct SectorProof {
                     std::vector<typename MerkleProofType::hash_type::digest_type> leafs() {
-                        return inclusion_proofs.iter().map(MerkleProofTrait::leaf).collect();
+                        return inclusion_proofs.iter().map(BasicMerkleProof::leaf).collect();
                     }
 
                     typename MerkleProofType::hash_type::digest_type comm_r_last() {
@@ -108,17 +108,17 @@ namespace nil {
                     }
 
                     std::vector<typename MerkleProofType::hash_type::digest_type> commitments() {
-                        return inclusion_proofs.iter().map(MerkleProofTrait::root).collect();
+                        return inclusion_proofs.iter().map(BasicMerkleProof::root).collect();
                     }
 
                     std::vector<std::vector<
                         std::pair<std::vector<typename MerkleProofType::hash_type::digest_type>, std::size_t>>>
                         paths() {
-                        return inclusion_proofs.iter().map(MerkleProofTrait::path).collect();
+                        return inclusion_proofs.iter().map(BasicMerkleProof::path).collect();
                     }
 
                     std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> as_options() {
-                        return inclusion_proofs.iter().map(MerkleProofTrait::as_options).collect();
+                        return inclusion_proofs.iter().map(BasicMerkleProof::as_options).collect();
                     }
 
                     std::vector<MerkleProof<typename MerkleProofType::hash_type, MerkleProofType::Arity,

@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(merklepor_blake2s_quad) {
 }
 
 // Takes a valid proof and breaks it.
-fn make_bogus_proof<Proof : MerkleProofTrait>(rng
+fn make_bogus_proof<Proof : BasicMerkleProof>(rng
                                               : &mut XorShiftRng, mut proof
                                               : DataProof<Proof>)
     ->DataProof<Proof> {

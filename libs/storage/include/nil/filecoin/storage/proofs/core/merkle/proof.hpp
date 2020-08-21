@@ -91,29 +91,31 @@ namespace nil {
             return a + b + c;
         }
 
-        /// Trait to abstract over the concept of Merkle Proof.
-        template<typename Hash, std::size_t BaseArity = PoseidonArity, std::size_t SubTreeArity = PoseidonArity,
-                 std::size_t TopTreeArity = PoseidonArity>
-        struct MerkleProofTrait {
+        /// Interface to abstract over the concept of Merkle Proof.
+        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity,
+                 std::size_t TopTreeArity, typename FieldType = typename algebra::curves::bls12<381>::scalar_filed_type>
+        struct BasicMerkleProof {
             typedef Hash hash_type;
+            typedef FieldType field_type;
+            typedef typename field_type::value_type fr_value_type;
 
             constexpr static const std::size_t base_arity = BaseArity;
             constexpr static const std::size_t sub_tree_arity = SubTreeArity;
             constexpr static const std::size_t top_tree_arity = TopTreeArity;
 
             /// Try to convert a merkletree proof into this structure.
-            static MerkleProofTrait<Hash, BaseArity, SubTreeArity, TopTreeArity>
+            static BasicMerkleProof<Hash, BaseArity, SubTreeArity, TopTreeArity>
                 try_from_proof(const Proof<typename Hash::digest_type, BaseArity> &p) {
             }
 
-            std::vector<std::pair<std::vector<Fr>, std::size_t>> as_options() {
+            std::vector<std::pair<std::vector<fr_value_type>, std::size_t>> as_options() {
                 return path()
                     .iter()
                     .map(| v | {(v .0.iter().copied().map(Into::into).map(Some).collect(), Some(v .1), )})
                     .collect::<Vec<_>>();
             }
 
-            std::pair<Fr, std::vector<std::pair<std::vector<Fr>, std::size_t>>> into_options_with_leaf() {
+            std::pair<fr_value_type, std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>> into_options_with_leaf() {
                 let leaf = leaf();
                 let path = path();
                 (Some(leaf.into()),
@@ -122,7 +124,7 @@ namespace nil {
                      .collect::<Vec<_>>(), )
             }
 
-            std::vector<std::pair<std::vector<Fr>, std::size_t>> as_pairs() {
+            std::vector<std::pair<std::vector<fr_value_type>, std::size_t>> as_pairs() {
                 self.path()
                     .iter()
                     .map(| v | (v .0.iter().copied().map(Into::into).collect(), v .1))
@@ -175,7 +177,7 @@ namespace nil {
             }
         };
 
-        template<typename Hash, std::size_t BaseArity = PoseidonArity>
+        template<typename Hash, std::size_t BaseArity>
         struct InclusionPath {
             /// Calculate the root of this path, given the leaf as input.
             typename Hash::digest_type root(const typename Hash::digest_type &leaf) {
@@ -377,9 +379,9 @@ namespace nil {
         using ProofData = boost::variant<SingleProof<Hash, BaseArity>, SubProof<Hash, BaseArity, SubTreeArity>,
                                          TopProof<Hash, BaseArity, SubTreeArity, TopTreeArity>>;
 
-        template<typename Hash, std::size_t BaseArity = PoseidonArity, std::size_t SubTreeArity = PoseidonArity,
-                 std::size_t TopTreeArity = PoseidonArity>
-        struct MerkleProof : public MerkleProofTrait<Hash, BaseArity, SubTreeArity, TopTreeArity> {
+        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity,
+                 std::size_t TopTreeArity>
+        struct MerkleProof : public BasicMerkleProof<Hash, BaseArity, SubTreeArity, TopTreeArity> {
             typedef typename Hash::digest_type digest_type;
             MerkleProof(std::size_t n) {
                 PathElement path_elem = PathElement {
@@ -423,7 +425,7 @@ namespace nil {
                 for (int j = i; j < BaseArity; j++) {
                 }
             }
-            let path = lemma[lemma_start_index..lemma.len() - 1]
+            InclusionPath<Hash, BaseArity> path = lemma[lemma_start_index..lemma.len() - 1]
                            .chunks(Arity::to_usize() - 1)
                            .zip(path.iter())
                            .map(| (hashes, index) | PathElement {

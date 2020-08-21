@@ -85,32 +85,32 @@ namespace nil {
                     std::uint64_t sector_challenge_index;
                 };
 
-                template<typename MerkleProofTrait>
+                template<typename BasicMerkleProof>
                 struct Proof {
-                    std::vector<typename MerkleProofTrait::hash_type::digest_type> leafs() {
+                    std::vector<typename BasicMerkleProof::hash_type::digest_type> leafs() {
                         return inclusion_proofs.iter().map(MerkleProof::leaf).collect();
                     }
 
-                    typename MerkleProofTrait::hash_type::digest_type comm_r_last() {
+                    typename BasicMerkleProof::hash_type::digest_type comm_r_last() {
                         return inclusion_proofs[0].root();
                     }
 
-                    std::vector<typename MerkleProofTrait::hash_type::digest_type> commitments() {
+                    std::vector<typename BasicMerkleProof::hash_type::digest_type> commitments() {
                         return inclusion_proofs.iter().map(MerkleProof::root).collect();
                     }
 
                     std::vector<std::vector<
-                        std::pair<std::vector<typename MerkleProofTrait::hash_type::digest_type>, std::size_t>>>
+                        std::pair<std::vector<typename BasicMerkleProof::hash_type::digest_type>, std::size_t>>>
                         paths() {
                         return inclusion_proofs.iter().map(MerkleProof::path).collect();
                     }
 
-                    std::vector<MerkleProof<typename MerkleProofTrait::hash, MerkleProofTrait::BaseArity,
-                                            MerkleProofTrait::SubTreeArity, MerkleProofTrait::TopTreeArity>>
+                    std::vector<MerkleProof<typename BasicMerkleProof::hash, BasicMerkleProof::BaseArity,
+                                            BasicMerkleProof::SubTreeArity, BasicMerkleProof::TopTreeArity>>
                         inclusion_proofs;
 
                     std::array<std::uint8_t, 32> ticket;
-                    typename MerkleProofTrait::hash_type::digest_type comm_c;
+                    typename BasicMerkleProof::hash_type::digest_type comm_c;
                 };
 
                 template<typename MerkleTreeType>

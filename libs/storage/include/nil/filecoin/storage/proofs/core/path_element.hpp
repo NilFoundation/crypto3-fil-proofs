@@ -28,13 +28,20 @@
 
 #include <vector>
 
+#include <nil/algebra/curves/bls12.hpp>
+
 namespace nil {
     namespace filecoin {
-        struct Fr;
-
-        template<typename Hash, std::size_t BaseArity>
+        template<typename Hash, std::size_t BaseArity,
+                 typename FieldType = algebra::curves::bls12<381>::scalar_field_type>
         struct PathElement {
-            std::vector<Fr> hashes = std::vector<Fr>(BaseArity);
+            typedef Hash hash_type;
+            typedef FieldType field_type;
+            typedef typename field_type::value_type value_type;
+
+            constexpr static const std::size_t arity = BaseArity;
+
+            std::vector<value_type> hashes = std::vector<value_type>(arity);
             size_t index = 0;
         };
     }    // namespace filecoin
