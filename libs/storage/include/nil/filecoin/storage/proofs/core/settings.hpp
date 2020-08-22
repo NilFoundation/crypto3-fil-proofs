@@ -41,6 +41,10 @@ namespace nil {
             bool use_gpu_tree_builder = false;
             std::uint32_t max_gpu_tree_batch_size = 700000;
             std::uint32_t rows_to_discard = 2;
+            std::uint32_t sdr_parents_cache_size = 2048;
+            std::uint32_t window_post_synthesis_num_cpus;
+            std::string parameter_cache;
+            std::string parent_cache;
         };
 
     }    // namespace filecoin

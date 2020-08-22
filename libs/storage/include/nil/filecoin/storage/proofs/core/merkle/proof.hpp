@@ -91,9 +91,169 @@ namespace nil {
             return a + b + c;
         }
 
+        template<typename T, std::size_t BaseTreeArity = 2>
+        struct Proof {
+            // Optional proofs at immediate lower level from current.  Should
+            // be None at the base layer.
+            std::shared_ptr<Proof<T, BaseTreeArity>> sub_tree_proof;
+            std::size_t top_layer_nodes;         // arity of top layer
+            std::size_t sub_tree_layer_nodes;    // arity of sub-tree
+            std::vector<T> lemma; // layer
+            std::vector<std::size_t> path; // branch index
+
+            /// Creates new MT inclusion proof
+            template<std::size_t TopLayerArity, std::size_t SubTreeArity>
+            Proof(std::shared_ptr<Proof<T, BaseTreeArity>> sub_tree_proof, const std::vector<T> &lemma, const
+                  std::vector<std::size_t> &path) : sub_tree_proof(sub_tree_proof), top_layer_nodes(TopLayerArity),
+                sub_tree_layer_nodes(SubTreeArity), lemma(lemma), path(path){
+                if (TopLayerArity == 0 && SubTreeArity == 0) {
+                    assert((lemma.size() > 2, "Invalid lemma length (short)"));
+                    assert((lemma.size() == get_merkle_proof_lemma_len(path.size() + 1, BaseTreeArity), "Invalid "
+                            "lemma length"));
+                }
+            }
+
+            /// Return proof target leaf
+            T item() {
+                return *lemma.begin();
+            }
+
+            /// Return sub tree root
+            T sub_tree_root() {
+                assert(sub_tree_layer_nodes > 0 && sub_tree_proof.is_some());
+                return sub_tree_proof.root();
+            }
+
+            /// Return tree root
+            T root() {
+                return *(lemma.end() - 1);
+            }
+
+            /// Validates sub-tree proofs with the specified arity.
+            template<template<typename> class Algorithm>
+            bool validate_sub_tree_proof(std::size_t arity) {
+                // Ensure that the sub_tree validates to the root of that
+                // sub_tree.
+                bool valid = sub_tree_proof.as_ref().unwrap().validate::<A>();
+                if (!valid) {
+                        return valid;
+                    }
+
+                // Validate top-most/current layer
+                //
+                // Check that the remaining proof matches the tree root (note
+                // that Proof::validate at the base layer cannot handle a
+                // proof this small, so this is a version specific for what we
+                // know we have in this case).
+                let mut a = A::default();
+                a.reset();
+                let node_count = arity;
+                let h = {
+                    let mut nodes: Vec<T> = Vec::with_capacity(node_count);
+                    let mut cur_index = 0;
+                    for j in 0..node_count {
+                        if j == self.path()[0] {
+                            nodes.push(self.sub_tree_root().clone());
+                        } else {
+                            nodes.push(self.lemma()[cur_index].clone());
+                            cur_index += 1;
+                        }
+                    }
+
+                    if cur_index != node_count - 1 {
+                        return Ok(false);
+                    }
+
+                    a.multi_node(&nodes, 0)
+                };
+
+                return h == root();
+            }
+
+            /// Verifies MT inclusion proof
+            template<template<typename> class Algorithm>
+            bool validate() {
+                if (top_layer_nodes > 0) {
+                    // Special Top layer handling here.
+                    assert((
+                        sub_tree_proof,
+                            "Sub tree proof must be present for validation")
+                    );
+
+                    return validate_sub_tree_proof<Algorithm>(top_layer_nodes);
+                }
+
+                if (sub_tree_layer_nodes > 0) {
+                    // Sub-tree layer handling here.
+                    assert((
+                        sub_tree_proof,
+                            "Sub tree proof must be present for validation"
+                    ));
+
+                    return validate_sub_tree_proof<Algorithm>(sub_tree_layer_nodes);
+                }
+
+                // Base layer handling here.
+                assert((sub_tree_layer_nodes == 0, "Base layer proof must have 0 as sub-tree layer node count"));
+                assert((top_layer_nodes == 0, "Base layer proof must have 0 as top layer node count"));
+                assert((!sub_tree_proof, "Sub tree proof must be None"));
+
+                std::size_t size = lemma.size();
+                if (size < 2) {
+                    return false;
+                }
+
+                std::size_t branches = BaseTreeArity;
+                let mut a = A::default();
+                let mut h = self.item();
+                let mut path_index = 1;
+
+                for i in (1..size - 1).step_by(branches - 1) {
+                    a.reset();
+                    h = {
+                        let mut nodes: Vec<T> = Vec::with_capacity(branches);
+                        let mut cur_index = 0;
+                        for j in 0..branches {
+                            if j == self.path[path_index - 1] {
+                                nodes.push(h.clone());
+                            } else {
+                                nodes.push(self.lemma[i + cur_index].clone());
+                                cur_index += 1;
+                            }
+                        }
+
+                        if cur_index != branches - 1 {
+                            return Ok(false);
+                        }
+
+                        path_index += 1;
+                        a.multi_node(&nodes, i - 1)
+                    };
+                }
+
+                return h == root();
+            }
+
+                /// Verifies MT inclusion proof and that leaf_data is the original leaf data for which proof was generated.
+                template<template<typename> class Algorithm>
+                bool validate_with_data(leaf_data: &dyn Hashable<A>) {
+                let mut a = A::default();
+                leaf_data.hash(&mut a);
+                let item = a.hash();
+                a.reset();
+                let leaf_hash = a.leaf(item);
+
+                if (leaf_hash == item()) {
+                    return validate<Algorithm>();
+                } else {
+                    return false;
+                }
+            }
+        };
+
         /// Interface to abstract over the concept of Merkle Proof.
-        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity,
-                 std::size_t TopTreeArity, typename FieldType = typename algebra::curves::bls12<381>::scalar_filed_type>
+        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
+                 typename FieldType = typename algebra::curves::bls12<381>::scalar_field_type>
         struct BasicMerkleProof {
             typedef Hash hash_type;
             typedef FieldType field_type;
@@ -115,7 +275,8 @@ namespace nil {
                     .collect::<Vec<_>>();
             }
 
-            std::pair<fr_value_type, std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>> into_options_with_leaf() {
+            std::pair<fr_value_type, std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>>
+                into_options_with_leaf() {
                 let leaf = leaf();
                 let path = path();
                 (Some(leaf.into()),
@@ -125,7 +286,9 @@ namespace nil {
             }
 
             std::vector<std::pair<std::vector<fr_value_type>, std::size_t>> as_pairs() {
-                self.path()
+                for (int i = 0; i < path().size(); i++) {
+
+                }
                     .iter()
                     .map(| v | (v .0.iter().copied().map(Into::into).collect(), v .1))
                     .collect::<Vec<_>>();
@@ -223,7 +386,7 @@ namespace nil {
 
         template<typename Hash, std::size_t BaseArity>
         struct SingleProof {
-            template<template<typename, typename> class Proof>
+            template<template<typename, std::size_t> class Proof>
             static SingleProof<Hash, BaseArity> try_from_proof(const Proof<typename Hash::digest_type, BaseArity> &p) {
                 return proof_to_single(p, 1);
             }
@@ -255,14 +418,14 @@ namespace nil {
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity>
         struct SubProof {
             static SubProof<Hash, BaseArity, SubTreeArity>
-                try_from_proof(const proof::Proof<typename Hash::digest_type, BaseArity> &p) {
+                try_from_proof(const Proof<typename Hash::digest_type, BaseArity> &p) {
                 assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
                 assert(("Cannot generate sub proof without a base-proof", p.sub_tree_proof));
-                let base_p = p.sub_tree_proof;
+                std::shared_ptr<Proof<typename Hash::digest_type, BaseArity>> base_p = p.sub_tree_proof;
 
                 // Generate SubProof
-                let root = p.root();
-                let leaf = base_p.item();
+                typename Hash::digest_type root = p.root();
+                typename Hash::digest_type leaf = base_p.item();
                 InclusionPath<Hash, BaseArity> base_proof =
                     extract_path<typename Hash::digest_type, BaseArity>(base_p.lemma(), base_p.path(), 1);
                 InclusionPath<Hash, SubTreeArity> sub_proof =
@@ -310,7 +473,7 @@ namespace nil {
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
         struct TopProof {
             TopProof<Hash, BaseArity, SubTreeArity, TopTreeArity>
-                try_from_proof(const proof::Proof<typename Hash::digest_type, BaseArity> &p) {
+                try_from_proof(const Proof<typename Hash::digest_type, BaseArity> &p) {
                 assert(("top arity mismatch", p.top_layer_nodes() == TopTreeArity));
                 assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
 
@@ -323,13 +486,7 @@ namespace nil {
                 let root = p.root();
                 let leaf = base_p.item();
 
-                InclusionPath<Hash, BaseArity> base_proof =
-                    extract_path<Hash, BaseArity>(base_p.lemma(), base_p.path(), 1);
-                InclusionPath<Hash, SubTreeArity> sub_proof =
-                    extract_path<Hash, SubTreeArity>(sub_p.lemma(), sub_p.path(), 0);
-                InclusionPath<Hash, TopTreeArity> top_proof = extract_path<Hash, TopTreeArity>(p.lemma(), p.path(), 0);
-
-                return {base_proof, sub_proof, top_proof, root, leaf};
+                return {extract_path<Hash, BaseArity>(base_p.lemma(), base_p.path(), 1), extract_path<Hash, SubTreeArity>(sub_p.lemma(), sub_p.path(), 0), extract_path<Hash, TopTreeArity>(p.lemma(), p.path(), 0), root, leaf};
             }
 
             bool verify() {
@@ -354,13 +511,8 @@ namespace nil {
                     base_proof_leaves *= BaseArity;
                 }
 
-                std::size_t sub_proof_leaves = base_proof_leaves * SubTreeArity;
-
-                std::size_t sub_proof_index = sub_proof.path_index();
-                std::size_t top_proof_index = top_proof.path_index();
-
-                return (sub_proof_index * base_proof_leaves) + (top_proof_index * sub_proof_leaves) +
-                       base_proof.path_index();
+                return (sub_proof.path_index() * base_proof_leaves) +
+                       (top_proof.path_index() * base_proof_leaves * SubTreeArity) + base_proof.path_index();
             }
 
             InclusionPath<Hash, BaseArity> base_proof;
@@ -379,17 +531,11 @@ namespace nil {
         using ProofData = boost::variant<SingleProof<Hash, BaseArity>, SubProof<Hash, BaseArity, SubTreeArity>,
                                          TopProof<Hash, BaseArity, SubTreeArity, TopTreeArity>>;
 
-        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity,
-                 std::size_t TopTreeArity>
+        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
         struct MerkleProof : public BasicMerkleProof<Hash, BaseArity, SubTreeArity, TopTreeArity> {
             typedef typename Hash::digest_type digest_type;
-            MerkleProof(std::size_t n) {
-                PathElement path_elem = PathElement {
-                hashes:
-                    vec ![Default::default(); BaseArity::to_usize()], index : 0, _arity : Default::default(),
-                };
-                let path = vec ![path_elem; n];
-                data = ProofData::Single(SingleProof::new (path.into(), root, leaf));
+            MerkleProof(std::size_t n) :
+                data(SingleProof<Hash, BaseArity>(std::vector<PathElement<Hash, BaseArity>>(n), root, leaf)) {
             }
 
             virtual bool verify() const override {
@@ -415,27 +561,20 @@ namespace nil {
         /// 'lemma_start_index' is required because sub/top proofs start at
         /// index 0 and base proofs start at index 1 (skipping the leaf at the
         /// front)
-        template<typename Hash, std::size_t BaseArity, typename LemmaIterator, typename PathIterator>
+        template<typename Hash, std::size_t BaseArity>
         InclusionPath<Hash, BaseArity> extract_path(const std::vector<typename Hash::digest_type> &lemma,
                                                     const std::vector<std::size_t> &path,
                                                     std::size_t lemma_start_index) {
-            std::vector<PathElement> res;
+            std::vector<PathElement<Hash, BaseArity>> res;
 
-            for (int i = lemma_start_index; i < lemma.size(); i += BaseArity) {
-                for (int j = i; j < BaseArity; j++) {
-                }
+            for (int i = 0; i < path.size(); i++) {
+                res.emplace_back(
+                    std::vector<typename Hash::digest_type>(lemma.begin() + lemma_start_index + BaseArity * i,
+                                                            lemma.begin() + lemma_start_index + BaseArity * (i + 1)),
+                    index);
             }
-            InclusionPath<Hash, BaseArity> path = lemma[lemma_start_index..lemma.len() - 1]
-                           .chunks(Arity::to_usize() - 1)
-                           .zip(path.iter())
-                           .map(| (hashes, index) | PathElement {
-                               hashes : hashes.to_vec(),
-                               index : *index,
-                               _arity : Default::default(),
-                           })
-                           .collect::<Vec<_>>();
 
-            path.into()
+            return InclusionPath<Hash, BaseArity>(res);
         }
 
         /// Converts a merkle_light proof to a SingleProof
