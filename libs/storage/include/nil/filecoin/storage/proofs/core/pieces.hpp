@@ -104,9 +104,9 @@ namespace nil {
             std::size_t parts = std::ceil(static_cast<double>(padded_piece_size) / static_cast<double>(NODE_SIZE));
 
             BinaryMerkleTree<Hash> tree = BinaryMerkleTree<Hash>::try_from_iter((0..parts).map(| _ | {
-                                              source.read_exact(&mut buf);
-                                              <H::Domain as Domain>::try_from_bytes(&buf).context("invalid Fr element")
-                                          })).context("failed to build tree");
+                source.read_exact(&mut buf);
+                <H::Domain as Domain>::try_from_bytes(&buf)
+            }));
 
             std::array<std::uint32_t, NODE_SIZE> comm_p_bytes;
             comm_p_bytes.fill(0);

@@ -26,7 +26,7 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_SETTINGS_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_SETTINGS_HPP
 
-#include <cstdint>
+#include <string>
 
 namespace nil {
     namespace filecoin {
@@ -46,7 +46,6 @@ namespace nil {
             std::string parameter_cache;
             std::string parent_cache;
         };
-
     }    // namespace filecoin
 }    // namespace nil
 
