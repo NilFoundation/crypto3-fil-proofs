@@ -28,6 +28,8 @@
 
 #include <boost/graph/directed_graph.hpp>
 
+#include <boost/random/chacha.hpp>
+
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
@@ -139,28 +141,28 @@ namespace nil {
                     }
                 } else {
                     // DRG node indexes are guaranteed to fit within a `u32`.
-                    std::uint32_t node = node;
-
-                    std::array<std::uint8_t, 32> seed {};
-                    std::copy(this->seed.begin(), this->seed.end(), seed.begin());
+                    std::array<std::uint8_t, 32> s32;
+                    boost::copy(seed, s32);
                     crypto3::detail::pack_to<crypto3::stream_endian::little_octet_big_bit>({node}, seed);
-                    let mut rng = ChaCha8Rng::from_seed(seed);
+                    boost::random::chacha rng(seed);
 
                     std::size_t m_prime = m - 1;
                     // Large sector sizes require that metagraph node indexes are `u64`.
                     std::size_t metagraph_node = node * m_prime;
                     std::size_t n_buckets = std::ceil(std::log2(static_cast<double>(metagraph_node)));
 
-                    for (auto parent = parents.begin(); parent < parents.begin() + m_prime; ++parent) {
-                        std::uint64_t bucket_index = (rng.gen<std::uint64_t>() % n_buckets) + 1;
-                        std::size_t largest_distance_in_bucket = std::min(metagraph_node, 1 << bucket_index);
-                        std::size_t smallest_distance_in_bucket = std::max(2, largest_distance_in_bucket >> 1);
+                    for (typename std::vector<uint32_t>::iterator parent = parents.begin();
+                         parent < parents.begin() + m_prime;
+                         ++parent) {
+                        std::uint64_t bucket_index = (rng() % n_buckets) + 1;
+                        std::size_t largest_distance_in_bucket = std::min(metagraph_node, 1ULL << bucket_index);
+                        std::size_t smallest_distance_in_bucket = std::max(2ULL, largest_distance_in_bucket >> 1ULL);
 
                         // Add 1 becuase the number of distances in the bucket is inclusive.
                         std::size_t n_distances_in_bucket =
                             largest_distance_in_bucket - smallest_distance_in_bucket + 1;
 
-                        std::size_t distance = smallest_distance_in_bucket + (rng.gen<u64>() % n_distances_in_bucket);
+                        std::size_t distance = smallest_distance_in_bucket + (rng() % n_distances_in_bucket);
 
                         std::uint32_t metagraph_parent = metagraph_node - distance;
 
