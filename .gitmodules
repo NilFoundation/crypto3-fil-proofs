@@ -49,3 +49,6 @@
 [submodule "libs/math"]
 	path = libs/math
 	url = git@github.com:nilfoundation/math.git
+[submodule "libs/crypto/random"]
+	path = libs/crypto/random
+	url = git@github.com:nilfoundation/random.git

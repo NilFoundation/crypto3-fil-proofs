@@ -46,7 +46,7 @@ namespace nil {
         constexpr static const std::size_t BASE_DEGREE = 6;
 
         std::array<std::uint8_t, 28> derive_drg_seed(const std::array<std::uint8_t, 32> &porep_id) {
-            std::array<std::uint8_t, 28> drg_seed;
+            std::array<std::uint8_t, 28> drg_seed {};
             std::array<std::uint8_t, 32> raw_seed = derive_porep_domain_seed(DRSAMPLE_DST, porep_id);
             std::copy(raw_seed.begin(), raw_seed.begin() + 28, drg_seed.begin());
             return drg_seed;
@@ -115,7 +115,7 @@ namespace nil {
                 std::size_t m_prime = base_degree - 1;
                 std::size_t n_metagraph_nodes = nodes * m_prime;
                 assert(("The number of metagraph nodes must be precisely castable to `double`",
-                        n_metagraph_nodes <= 1u64 << 54));
+                        n_metagraph_nodes <= 1ULL << 54));
 
                 seed = derive_drg_seed(porep_id);
             }
@@ -194,11 +194,11 @@ namespace nil {
                 if (node != parents[0]) {
                     for (std::uint32_t parent : parents) {
                         std::size_t offset = data_at_node_offset(parent);
-                        hash<ParentsHash>(base_parents_data.begin(), base_parents_data.begin() + NODE_SIZE, acc);
+                        hash<ParentsHash>(parents_data.begin(), parents_data.begin() + NODE_SIZE, acc);
                     }
                 }
 
-                typename ParentsHash::digest_type hash = accumulators::extract<ParentsHash>(acc);
+                typename ParentsHash::digest_type hash = accumulators::extract::hash<ParentsHash>(acc);
                 return bytes_into_fr_repr_safe(hash);
             }
 

@@ -35,11 +35,18 @@
 namespace nil {
     namespace filecoin {
         struct multi_proof {
-            std::vector<r1cs_ppzksnark_proof<algebra::curves::bls12<381>>> circuit_proofs;
-            std::vector<r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>>> verifying_key;
+            std::vector<
+                crypto3::zk::snark::r1cs_ppzksnark_proof<typename algebra::curves::bls12<381>::scalar_field_type>>
+                circuit_proofs;
+            crypto3::zk::snark::r1cs_ppzksnark_verification_key<typename algebra::curves::bls12<381>::scalar_field_type>
+                verifying_key;
 
-            multi_proof(const r1cs_ppzksnark_proof<algebra::curves::bls12<381>> &proof, const r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> &key) :
-                circuit_proofs(proof), verifying_key(key) {
+            multi_proof(const std::vector<crypto3::zk::snark::r1cs_ppzksnark_proof<
+                            typename algebra::curves::bls12<381>::scalar_field_type>> &proof,
+                        const crypto3::zk::snark::r1cs_ppzksnark_verification_key<
+                            typename algebra::curves::bls12<381>::scalar_field_type> &key) :
+                circuit_proofs(proof),
+                verifying_key(key) {
             }
 
             std::size_t size() {

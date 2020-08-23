@@ -119,8 +119,9 @@ namespace nil {
              * @tparam ProofIterator
              */
             template<typename ProofIterator>
-            std::enable_if<std::is_same<typename std::iterator_traits<ProofIterator>::value_type, proof_type>::value,
-                           r1cs_ppzksnark_proof<algebra::curves::bls12<381>>>::type
+            std::enable_if<
+                std::is_same<typename std::iterator_traits<ProofIterator>::value_type, proof_type>::value,
+                crypto3::zk::snark::r1cs_ppzksnark_proof<typename algebra::curves::bls12<381>::scalar_field_type>>::type
                 circuit_proofs(const public_inputs_type &pub_in, ProofIterator vanilla_proof_first,
                                ProofIterator vanilla_proof_last, const public_params_type &pp,
                                const groth16::mapped_params<algebra::curves::bls12<381>> &groth_params, bool priority) {
@@ -189,8 +190,9 @@ namespace nil {
              * @return
              */
             template<typename UniformRandomGenerator>
-            virtual r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> verifying_key(UniformRandomGenerator &rng,
-                                                                                   const public_params_type &pp) {
+            virtual crypto3::zk::snark::r1cs_ppzksnark_verification_key<
+                typename algebra::curves::bls12<381>::scalar_field_type>
+                verifying_key(UniformRandomGenerator &rng, const public_params_type &pp) {
                 return get_verifying_key(rng, blank_circuit(pp), pp);
             }
         };
