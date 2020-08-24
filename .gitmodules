@@ -55,3 +55,6 @@
 [submodule "libs/crypto/mac"]
 	path = libs/crypto/mac
 	url = git@github.com:nilfoundation/mac.git
+[submodule "libs/crypto/modes"]
+	path = libs/crypto/modes
+	url = git@github.com:nilfoundation/modes.git
