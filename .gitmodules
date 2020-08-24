@@ -52,3 +52,6 @@
 [submodule "libs/crypto/random"]
 	path = libs/crypto/random
 	url = git@github.com:nilfoundation/random.git
+[submodule "libs/crypto/mac"]
+	path = libs/crypto/mac
+	url = git@github.com:nilfoundation/mac.git
