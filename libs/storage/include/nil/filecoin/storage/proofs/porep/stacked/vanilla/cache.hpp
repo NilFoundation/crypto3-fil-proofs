@@ -88,7 +88,7 @@ namespace nil {
 
                         std::array<std::uint32_t, DEGREE> res;
                         res.fill(0);
-                        LittleEndian::read_u32_into(data[start..end], res);
+                        crypto3::detail::pack_to<crypto3::stream_endian::little_octet_big_bit>(data, res);
                         return res;
                     }
 
@@ -140,7 +140,7 @@ namespace nil {
                     template<template<typename, typename> class StackedGraph, typename Hash, typename Graph>
                     ParentCache(std::uint32_t len, std::uint32_t cache_entries, StackedGraph<Hash, Graph> &graph) {
                         boost::filesystem::path path = cache_path(cache_entries, graph);
-                        if (path.is_complete()) {
+                        if (path) {
                             open(len, cache_entries, path);
                         } else {
                             generate(len, cache_entries, graph, path);
@@ -150,25 +150,20 @@ namespace nil {
                     /// Opens an existing cache from disk.
                     static ParentCache open(std::uint32_t len, std::uint32_t cache_entries,
                                             const boost::filesystem::path &path) {
-                        info !("parent cache: opening {}", path.display());
 
-                        CacheData cache = CacheData::open(0, len, &path);
-                        info !("parent cache: opened");
+                        CacheData cache = CacheData::open(0, len, path);
 
-                        return {cache, path, cache_entries};
+                        return {path, cache_entries, cache};
                     }
 
                     /// Generates a new cache and stores it on disk.
                     template<template<typename, typename> class StackedGraph, typename Hash, typename Graph>
                     static ParentCache generate(std::uint32_t len, std::uint32_t cache_entries,
                                                 StackedGraph<Hash, Graph> &graph, const boost::filesystem::path &path) {
-                        info !("parent cache: generating {}", path.display());
 
                         with_exclusive_lock(path, [&](const boost::filesystem::path &file) {
-                            std::size_t cache_size = cache_entries as usize * NODE_BYTES * DEGREE;
-                            file.as_ref()
-                                .set_len(cache_size as u64)
-                                .with_context(|| format !("failed to set length: {}", cache_size));
+                            std::size_t cache_size = cache_entries * NODE_BYTES * DEGREE;
+                            file.set_len(cache_size);
 
                             let mut data =
                                 unsafe {memmap::MmapOptions::new ()
@@ -244,7 +239,8 @@ namespace nil {
                     hash<FormatHash>(cache_entries, acc);
 
                     typename FormatHash::digest_type h = accumulators::extract::hash<FormatHash>(acc);
-                    return boost::filesystem::path(parent_cache_dir_name() + "v" + VERSION + "-sdr-parent-" +
+                    return boost::filesystem::path(parent_cache_dir_name() + "v" + std::to_string(VERSION) +
+                                                   "-sdr-parent-" +
                                                    encode<codec::hex>(h) + ".cache");
                 }
             }    // namespace vanilla
