@@ -58,3 +58,6 @@
 [submodule "libs/crypto/modes"]
 	path = libs/crypto/modes
 	url = git@github.com:nilfoundation/modes.git
+[submodule "libs/crypto/algebra"]
+	path = libs/crypto/algebra
+	url = git@github.com:nilfoundation/crypto3-algebra.git
