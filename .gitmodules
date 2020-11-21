@@ -27,7 +27,7 @@
 	url = git@github.com:nilfoundation/fft.git
 [submodule "libs/multiprecision"]
 	path = libs/multiprecision
-	url = git@github.com:nilfoundation/multiprecision.git
+	url = git@github.com:nilfoundation/crypto3-multiprecision.git
 [submodule "libs/crypto/zk"]
 	path = libs/crypto/zk
 	url = git@github.com:nilfoundation/zk.git
