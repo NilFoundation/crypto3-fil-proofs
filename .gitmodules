@@ -61,3 +61,6 @@
 [submodule "libs/crypto/algebra"]
 	path = libs/crypto/algebra
 	url = git@github.com:nilfoundation/crypto3-algebra.git
+[submodule "libs/blueprint"]
+	path = libs/blueprint
+	url = git@github.com:NilFoundation/crypto3-blueprint.git

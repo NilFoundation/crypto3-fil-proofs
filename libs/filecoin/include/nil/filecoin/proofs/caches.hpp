@@ -39,7 +39,7 @@ namespace nil {
         using namespace crypto3::zk::snark;
 
         typedef groth16::MappedParameters<algebra::curves::bls12<381>> Bls12GrothParams;
-        typedef r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> Bls12VerifyingKey;
+        typedef r1cs_ppzksnark<algebra::curves::bls12<381>>::verification_key_type Bls12VerifyingKey;
 
         template<typename T>
         using cache_type = std::unordered_map<std::string, T>;

@@ -26,7 +26,7 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_PARAMS_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_PARAMS_HPP
 
-#include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
+#include <nil/filecoin/storage/proofs/core/components/por.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/circuit/column_proof.hpp>
 

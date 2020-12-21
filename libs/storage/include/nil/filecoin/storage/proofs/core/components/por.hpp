@@ -23,12 +23,12 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_CORE_GADGETS_POR_HPP
-#define FILECOIN_STORAGE_PROOFS_CORE_GADGETS_POR_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
+#define FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
 
 #include <nil/algebra/curves/bls12.hpp>
 
-#include <nil/crypto3/zk/snark/gadgets/basic_gadgets.hpp>
+#include <nil/crypto3/zk/snark/components/basic_components.hpp>
 
 #include <nil/filecoin/storage/proofs/core/path_element.hpp>
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
@@ -38,18 +38,18 @@
 
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 
-#include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
+#include <nil/filecoin/storage/proofs/core/components/variables.hpp>
 
 namespace nil {
     namespace filecoin {
         template<typename Hash, std::size_t BaseArity, typename FieldType>
-        struct SubPath : public crypto3::zk::snark::gadget<FieldType> {
+        struct SubPath : public crypto3::zk::snark::components::component<FieldType> {
             std::vector<PathElement<Hash, FieldType, BaseArity>> path;
 
             SubPath(crypto3::zk::snark::protoboard<FieldType> &pb, crypto3::zk::snark::pb_variable<FieldType> cur,
                     std::size_t capacity) :
                 path(capacity),
-                crypto3::zk::snark::gadget<FieldType>(pb) {
+                crypto3::zk::snark::components::component<FieldType>(pb) {
                 std::size_t arity = BaseArity;
 
                 if (arity == 0) {
@@ -126,9 +126,9 @@ namespace nil {
 
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
                  typename FieldType>
-        struct AuthPath : public crypto3::zk::snark::gadget<FieldType> {
+        struct AuthPath : public crypto3::zk::snark::components::component<FieldType> {
             SubPath(crypto3::zk::snark::protoboard<FieldType> &pb, std::size_t capacity) :
-                path(capacity), crypto3::zk::snark::gadget<FieldType>(pb) {
+                path(capacity), crypto3::zk::snark::components::component<FieldType>(pb) {
             }
 
             void generate_r1cs_constraints() {
@@ -294,4 +294,4 @@ namespace nil {
     }    // namespace filecoin
 }    // namespace nil
 
-#endif
+#endif // FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP

@@ -15,15 +15,15 @@
 // <https://github.com/NilFoundation/plugin/blob/master/LICENSE_1_0.txt>.
 //----------------------------------------------------------------------------
 
-#define BOOST_TEST_MODULE por_gadget_test
+#define BOOST_TEST_MODULE por_component_test
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
+#include <nil/filecoin/storage/proofs/core/components/por.hpp>
 
-BOOST_AUTO_TEST_SUITE(por_gadget_test_suite)
+BOOST_AUTO_TEST_SUITE(por_component_test_suite)
 
 type TestTree<H, A> = MerkleTreeWrapper<H, VecStore << H as Hasher>::Domain >, A, 0, 0 > ;
 

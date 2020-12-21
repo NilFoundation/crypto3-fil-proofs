@@ -29,10 +29,10 @@
 #include <nil/crypto3/hash/hash_state.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
 
-#include <nil/crypto3/zk/snark/gadgets/basic_gadgets.hpp>
+#include <nil/crypto3/zk/snark/components/basic_components.hpp>
 
-#include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
-#include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
+#include <nil/filecoin/storage/proofs/core/components/variables.hpp>
+#include <nil/filecoin/storage/proofs/core/components/por.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -64,7 +64,7 @@ namespace nil {
                  * @tparam Hash
                  */
                 template<typename Hash, typename CurveType = algebra::curves::bls12<381>>
-                struct DrgPoRepCircuit : public crypto3::zk::snark::gadget<typename CurveType::scalar_field_type> {
+                struct DrgPoRepCircuit : public crypto3::zk::snark::components::component<typename CurveType::scalar_field_type> {
                     typedef Hash hash_type;
                     typedef CurveType curve_type;
                     typedef typename curve_type::scalar_field_type fr_type;
@@ -82,7 +82,7 @@ namespace nil {
                     fr_value_type replica_id;
                     bool priv;
 
-                    DrgPoRepCircuit(crypto3::zk::snark::protoboard<fr_type> &pb) : crypto3::zk::snark::gadget<fr_type>(pb) {
+                    DrgPoRepCircuit(crypto3::zk::snark::protoboard<fr_type> &pb) : crypto3::zk::snark::components::component<fr_type>(pb) {
                     }
 
                     template<template<typename> class ConstraintSystem>

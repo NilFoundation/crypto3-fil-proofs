@@ -26,7 +26,7 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_HASH_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_HASH_HPP
 
-#include <nil/filecoin/storage/proofs/core/gadgets/variables.hpp>
+#include <nil/filecoin/storage/proofs/core/components/variables.hpp>
 
 namespace nil {
     namespace filecoin {

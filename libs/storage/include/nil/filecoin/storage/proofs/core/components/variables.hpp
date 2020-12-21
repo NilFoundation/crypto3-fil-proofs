@@ -23,11 +23,30 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_CORE_GADGETS_INSERTION_HPP
-#define FILECOIN_STORAGE_PROOFS_CORE_GADGETS_INSERTION_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_VARIABLES_HPP
+#define FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_VARIABLES_HPP
+
+#include <boost/variant.hpp>
+
+#include <nil/crypto3/zk/snark/pb_variable.hpp>
 
 namespace nil {
-    namespace filecoin { }
+    namespace filecoin {
+        /*!
+         * @brief Root represents a root commitment which may be either a raw value or an already-allocated number.
+         * This allows subcomponents to depend on roots which may optionally be shared with their parent
+         * or sibling components.
+         *
+         * @tparam FieldType
+         */
+        template<typename FieldType>
+        struct root {
+            typedef FieldType field_type;
+
+            typedef boost::variant<crypto3::zk::snark::pb_variable<field_type>, typename field_type::value_type>
+                value_type;
+        };
+    }    // namespace filecoin
 }    // namespace nil
 
-#endif
+#endif // FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_VARIABLES_HPP

@@ -26,7 +26,7 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POST_FALLBACK_CIRCUIT_HPP
 #define FILECOIN_STORAGE_PROOFS_POST_FALLBACK_CIRCUIT_HPP
 
-#include <nil/filecoin/storage/proofs/core/gadgets/por.hpp>
+#include <nil/filecoin/storage/proofs/core/components/por.hpp>
 
 #include <nil/filecoin/storage/proofs/post/fallback/vanilla.hpp>
 

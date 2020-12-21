@@ -23,11 +23,13 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_CORE_GADGETS_ENCODE_HPP
-#define FILECOIN_STORAGE_PROOFS_CORE_GADGETS_ENCODE_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_XOR_HPP
+#define FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_XOR_HPP
 
 namespace nil {
-    namespace filecoin { }
+    namespace filecoin { 
+
+    }	// namespace filecoin
 }    // namespace nil
 
-#endif
+#endif // FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_XOR_HPP
