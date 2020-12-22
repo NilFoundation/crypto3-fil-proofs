@@ -82,7 +82,7 @@ namespace nil {
                     fr_value_type replica_id;
                     bool priv;
 
-                    DrgPoRepCircuit(crypto3::zk::snark::protoboard<fr_type> &pb) : crypto3::zk::snark::components::component<fr_type>(pb) {
+                    DrgPoRepCircuit(crypto3::zk::snark::blueprint<fr_type> &bp) : crypto3::zk::snark::components::component<fr_type>(bp) {
                     }
 
                     template<template<typename> class ConstraintSystem>

@@ -28,23 +28,22 @@
 
 #include <vector>
 
-#include <nil/algebra/curves/bls12.hpp>
+#include <nil/crypto3/algebra/curves/bls12.hpp>
 
 #include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
 
 namespace nil {
     namespace filecoin {
-        struct multi_proof {
-            std::vector<
-                crypto3::zk::snark::r1cs_ppzksnark_proof<typename algebra::curves::bls12<381>::scalar_field_type>>
-                circuit_proofs;
-            crypto3::zk::snark::r1cs_ppzksnark_verification_key<typename algebra::curves::bls12<381>::scalar_field_type>
-                verifying_key;
+        class multi_proof {
+            using proof_system_type = crypto3::zk::snark::r1cs_gg_ppzksnark<typename algebra::curves::bls12<381>>;
+        public:
 
-            multi_proof(const std::vector<crypto3::zk::snark::r1cs_ppzksnark_proof<
-                            typename algebra::curves::bls12<381>::scalar_field_type>> &proof,
-                        const crypto3::zk::snark::r1cs_ppzksnark_verification_key<
-                            typename algebra::curves::bls12<381>::scalar_field_type> &key) :
+
+            std::vector<typename proof_system_type::proof_type> circuit_proofs;
+            typename proof_system_type::verification_key_type verifying_key;
+
+            multi_proof(const std::vector<typename proof_system_type::proof_type> &proof,
+                        const typename proof_system_type::verification_key_type &key) :
                 circuit_proofs(proof),
                 verifying_key(key) {
             }

@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include <nil/algebra/curves/bls12.hpp>
+#include <nil/crypto3/algebra/curves/bls12.hpp>
 
 namespace nil {
     namespace filecoin {

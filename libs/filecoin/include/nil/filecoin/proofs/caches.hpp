@@ -28,7 +28,7 @@
 
 #include <unordered_map>
 
-#include <nil/algebra/curves/bls12.hpp>
+#include <nil/crypto3/algebra/curves/bls12.hpp>
 
 #include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
 

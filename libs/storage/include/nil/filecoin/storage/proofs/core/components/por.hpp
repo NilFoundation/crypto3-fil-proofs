@@ -26,7 +26,7 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
 
-#include <nil/algebra/curves/bls12.hpp>
+#include <nil/crypto3/algebra/curves/bls12.hpp>
 
 #include <nil/crypto3/zk/snark/components/basic_components.hpp>
 
@@ -46,10 +46,10 @@ namespace nil {
         struct SubPath : public crypto3::zk::snark::components::component<FieldType> {
             std::vector<PathElement<Hash, FieldType, BaseArity>> path;
 
-            SubPath(crypto3::zk::snark::protoboard<FieldType> &pb, crypto3::zk::snark::pb_variable<FieldType> cur,
+            SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, crypto3::zk::snark::bp_variable<FieldType> cur,
                     std::size_t capacity) :
                 path(capacity),
-                crypto3::zk::snark::components::component<FieldType>(pb) {
+                crypto3::zk::snark::components::component<FieldType>(bp) {
                 std::size_t arity = BaseArity;
 
                 if (arity == 0) {
@@ -72,7 +72,7 @@ namespace nil {
             template<template<typename> class ConstraintSystem>
             std::pair<AllocatedNumber<algebra::curves::bls12<381>>, std::vector<bool>>
                 synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
-                           crypto3::zk::snark::pb_variable<algebra::curves::bls12<381>> &cur) {
+                           crypto3::zk::snark::bp_variable<algebra::curves::bls12<381>> &cur) {
                 std::size_t arity = BaseArity;
 
                 if (arity == 0) {
@@ -127,8 +127,8 @@ namespace nil {
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
                  typename FieldType>
         struct AuthPath : public crypto3::zk::snark::components::component<FieldType> {
-            SubPath(crypto3::zk::snark::protoboard<FieldType> &pb, std::size_t capacity) :
-                path(capacity), crypto3::zk::snark::components::component<FieldType>(pb) {
+            SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, std::size_t capacity) :
+                path(capacity), crypto3::zk::snark::components::component<FieldType>(bp) {
             }
 
             void generate_r1cs_constraints() {
@@ -136,8 +136,8 @@ namespace nil {
             void generate_r1cs_witness() {
             }
 
-            AuthPath(crypto3::zk::snark::protoboard<FieldType> &pb, std::size_t leaves) :
-                base(SubPath<Hash, BaseArity>(pb, base_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves))) {
+            AuthPath(crypto3::zk::snark::blueprint<FieldType> &bp, std::size_t leaves) :
+                base(SubPath<Hash, BaseArity>(bp, base_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves))) {
             }
 
             AuthPath(const std::vector<std::pair<std::vector<Fr>, std::size_t>> &base_opts) {
