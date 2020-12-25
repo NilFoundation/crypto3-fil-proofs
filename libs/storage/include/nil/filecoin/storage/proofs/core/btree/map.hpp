@@ -20,8 +20,8 @@
  * btree. See btree.h for details of the btree implementation and caveats.
  */
 
-#ifndef BTREE_MAP_H__
-#define BTREE_MAP_H__
+#ifndef BTREE_MAP_HPP
+#define BTREE_MAP_HPP
 
 #include <nil/filecoin/storage/proofs/core/btree/btree.hpp>
 
@@ -260,4 +260,4 @@ inline void swap(btree::multimap<K, V, C, A, N> &x, btree::multimap<K, V, C, A, 
     x.swap(y);
 }
 
-#endif    // BTREE_MAP_H__
+#endif    // BTREE_MAP_HPP

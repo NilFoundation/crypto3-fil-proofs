@@ -20,8 +20,8 @@
  * implementation and caveats.
  */
 
-#ifndef BTREE_SET_H__
-#define BTREE_SET_H__
+#ifndef BTREE_SET_HPP
+#define BTREE_SET_HPP
 
 #include <nil/filecoin/storage/proofs/core/btree/btree.hpp>
 
@@ -167,4 +167,4 @@ inline void swap(btree::multiset<K, C, A, N> &x, btree::multiset<K, C, A, N> &y)
     x.swap(y);
 }
 
-#endif    // BTREE_SET_H__
+#endif    // BTREE_SET_HPP

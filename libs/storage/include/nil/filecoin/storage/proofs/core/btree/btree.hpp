@@ -101,8 +101,8 @@
  * BM_map_string_fwditer       243      113  +53.50%  <256>    [72.0, 55.8]
  */
 
-#ifndef BTREE_BTREE_H__
-#define BTREE_BTREE_H__
+#ifndef BTREE_BTREE_HPP
+#define BTREE_BTREE_HPP
 
 #include <assert.h>
 #include <stddef.h>
@@ -3082,4 +3082,4 @@ namespace btree {
 
 }    // namespace btree
 
-#endif    // BTREE_BTREE_H__
+#endif    // BTREE_BTREE_HPP

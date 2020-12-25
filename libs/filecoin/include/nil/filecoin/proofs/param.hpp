@@ -38,7 +38,7 @@
 #include <nil/crypto3/hash/adaptor/hashed.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
-#include <nil/filecoin/proofs/btree/map.hpp>
+#include <nil/filecoin/storage/proofs/core/btree/map.hpp>
 
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
 
