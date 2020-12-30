@@ -47,7 +47,7 @@ void test_merklepor() {
     };
 
     let leaf =
-        <typename MerkleTreeType::hash_type as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     let priv_inputs = PrivateInputs::new (leaf, &tree);
@@ -59,7 +59,7 @@ void test_merklepor() {
     assert !(is_valid);
 }
 
-type TestTree<H, U> = MerkleTreeWrapper<H, DiskStore << H as Hasher>::Domain >, U, 0, 0> ;
+type TestTree<H, U> = MerkleTreeWrapper<H, DiskStore << H>::Domain >, U, 0, 0> ;
 
 BOOST_AUTO_TEST_CASE(merklepor_pedersen_binary) {
     test_merklepor<TestTree<PedersenHasher, 2>>();
@@ -98,7 +98,7 @@ fn make_bogus_proof<Proof : BasicMerkleProof>(rng
                                               : &mut XorShiftRng, mut proof
                                               : DataProof<Proof>)
     ->DataProof<Proof> {
-    let bogus_leaf = <Proof::Hasher as Hasher>::Domain::random(rng);
+    let bogus_leaf = <Proof::Hasher>::Domain::random(rng);
     proof.proof.break_me(bogus_leaf);
     proof
 }
@@ -125,7 +125,7 @@ fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
     };
 
     let leaf =
-        <typename MerkleTreeType::hash_type as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     let priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
@@ -198,7 +198,7 @@ void test_merklepor_validates_challenge_identity() {
     };
 
     let leaf =
-        <typename MerkleTreeType::hash_type as Hasher>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     let priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);

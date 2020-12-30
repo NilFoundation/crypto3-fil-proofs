@@ -73,13 +73,13 @@ void test_rational_post() {
 
     let comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
-    let comm_cs : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
-        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng)).collect();
+    let comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    let comm_rs : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
+    let comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
-              .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type as Hasher>::Function::hash2(comm_c, comm_r_last)})
+              .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
               .collect();
 
     let pub_inputs = PublicInputs {
@@ -156,13 +156,13 @@ void test_rational_post_validates_challenge_identity() {
     let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
     let comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
-    let comm_cs : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
-        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng)).collect();
+    let comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    let comm_rs : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
+    let comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
-              .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type as Hasher>::Function::hash2(comm_c, comm_r_last)})
+              .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
               .collect();
 
     let pub_inputs = PublicInputs {
@@ -183,13 +183,13 @@ void test_rational_post_validates_challenge_identity() {
     let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
     let comm_r_lasts = challenges.iter().map(| _c | tree.root()).collect::<Vec<_>>();
 
-    let comm_cs : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
-        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng)).collect();
+    let comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    let comm_rs : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
+    let comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
-              .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type as Hasher>::Function::hash2(comm_c, comm_r_last)})
+              .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
               .collect();
 
     let different_pub_inputs = PublicInputs {

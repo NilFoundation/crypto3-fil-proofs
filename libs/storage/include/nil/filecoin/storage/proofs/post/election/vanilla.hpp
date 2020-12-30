@@ -152,12 +152,12 @@ namespace nil {
                                             // TODO: replace unwrap with proper error handling
                                             let challenged_leaf_start =
                                                 generate_leaf_challenge(pub_params, pub_inputs.randomness,
-                                                                        pub_inputs.sector_challenge_index, n as u64, )
+                                                                        pub_inputs.sector_challenge_index, std::uint64_t(n))
                                                     ;
                                             (0..pub_params.challenged_nodes)
                                                 .into_par_iter()
                                                 .map(move | i |
-                                                     {tree.gen_cached_proof(challenged_leaf_start as usize + i, None)})
+                                                     {tree.gen_cached_proof(std::uint(challenged_leaf_start) + i, None)})
                                         })
                                     .collect::<Result<Vec<_>>>()});
 
@@ -175,7 +175,7 @@ namespace nil {
                         let comm_c = pr.comm_c;
                         let comm_r = &pub_inputs.comm_r;
 
-                        if (AsRef ::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type as Hasher>::Function::hash2(
+                        if (AsRef ::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type>::Function::hash2(
                                 &comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(comm_r)) {
                             return false;
                         }
@@ -229,7 +229,7 @@ namespace nil {
                                  };
 
                                  generate_candidate::<Tree>(pub_params, tree, prover_id, *sector_id, randomness,
-                                                            sector_challenge_index as u64, )
+                                                            std::uint_64t(sector_challenge_index), )
                              })
                         .collect()
                 }
@@ -304,7 +304,7 @@ namespace nil {
                     let hash = hasher.result();
 
                     let sector_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
-                    let sector_index = (sector_challenge % sectors.len() as u64) as usize;
+                    std::uint sector_index = (std::uint64_t(sector_challenge % sectors.len()));
                     let sector = *sectors.iter().nth(sector_index).context("invalid challenge generated") ? ;
 
                     return sector;

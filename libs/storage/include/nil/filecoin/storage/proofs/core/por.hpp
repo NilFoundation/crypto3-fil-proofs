@@ -103,7 +103,7 @@ namespace nil {
                 if (inputs.commitment != tree.root()) {
                     return false;
                 }
-                return {tree.gen_proof(challenge), pinputs.leaf};
+                return {generate_proof(tree, challenge), pinputs.leaf};
             }
             virtual bool verify(const public_params_type &pub_params, const public_inputs_type &pub_inputs,
                                 const proof_type &pr) override {

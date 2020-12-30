@@ -66,13 +66,13 @@ void rational_post_test_compound() {
     let comm_r_lasts_raw = vec ![ tree1.root(), tree2.root() ];
     let comm_r_lasts : Vec<_> = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
 
-    let comm_cs : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
-        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng)).collect();
+    let comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
     let comm_rs
         : Vec<_> = comm_cs.iter()
                        .zip(comm_r_lasts.iter())
-                       .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type as Hasher>::Function::hash2(comm_c, comm_r_last)})
+                       .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
                        .collect();
 
     let pub_inputs = rational::PublicInputs {

@@ -44,13 +44,13 @@ BOOST_AUTO_TEST_CASE(test_hash2_circuit) {
     num::AllocatedNumber::alloc(&mut cs, || Ok(b))
 };
 
-let out = <PedersenHasher as Hasher>::Function::hash2_circuit(cs.namespace(|| "hash2"), &a_num, &b_num, )
+let out = <PedersenHasher>::Function::hash2_circuit(cs.namespace(|| "hash2"), &a_num, &b_num, )
               .expect("hash2 function failed");
 
 BOOST_CHECK(cs.is_satisfied(), "constraints not satisfied");
 BOOST_CHECK_EQUAL(cs.num_constraints(), 1371);
 
-let expected : Fr = <PedersenHasher as Hasher>::Function::hash2(&a.into(), &b.into()).into();
+let expected : Fr = <PedersenHasher>::Function::hash2(&a.into(), &b.into()).into();
 
 BOOST_CHECK_EQUAL(expected, out.get_value(), "circuit and non circuit do not match");
 }

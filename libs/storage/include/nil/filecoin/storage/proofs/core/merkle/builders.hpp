@@ -112,18 +112,18 @@ namespace nil {
                     base_tree_len, MerkleTreeType::base_arity, configs[i]);
                 if let
                     Some(lc_store) = Any::downcast_mut::<merkletree::store::LevelCacheStore
-                                                         << typename MerkleTreeType::hash_type as Hasher>::Domain,
+                                                         << typename MerkleTreeType::hash_type>::Domain,
                     std::fs::File >, > (&mut store) {
                         assert(("Cannot create LCTree without replica paths", replica_config));
                         lc_store.set_external_reader(ExternalReader::new_from_config(&replica_config, i));
                     }
 
-                if (configs.size()) == 1) {
+                if (configs.size() == 1) {
                         return MerkleTreeType::from_data_store(store, base_tree_leafs);
                     }
                 else {
                     trees.push_back(
-                        MerkleTreeType<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity, 0,
+                        MerkleTreeType<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::arity, 0,
                                        0>::from_data_store(store, base_tree_leafs));
                 }
             }
@@ -163,13 +163,13 @@ namespace nil {
             };
 
             if (config) {
-                merkle::MerkleTree << typename MerkleTreeType::hash_type as Hasher > ::Domain,
-                    <typename MerkleTreeType::hash_type as Hasher>::Function, MerkleTreeType::Store, MerkleTreeType::base_arity,
+                merkle::MerkleTree << typename MerkleTreeType::hash_type > ::Domain,
+                    <typename MerkleTreeType::hash_type>::Function, MerkleTreeType::Store, MerkleTreeType::base_arity,
                     MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity,
                     > ::from_par_iter_with_config((0..size).into_par_iter().map(f), x);
             } else {
-                merkle::MerkleTree:: << typename MerkleTreeType::hash_type as Hasher > ::Domain,
-                    <typename MerkleTreeType::hash_type as Hasher>::Function, MerkleTreeType::Store, MerkleTreeType::base_arity,
+                merkle::MerkleTree:: << typename MerkleTreeType::hash_type > ::Domain,
+                    <typename MerkleTreeType::hash_type>::Function, MerkleTreeType::Store, MerkleTreeType::base_arity,
                     MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity,
                     > ::from_par_iter((0..size).into_par_iter().map(f))
             }
@@ -296,7 +296,7 @@ namespace nil {
             generate_base_tree(UniformRandomGenerator &rng, std::size_t nodes,
                                boost::optional<const boost::filesystem::path &> temp_path) {
             let elements =
-                (0..nodes).map(| _ | <typename MerkleTreeType::hash_type as Hasher>::Domain::random(rng)).collect::<Vec<_>>();
+                (0..nodes).map(| _ | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect::<Vec<_>>();
 
             std::vector<std::uint8_t> data;
             for (el : elements) {
@@ -322,9 +322,9 @@ namespace nil {
 
                     if let
                         Some(lc_tree) =
-                            Any::downcast_mut::<merkle::MerkleTree << typename MerkleTreeType::hash_type as Hasher>::Domain,
-                        <typename MerkleTreeType::hash_type as Hasher>::Function,
-                        merkletree::store::LevelCacheStore << typename MerkleTreeType::hash_type as Hasher > ::Domain,
+                            Any::downcast_mut::<merkle::MerkleTree << typename MerkleTreeType::hash_type>::Domain,
+                        <typename MerkleTreeType::hash_type>::Function,
+                        merkletree::store::LevelCacheStore << typename MerkleTreeType::hash_type> ::Domain,
                         std::fs::File, >, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                         MerkleTreeType::top_tree_arity, >, > (&mut tree.inner) {
                             lc_tree.set_external_reader_path(&replica_path).unwrap();

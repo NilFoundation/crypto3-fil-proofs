@@ -69,7 +69,6 @@ namespace nil {
         template<typename Hash, std::size_t Arity = 2>
         struct merkle_tree {
             typedef typename Hash::digest_type digest_type;
-            typedef std::vector<merkle_authentication_node> merkle_authentication_path_type;
 
             constexpr static const std::size_t arity = Arity;
 
@@ -215,30 +214,48 @@ namespace nil {
                 auto it = hashes.find(0);
                 return (it == hashes.end() ? hash_defaults[0] : it->second);
             }
-            merkle_authentication_path_type get_path(const std::size_t address) const {
-                typename Hash::merkle_authentication_path_type result(depth);
-                assert(static_cast<std::size_t>(std::ceil(std::log2(address))) <= depth);
-                std::size_t idx = address + (1ul << depth) - 1;
-
-                for (std::size_t layer = depth; layer > 0; --layer) {
-                    std::size_t sibling_idx = ((idx + 1) ^ 1) - 1;
-                    auto it = hashes.find(sibling_idx);
-                    if (layer == depth) {
-                        auto it2 = values.find(sibling_idx - ((1ul << depth) - 1));
-                        result[layer - 1] =
-                            (it2 == values.end() ? std::vector<bool>(value_size, false) : it2->second);
-                        result[layer - 1].resize(digest_size);
-                    } else {
-                        result[layer - 1] = (it == hashes.end() ? hash_defaults[layer] : it->second);
-                    }
-
-                    idx = (idx - 1) / 2;
-                }
-
-                return result;
-            }
+            
         };
 
+        template <typename MerkleTree>
+        std::vector<typename MerkleTree::merkle_authentication_node> make_merkle_tree_path(const MerkleTree mt, 
+            const std::size_t address) {
+
+            std::size_t depth = MerkleTree::depth;
+            std::size_t arity = MerkleTree::arity;
+
+            std::vector<merkle_authentication_node> result(depth);
+            assert(static_cast<std::size_t>(std::ceil(std::log2(address))) <= depth);
+            std::size_t idx = address + pow(arity, depth) - 1;
+
+            for (std::size_t layer = depth; layer > 0; --layer) {
+                for (std::size_t sibling_idx = idx % arity; sibling_idx < idx % arity + (arity - 1); ++sibling_idx){
+                    if (sibling_idx != idx){
+                        //std::size_t sibling_idx = ((idx + 1) ^ 1) - 1;
+
+                        auto it = mt.hashes.find(sibling_idx);
+                        if (layer == depth) {
+                            auto it2 = mt.values.find(sibling_idx - ((1ul << depth) - 1));
+                            result[layer - 1] =
+                                (it2 == mt.values.end() ? std::vector<bool>(value_size, false) : it2->second);
+                            result[layer - 1].resize(digest_size);
+                        } else {
+                            result[layer - 1] = (it == mt.hashes.end() ? hash_defaults[layer] : it->second);
+                        }
+                    }
+                }
+
+                idx = (idx - 1) / 2;
+            }
+
+            return result;
+        }
+
+        template <typename MerkleTree>
+        MerkleProof<typename MerkleTree::Hash, typename MerkleTree::Arity> generate_proof(const MerkleTree mt, 
+            const std::size_t i) {
+
+        }
     }            // namespace filecoin
 }    // namespace nil
 

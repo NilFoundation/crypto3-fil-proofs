@@ -229,7 +229,7 @@ namespace nil {
                         let le_bits = be_bits.chunks(8)
                                           .flat_map(| chunk | chunk.iter().rev())
                                           .copied()
-                                          .take(typename ScalarEngine::Fr::CAPACITY as usize)
+                                          .take(std::size_t(ScalarEngine::Fr::CAPACITY))
                                           .collect::<Vec<bool>>();
 
                         fr = multipack::compute_multipacking<ScalarEngine>(&le_bits)[0];

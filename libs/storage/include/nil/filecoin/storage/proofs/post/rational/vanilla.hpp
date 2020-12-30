@@ -183,7 +183,7 @@ namespace nil {
                             // comm_r_last is the root of the proof
                             let comm_r_last = merkle_proof.root();
 
-                            if (AsRef::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type as Hasher>::Function::hash2(
+                            if (AsRef::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type>::Function::hash2(
                                     comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(&comm_r)) {
                                 return false;
                             }
@@ -217,7 +217,7 @@ namespace nil {
                     let sector_challenge = LittleEndian::read_u64(&challenge_bytes[..8]);
                     let leaf_challenge = LittleEndian::read_u64(&challenge_bytes[8..16]);
 
-                    let sector_index = (sector_challenge % sectors.len() as u64) as usize;
+                    let sector_index = (std::uint64_t(sector_challenge % sectors.len())) as usize;
                     let sector = *sectors.iter().nth(sector_index).context("invalid challenge generated") ? ;
 
                     return {sector, leaf_challenge % (sector_size / NODE_SIZE)};
@@ -234,7 +234,7 @@ namespace nil {
                                  let mut attempt = 0;
                                  let mut attempted_sectors = HashSet::new ();
                                  loop {
-                                     let c = derive_challenge(seed, n as u64, attempt, sector_size, sectors);
+                                     let c = derive_challenge(seed, std::uint64_t(n), attempt, sector_size, sectors);
 
                                      // check for faulty sector
                                      if (!faults.contains(&c.sector)) {

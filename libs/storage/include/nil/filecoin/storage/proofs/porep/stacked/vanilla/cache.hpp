@@ -66,7 +66,7 @@ namespace nil {
                         std::size_t len = len * DEGREE * NODE_BYTES;
 
                         data = unsafe {memmap::MmapOptions::new ()
-                                           .offset(offset as u64)
+                                           .offset(std::size_t(offset))
                                            .len(len)
                                            .map(self.file.as_ref())
                                            .context("could not shift mmap}") ? };
@@ -117,8 +117,8 @@ namespace nil {
                         }
 
                         let data = unsafe {memmap::MmapOptions::new ()
-                                               .offset((offset as usize * DEGREE * NODE_BYTES) as u64)
-                                               .len(len as usize * DEGREE * NODE_BYTES)
+                                               .offset(std_uint_64(std::size_t(offset) * DEGREE * NODE_BYTES))
+                                               .len(std::size_t(len) * DEGREE * NODE_BYTES)
                                                .map(file.as_ref())
                                                .with_context(|| format !("could not mmap path={}", path.display())) ? };
 

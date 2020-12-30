@@ -121,7 +121,7 @@ namespace nil {
 
                                 // All labels in C_X
                                 trace !("  c_x");
-                                let c_x = t_aux.column(challenge as u32) ?.into_proof(tree_c) ? ;
+                                let c_x = t_aux.column(std::uint_32t(challenge)) ?.into_proof(tree_c) ? ;
 
                                 // All labels in the DRG parents.
                                 trace !("  drg_parents");
@@ -198,8 +198,8 @@ namespace nil {
                                 chunk.copy_from_slice(&parents_data[..chunk.size()]);
                             }
 
-                            let proof = LabelingProof::<typename MerkleTreeType::hash_type>::new (layer as u32, challenge as u64,
-                                                                            parents_data_full.clone(), );
+                            let proof = LabelingProof::<typename MerkleTreeType::hash_type>::new (std::uint_32t(layer), 
+                                std::uint_64t(challenge), parents_data_full.clone());
 
                             {
                                 let labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
@@ -212,7 +212,7 @@ namespace nil {
 
                             if (layer == layers) {
                                 encoding_proof =
-                                    Some(EncodingProof::new (layer as u32, challenge as u64, parents_data_full, ));
+                                    Some(EncodingProof::new (std::uint_32t(layer), std::uint_64t(challenge), parents_data_full, ));
                             }
                             }
 
@@ -246,8 +246,8 @@ namespace nil {
 
                 for ((key, encoded_node_bytes)
                     : last_layer_labels.read_range(0..size) ?.into_iter().zip(data.chunks_mut(NODE_SIZE))) {
-                    let encoded_node = <typename MerkleTreeType::hash_type as Hasher>::Domain::try_from_bytes(encoded_node_bytes) ? ;
-                    let data_node = decode:: << typename MerkleTreeType::hash_type as Hasher > ::Domain > (key, encoded_node);
+                    let encoded_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(encoded_node_bytes) ? ;
+                    let data_node = decode:: << typename MerkleTreeType::hash_type> ::Domain > (key, encoded_node);
 
                     // store result in the data
                     encoded_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&data_node));
@@ -262,7 +262,7 @@ namespace nil {
 
                 let layers = layer_challenges.layers();
                 // For now, we require it due to changes in encodings structure.
-                let mut labels : Vec<DiskStore << typename MerkleTreeType::hash_type as Hasher>::Domain >> = Vec::with_capacity(layers);
+                let mut labels : Vec<DiskStore << typename MerkleTreeType::hash_type>::Domain >> = Vec::with_capacity(layers);
                 let mut label_configs : Vec<StoreConfig> = Vec::with_capacity(layers);
 
                 let layer_size = graph.size() * NODE_SIZE;
@@ -381,11 +381,11 @@ namespace nil {
                         // FIL_PROOFS_MAX_GPU_COLUMN_BATCH_SIZE, FIL_PROOFS_MAX_GPU_TREE_BATCH_SIZE, and
                         // FIL_PROOFS_COLUMN_WRITE_BATCH_SIZE respectively.
                         let max_gpu_column_batch_size =
-                            settings::SETTINGS.lock().max_gpu_column_batch_size as usize;
+                            settings::SETTINGS.lock().max_gpu_column_batch_size;
                         let max_gpu_tree_batch_size =
-                            settings::SETTINGS.lock().max_gpu_tree_batch_size as usize;
+                            settings::SETTINGS.lock().max_gpu_tree_batch_size;
                         let column_write_batch_size =
-                            settings::SETTINGS.lock().column_write_batch_size as usize;
+                            settings::SETTINGS.lock().column_write_batch_size;
 
                         // This channel will receive batches of columns and add them to the ColumnTreeBuilder.
                         let(builder_tx, builder_rx) = mpsc::sync_channel(0);
@@ -424,7 +424,7 @@ namespace nil {
                                                     let store = labels.labels_for_layer(layer_index + 1);
                                                     let start = (i * nodes_count) + node_index;
                                                     let end = start + chunked_nodes_count;
-                                                    let elements : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
+                                                    let elements : Vec << typename MerkleTreeType::hash_type> ::Domain >
                                                         = store.read_range(std::ops::Range {start, end})
                                                               .expect("failed to read store range");
                                                     layer_elements.extend(elements.into_iter().map(Into::into));
@@ -482,7 +482,7 @@ namespace nil {
 
                                     // Persist the base and tree data to disk based using the current store config.
                                     let tree_c_store =
-                                        DiskStore:: << typename MerkleTreeType::hash_type as Hasher > ::Domain >
+                                        DiskStore:: << typename MerkleTreeType::hash_type> ::Domain >
                                         ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone(), )
                                             .expect("failed to create DiskStore for base tree data");
 
@@ -551,8 +551,8 @@ namespace nil {
 
                         let mut trees = Vec::with_capacity(tree_count);
                         for ((i, config) : configs.iter().enumerate()) {
-                            let mut hashes : Vec << typename MerkleTreeType::hash_type as Hasher > ::Domain >
-                                = vec ![<typename MerkleTreeType::hash_type as Hasher>::Domain::default(); nodes_count];
+                            let mut hashes : Vec << typename MerkleTreeType::hash_type > ::Domain >
+                                = vec ![<typename MerkleTreeType::hash_type>::Domain::default(); nodes_count];
 
                             rayon::scope(| s | {
                                 let n = num_cpus::get();
@@ -576,7 +576,7 @@ namespace nil {
                                                                     {
                                                                         let store = labels.labels_for_layer(layer);
                                                                         let el
-                                                                            : <typename MerkleTreeType::hash_type as Hasher>::Domain =
+                                                                            : <typename MerkleTreeType::hash_type>::Domain =
                                                                                   store
                                                                                       .read_at((i * nodes_count) + j +
                                                                                                chunk * chunk_size)
@@ -618,7 +618,7 @@ namespace nil {
 
                 if (settings ::SETTINGS.lock().use_gpu_tree_builder) {
                     info !("generating tree r last using the GPU");
-                    let max_gpu_tree_batch_size = settings::SETTINGS.lock().max_gpu_tree_batch_size as usize;
+                    std::uint max_gpu_tree_batch_size = settings::SETTINGS.lock().max_gpu_tree_batch_size;
 
                     // This channel will receive batches of leaf nodes and add them to the TreeBuilder.
                     let(builder_tx, builder_rx) = mpsc::sync_channel::<(Vec<Fr>, bool)>(0);
@@ -644,10 +644,10 @@ namespace nil {
                                                      NODE_SIZE), )
                                             .map(| (key, data_node_bytes) | {
                                                 let data_node =
-                                                    <typename MerkleTreeType::hash_type as Hasher>::Domain::try_from_bytes(data_node_bytes, )
+                                                    <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes, )
                                                         .expect("try_from_bytes failed");
                                                 let encoded_node =
-                                                    encode:: << typename MerkleTreeType::hash_type as Hasher > ::Domain > (key, data_node);
+                                                    encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
                                                 data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
 
                                                 encoded_node
@@ -737,9 +737,9 @@ namespace nil {
                             .into_par_iter()
                             .zip(data.as_mut()[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE), )
                             .map(| (key, data_node_bytes) | {
-                                let data_node = <typename MerkleTreeType::hash_type as Hasher>::Domain::try_from_bytes(data_node_bytes)
+                                let data_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes)
                                                     .expect("try from bytes failed");
-                                let encoded_node = encode:: << typename MerkleTreeType::hash_type as Hasher > ::Domain > (key, data_node);
+                                let encoded_node = encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
                                 data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
 
                                 encoded_node
@@ -880,8 +880,8 @@ namespace nil {
                 data.drop_data();
 
                 // comm_r = H(comm_c || comm_r_last)
-                let comm_r : <typename MerkleTreeType::hash_type as Hasher>::Domain =
-                                 <typename MerkleTreeType::hash_type as Hasher>::Function::hash2(&tree_c_root, &tree_r_last_root);
+                let comm_r : <typename MerkleTreeType::hash_type>::Domain =
+                                 <typename MerkleTreeType::hash_type>::Function::hash2(&tree_c_root, &tree_r_last_root);
 
                 Ok((Tau {
                     comm_d : tree_d_root,

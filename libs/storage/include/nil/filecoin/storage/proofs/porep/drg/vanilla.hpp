@@ -187,16 +187,16 @@ namespace nil {
                             for (p : parents) {
                                 replica_parentsi.push_back((*p, {
                                     let proof =
-                                        tree_r.gen_cached_proof(*p as usize, Some(tree_r_config_rows_to_discard));
+                                        tree_r.gen_cached_proof(std::size_t(*p), Some(tree_r_config_rows_to_discard));
                                     DataProof {
-                                        proof, data : tree_r.read_at(*p as usize)
+                                        proof, data : tree_r.read_at(std::size_t(*p))
                                     }
                                 }));
                             }
 
                             replica_parents.push(replica_parentsi);
 
-                            let node_proof = tree_d.gen_proof(challenge);
+                            let node_proof = generate_proof(tree_d, challenge);
 
                             {
                                 // TODO: use this again, I can't make lifetimes work though atm and I do not know
@@ -327,7 +327,7 @@ namespace nil {
                             let start = data_at_node_offset(node);
                             let end = start + NODE_SIZE;
 
-                            let node_data = <H as Hasher>::Domain::try_from_bytes(&data.as_ref()[start..end]);
+                            let node_data = <H>::Domain::try_from_bytes(&data.as_ref()[start..end]);
                             let encoded = H::sloth_encode(key.as_ref(), &node_data);
 
                             encoded.write_bytes(&mut data.as_mut()[start..end]);
@@ -370,7 +370,7 @@ namespace nil {
                     std::vector<std::uint8_t> parents(graph.degree());
                     graph.parents(v, parents);
                     let key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
-                        let node_data = <H as Hasher>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
+                        let node_data = <H>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
 
                         return encode::decode(*key.as_ref(), node_data));
                 }
