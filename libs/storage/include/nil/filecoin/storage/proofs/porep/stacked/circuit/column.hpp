@@ -64,16 +64,15 @@ namespace nil {
                     /// Consume this column, and allocate its values in the circuit.
                     template<template<typename> class ConstraintSystem>
                     AllocatedColumn alloc(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
-                        let Self {rows} = self;
+                        auto Self {rows} = self;
 
-                        let rows = rows.into_iter()
+                        auto rows = rows.into_iter()
                                        .enumerate()
                                        .map(| (i, val) |
                                             {num::AllocatedNumber::alloc(
                                                 cs.namespace(|| format !("column_num_row_{}", i)),
                                                 || {val.ok_or_else(|| SynthesisError::AssignmentMissing)})})
-                                       .collect::<Result<Vec<_>, _>>() ?
-                            ;
+                                       .collect::<Result<Vec<_>, _>>() ?;
 
                         return {rows};
                     }

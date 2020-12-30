@@ -87,7 +87,7 @@ namespace nil {
                         };
 
                         auto get_exp_parents_columns = [&](std::size_t x) -> std::vector<Column<tree_hash_type>> {
-                            let mut parents = vec ![0; graph.expansion_degree()];
+                            auto mut parents = vec ![0; graph.expansion_degree()];
                             graph.expanded_parents(x, &mut parents) ? ;
 
                             return parents.iter().map(| parent | t_aux.column(*parent)).collect();
@@ -98,7 +98,7 @@ namespace nil {
                             trace !("proving partition {}/{}", k + 1, partition_count);
 
                             // Derive the set of challenges we are proving over.
-                            let challenges = pub_inputs.challenges(layer_challenges, graph_size, Some(k));
+                            auto challenges = pub_inputs.challenges(layer_challenges, graph_size, Some(k));
 
                             // Stacked commitment specifics
                         challenges
@@ -110,22 +110,22 @@ namespace nil {
                                 assert !(challenge > 0, "Invalid challenge");
 
                                 // Initial data layer openings (c_X in Comm_D)
-                                let comm_d_proof = t_aux.tree_d.gen_proof(challenge) ? ;
+                                auto comm_d_proof = t_aux.tree_d.gen_proof(challenge) ? ;
                                 assert !(comm_d_proof.validate(challenge));
 
                                 // Stacked replica column openings
-                                let rcp = {
-                                    let(c_x, drg_parents,
+                                auto rcp = {
+                                    auto(c_x, drg_parents,
                                         exp_parents) = {assert_eq !(p_aux.comm_c, t_aux.tree_c.root());
-                                let tree_c = &t_aux.tree_c;
+                                auto tree_c = &t_aux.tree_c;
 
                                 // All labels in C_X
                                 trace !("  c_x");
-                                let c_x = t_aux.column(std::uint_32t(challenge)) ?.into_proof(tree_c) ? ;
+                                auto c_x = t_aux.column(std::uint_32t(challenge)) ?.into_proof(tree_c) ? ;
 
                                 // All labels in the DRG parents.
                                 trace !("  drg_parents");
-                                let drg_parents =
+                                auto drg_parents =
                                     get_drg_parents_columns(challenge) ?.into_iter()
                                                                             .map(| column | column.into_proof(tree_c))
                                                                             .collect::<Result<_>>() ?
@@ -133,7 +133,7 @@ namespace nil {
 
                                 // Labels for the expander parents
                                 trace !("  exp_parents");
-                                let exp_parents =
+                                auto exp_parents =
                                     get_exp_parents_columns(challenge) ?.into_iter()
                                                                             .map(| column | column.into_proof(tree_c))
                                                                             .collect::<Result<_>>() ?
@@ -149,7 +149,7 @@ namespace nil {
 
                             // Final replica layer openings
                             trace!("final replica layer openings");
-                            let comm_r_last_proof = t_aux.tree_r_last.gen_cached_proof(
+                            auto comm_r_last_proof = t_aux.tree_r_last.gen_cached_proof(
                                 challenge,
                                 Some(t_aux.tree_r_last_config_rows_to_discard),
                             )?;
@@ -157,23 +157,23 @@ namespace nil {
                             debug_assert!(comm_r_last_proof.validate(challenge));
 
                             // Labeling Proofs Layer 1..l
-                            let mut labeling_proofs = Vec::with_capacity(layers);
-                            let mut encoding_proof = None;
+                            auto mut labeling_proofs = Vec::with_capacity(layers);
+                            auto mut encoding_proof = None;
 
                             for (int layer = 1; layer != layers; layer++) {
                             trace !("  encoding proof layer {}", layer);
                             std::vector<typename tree_hash_type::digest_type> parents_data;
                             if (layer == 1) {
-                                let mut parents = vec ![0; graph.base_graph().degree()];
+                                auto mut parents = vec ![0; graph.base_graph().degree()];
                                 graph.base_parents(challenge, &mut parents) ? ;
 
                                 parents_data = parents.into_iter()
                                                    .map(| parent | t_aux.domain_node_at_layer(layer, parent))
                                                    .collect::<Result<_>>();
                             } else {
-                                let mut parents = vec ![0; graph.degree()];
+                                auto mut parents = vec ![0; graph.degree()];
                                 graph.parents(challenge, &mut parents) ? ;
-                                let base_parents_count = graph.base_graph().degree();
+                                auto base_parents_count = graph.base_graph().degree();
 
                                 parents_data = parents.into_iter()
                                                    .enumerate()
@@ -193,20 +193,18 @@ namespace nil {
                             };
 
                             // repeat parents
-                            let mut parents_data_full = vec ![Default::default(); TOTAL_PARENTS];
+                            auto mut parents_data_full = vec ![Default::default(); TOTAL_PARENTS];
                             for (chunk : parents_data_full.chunks_mut(parents_data.size())) {
                                 chunk.copy_from_slice(&parents_data[..chunk.size()]);
                             }
 
-                            let proof = LabelingProof::<typename MerkleTreeType::hash_type>::new (std::uint_32t(layer), 
+                            auto proof = LabelingProof::<typename MerkleTreeType::hash_type>::new (std::uint_32t(layer), 
                                 std::uint_64t(challenge), parents_data_full.clone());
 
-                            {
-                                let labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
-                                assert !(proof.verify(&pub_inputs.replica_id, &labeled_node),
-                                         format !("Invalid encoding proof generated at layer {}", layer));
-                                trace !("Valid encoding proof generated at layer {}", layer);
-                            }
+                            auto labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
+                            assert !(proof.verify(&pub_inputs.replica_id, &labeled_node),
+                                     format !("Invalid encoding proof generated at layer {}", layer));
+                            trace !("Valid encoding proof generated at layer {}", layer);
 
                             labeling_proofs.push(proof);
 
@@ -235,19 +233,19 @@ namespace nil {
                                                      const std::vector<std::uint8_t> &data, const StoreConfig &config) {
                 trace !("extract_and_invert_transform_layers");
 
-                let layers = layer_challenges.layers();
+                auto layers = layer_challenges.layers();
                 assert(layers > 0);
 
                 // generate labels
-                let(labels, _) = generate_labels(graph, layer_challenges, replica_id, config) ? ;
+                auto(labels, _) = generate_labels(graph, layer_challenges, replica_id, config) ? ;
 
-                let last_layer_labels = labels.labels_for_last_layer() ? ;
-                let size = merkletree::store::Store::len(last_layer_labels);
+                auto last_layer_labels = labels.labels_for_last_layer() ? ;
+                auto size = merkletree::store::Store::len(last_layer_labels);
 
                 for ((key, encoded_node_bytes)
                     : last_layer_labels.read_range(0..size) ?.into_iter().zip(data.chunks_mut(NODE_SIZE))) {
-                    let encoded_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(encoded_node_bytes) ? ;
-                    let data_node = decode:: << typename MerkleTreeType::hash_type> ::Domain > (key, encoded_node);
+                    auto encoded_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(encoded_node_bytes) ? ;
+                    auto data_node = decode:: << typename MerkleTreeType::hash_type> ::Domain > (key, encoded_node);
 
                     // store result in the data
                     encoded_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&data_node));
@@ -260,17 +258,17 @@ namespace nil {
                                 const typename tree_hash_type::digest_type &replica_id, const StoreConfig &config) {
                 info !("generate labels");
 
-                let layers = layer_challenges.layers();
+                auto layers = layer_challenges.layers();
                 // For now, we require it due to changes in encodings structure.
-                let mut labels : Vec<DiskStore << typename MerkleTreeType::hash_type>::Domain >> = Vec::with_capacity(layers);
-                let mut label_configs : Vec<StoreConfig> = Vec::with_capacity(layers);
+                auto mut labels : Vec<DiskStore << typename MerkleTreeType::hash_type>::Domain >> = Vec::with_capacity(layers);
+                auto mut label_configs : Vec<StoreConfig> = Vec::with_capacity(layers);
 
-                let layer_size = graph.size() * NODE_SIZE;
+                auto layer_size = graph.size() * NODE_SIZE;
                 // NOTE: this means we currently keep 2x sector size around, to improve speed.
-                let mut labels_buffer = vec ![0u8; 2 * layer_size];
+                auto mut labels_buffer = vec ![0u8; 2 * layer_size];
 
-                let use_cache = settings::SETTINGS.lock().maximize_caching;
-                let mut cache = if use_cache {
+                auto use_cache = settings::SETTINGS.lock().maximize_caching;
+                auto mut cache = if use_cache {
                             Some(graph.parent_cache()?)
                 }
                 else {None};
@@ -278,21 +276,21 @@ namespace nil {
                     for
                         layer in 1.. = layers {
                             info !("generating layer: {}", layer);
-                            if let
+                            if auto
                                 Some(ref mut cache) = cache {
                                     cache.reset() ? ;
                                 }
 
                             if layer
                                 == 1 {
-                                    let layer_labels = &mut labels_buffer[..layer_size];
+                                    auto layer_labels = &mut labels_buffer[..layer_size];
                             for
                                 node in 0..graph.size() {
                                     create_label(graph, cache.as_mut(), replica_id, layer_labels, layer, node) ? ;
                                 }
                                 }
                             else {
-                                let(layer_labels, exp_labels) = labels_buffer.split_at_mut(layer_size);
+                                auto(layer_labels, exp_labels) = labels_buffer.split_at_mut(layer_size);
                             for
                                 node in 0..graph.size() {
                                     create_label_exp(graph, cache.as_mut(), replica_id, exp_labels, layer_labels, layer,
@@ -305,7 +303,7 @@ namespace nil {
                             labels_buffer.copy_within(..layer_size, layer_size);
 
                             // Write the result to disk to avoid keeping it in memory all the time.
-                            let layer_config =
+                            auto layer_config =
                                 StoreConfig::from_config(&config, cache_key::label_layer(layer), Some(graph.size()));
 
                             info !("  storing labels on disk");
@@ -380,51 +378,51 @@ namespace nil {
                         // Override these values with care using environment variables:
                         // FIL_PROOFS_MAX_GPU_COLUMN_BATCH_SIZE, FIL_PROOFS_MAX_GPU_TREE_BATCH_SIZE, and
                         // FIL_PROOFS_COLUMN_WRITE_BATCH_SIZE respectively.
-                        let max_gpu_column_batch_size =
+                        auto max_gpu_column_batch_size =
                             settings::SETTINGS.lock().max_gpu_column_batch_size;
-                        let max_gpu_tree_batch_size =
+                        auto max_gpu_tree_batch_size =
                             settings::SETTINGS.lock().max_gpu_tree_batch_size;
-                        let column_write_batch_size =
+                        auto column_write_batch_size =
                             settings::SETTINGS.lock().column_write_batch_size;
 
                         // This channel will receive batches of columns and add them to the ColumnTreeBuilder.
-                        let(builder_tx, builder_rx) = mpsc::sync_channel(0);
+                        auto(builder_tx, builder_rx) = mpsc::sync_channel(0);
                         mpsc::sync_channel::<(Vec<GenericArray<Fr, ColumnArity>>, bool)>(
                             max_gpu_column_batch_size * ColumnArity::to_usize() * 32, );
 
-                        let config_count = configs.len();    // Don't move config into closure below.
+                        auto config_count = configs.len();    // Don't move config into closure below.
                         rayon::scope(| s | {
                             s.spawn(move | _ | {
                                 for (int i = 0; i < config_count; ++i) {
-                                    let mut node_index = 0;
-                                    let builder_tx = builder_tx.clone();
+                                    auto mut node_index = 0;
+                                    auto builder_tx = builder_tx.clone();
                                     while (node_index != nodes_count) {
-                                        let chunked_nodes_count =
+                                        auto chunked_nodes_count =
                                             std::cmp::min(nodes_count - node_index, max_gpu_column_batch_size);
                                         trace !("processing config {}/{} with column nodes {}", i + 1, tree_count,
                                                 chunked_nodes_count, );
-                                        let mut columns
+                                        auto mut columns
                                             : Vec<GenericArray<Fr, ColumnArity>> =
                                                   vec ![GenericArray::<Fr, ColumnArity>::generate(| _i
                                                                                                   : usize | Fr::zero());
                                                       chunked_nodes_count];
 
                                         // Allocate layer data array and insert a placeholder for each layer.
-                                        let mut layer_data : Vec<Vec<Fr>> =
+                                        auto mut layer_data : Vec<Vec<Fr>> =
                                                                  vec ![Vec::with_capacity(chunked_nodes_count); layers];
 
                                         rayon::scope(| s | {
                                             // capture a shadowed version of layer_data.
-                                            let layer_data : &mut Vec<_> = &mut layer_data;
+                                            auto layer_data : &mut Vec<_> = &mut layer_data;
 
                                             // gather all layer data in parallel.
                                             s.spawn(move | _ | {
                                                 for ((layer_index, layer_elements) :
                                                      layer_data.iter_mut().enumerate()) {
-                                                    let store = labels.labels_for_layer(layer_index + 1);
-                                                    let start = (i * nodes_count) + node_index;
-                                                    let end = start + chunked_nodes_count;
-                                                    let elements : Vec << typename MerkleTreeType::hash_type> ::Domain >
+                                                    auto store = labels.labels_for_layer(layer_index + 1);
+                                                    auto start = (i * nodes_count) + node_index;
+                                                    auto end = start + chunked_nodes_count;
+                                                    auto elements : Vec << typename MerkleTreeType::hash_type> ::Domain >
                                                         = store.read_range(std::ops::Range {start, end})
                                                               .expect("failed to read store range");
                                                     layer_elements.extend(elements.into_iter().map(Into::into));
@@ -444,24 +442,24 @@ namespace nil {
                                         node_index += chunked_nodes_count;
                                         trace !("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
 
-                                        let is_final = node_index == nodes_count;
+                                        auto is_final = node_index == nodes_count;
                                         builder_tx.send((columns, is_final)).expect("failed to send columns");
                                     }
                                 }
                             });
-                            let configs = &configs;
+                            auto configs = &configs;
                             s.spawn(move | _ | {
-                                let mut column_tree_builder = ColumnTreeBuilder::<ColumnArity, TreeArity, >::new (
+                                auto mut column_tree_builder = ColumnTreeBuilder::<ColumnArity, TreeArity, >::new (
                                                                   Some(BatcherType::GPU), nodes_count,
                                                                   max_gpu_column_batch_size, max_gpu_tree_batch_size, )
                                                                   .expect("failed to create ColumnTreeBuilder");
 
-                                let mut i = 0;
-                                let mut config = &configs[i];
+                                auto mut i = 0;
+                                auto mut config = &configs[i];
 
                                 // Loop until all trees for all configs have been built.
                                 while (i < configs.size()) {
-                                    let(columns, is_final) :
+                                    auto(columns, is_final) :
                                         (Vec<GenericArray<Fr, ColumnArity>>, bool) =
                                             builder_rx.recv().expect("failed to recv columns");
 
@@ -472,28 +470,28 @@ namespace nil {
                                     };
 
                                     // If we get here, this is a final column: build a sub-tree.
-                                    let(base_data, tree_data) = column_tree_builder.add_final_columns(&columns).expect(
+                                    auto(base_data, tree_data) = column_tree_builder.add_final_columns(&columns).expect(
                                         "failed to add final columns");
                                     trace !("base data len {}, tree data len {}", base_data.len(), tree_data.len());
-                                    let tree_len = base_data.len() + tree_data.len();
+                                    auto tree_len = base_data.len() + tree_data.len();
                                     info !("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len, );
                                     assert_eq !(base_data.len(), nodes_count);
                                     assert_eq !(tree_len, config.size);
 
                                     // Persist the base and tree data to disk based using the current store config.
-                                    let tree_c_store =
+                                    auto tree_c_store =
                                         DiskStore:: << typename MerkleTreeType::hash_type> ::Domain >
                                         ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone(), )
                                             .expect("failed to create DiskStore for base tree data");
 
-                                    let store = Arc::new (RwLock::new (tree_c_store));
-                                    let batch_size = std::cmp::min(base_data.len(), column_write_batch_size);
-                                    let flatten_and_write_store = | data : &Vec<Fr>,
+                                    auto store = Arc::new (RwLock::new (tree_c_store));
+                                    auto batch_size = std::cmp::min(base_data.len(), column_write_batch_size);
+                                    auto flatten_and_write_store = | data : &Vec<Fr>,
                                         offset | {data.into_par_iter()
                                                       .chunks(column_write_batch_size)
                                                       .enumerate()
                                                       .try_for_each(| (index, fr_elements) | {
-                                                          let mut buf = Vec::with_capacity(batch_size * NODE_SIZE);
+                                                          auto mut buf = Vec::with_capacity(batch_size * NODE_SIZE);
 
                                                           for (fr : fr_elements) {
                                                               buf.extend(fr_into_bytes(&fr));
@@ -509,7 +507,7 @@ namespace nil {
                                     flatten_and_write_store(&base_data, 0).expect("failed to flatten and write store");
                                     trace !("done flattening tree_c base data");
 
-                                    let base_offset = base_data.len();
+                                    auto base_offset = base_data.len();
                                     trace !(
                                         "flattening tree_c tree data of {} nodes using batch size {} and base "
                                         "offset "
@@ -549,13 +547,13 @@ namespace nil {
                     GenerateTreeC, || {
                         info !("Building column hashes");
 
-                        let mut trees = Vec::with_capacity(tree_count);
+                        auto mut trees = Vec::with_capacity(tree_count);
                         for ((i, config) : configs.iter().enumerate()) {
-                            let mut hashes : Vec << typename MerkleTreeType::hash_type > ::Domain >
+                            auto mut hashes : Vec << typename MerkleTreeType::hash_type > ::Domain >
                                 = vec ![<typename MerkleTreeType::hash_type>::Domain::default(); nodes_count];
 
                             rayon::scope(| s | {
-                                let n = num_cpus::get();
+                                auto n = num_cpus::get();
 
                                 // only split if we have at least two elements per thread
                                 std::size_t num_chunks = n > nodes_count * 2 ? 1 : n;
@@ -566,16 +564,16 @@ namespace nil {
 
                                 // calculate all n chunks in parallel
                                 for ((chunk, hashes_chunk) : hashes.chunks_mut(chunk_size).enumerate()) {
-                                    let labels = &labels;
+                                    auto labels = &labels;
 
                                     s.spawn(move | _ | {
                                         for ((j, hash) : hashes_chunk.iter_mut().enumerate()) {
-                                            let data : Vec<_> =
+                                            auto data : Vec<_> =
                                                            (1.. = layers)
                                                                .map(| layer |
                                                                     {
-                                                                        let store = labels.labels_for_layer(layer);
-                                                                        let el
+                                                                        auto store = labels.labels_for_layer(layer);
+                                                                        auto el
                                                                             : <typename MerkleTreeType::hash_type>::Domain =
                                                                                   store
                                                                                       .read_at((i * nodes_count) + j +
@@ -609,44 +607,44 @@ namespace nil {
                 generate_tree_r_last(Data &data, std::size_t nodes_count, std::size_t tree_count,
                                      const StoreConfig &tree_r_last_config, const boost::filesystem::path &replica_path,
                                      const LabelsCache<Tree> &labels) {
-                let(configs, replica_config) =
+                auto(configs, replica_config) =
                     split_config_and_replica(tree_r_last_config.clone(), replica_path, nodes_count, tree_count, ) ?
                     ;
 
                 data.ensure_data() ? ;
-                let last_layer_labels = labels.labels_for_last_layer() ? ;
+                auto last_layer_labels = labels.labels_for_last_layer() ? ;
 
                 if (settings ::SETTINGS.lock().use_gpu_tree_builder) {
                     info !("generating tree r last using the GPU");
                     std::uint max_gpu_tree_batch_size = settings::SETTINGS.lock().max_gpu_tree_batch_size;
 
                     // This channel will receive batches of leaf nodes and add them to the TreeBuilder.
-                    let(builder_tx, builder_rx) = mpsc::sync_channel::<(Vec<Fr>, bool)>(0);
-                    let config_count = configs.len();    // Don't move config into closure below.
-                    let configs = &configs;
+                    auto(builder_tx, builder_rx) = mpsc::sync_channel::<(Vec<Fr>, bool)>(0);
+                    auto config_count = configs.len();    // Don't move config into closure below.
+                    auto configs = &configs;
                     rayon::scope(| s | {
                         s.spawn(move | _ | {
                             for (int i = 0; i < config_count; i++) {
-                                let mut node_index = 0;
+                                auto mut node_index = 0;
                                 while (node_index != nodes_count) {
-                                    let chunked_nodes_count =
+                                    auto chunked_nodes_count =
                                         std::cmp::min(nodes_count - node_index, max_gpu_tree_batch_size);
-                                    let start = (i * nodes_count) + node_index;
-                                    let end = start + chunked_nodes_count;
+                                    auto start = (i * nodes_count) + node_index;
+                                    auto end = start + chunked_nodes_count;
                                     trace !("processing config {}/{} with leaf nodes {} [{}, {}, {}-{}]", i + 1,
                                             tree_count, chunked_nodes_count, node_index, nodes_count, start, end, );
 
-                                    let encoded_data =
+                                    auto encoded_data =
                                         last_layer_labels.read_range(start..end)
                                             .expect("failed to read layer range")
                                             .into_par_iter()
                                             .zip(data.as_mut()[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(
                                                      NODE_SIZE), )
                                             .map(| (key, data_node_bytes) | {
-                                                let data_node =
+                                                auto data_node =
                                                     <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes, )
                                                         .expect("try_from_bytes failed");
-                                                let encoded_node =
+                                                auto encoded_node =
                                                     encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
                                                 data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
 
@@ -656,28 +654,28 @@ namespace nil {
                                     node_index += chunked_nodes_count;
                                     trace !("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
 
-                                    let encoded : Vec<_> = encoded_data.into_par_iter().map(| x | x.into()).collect();
+                                    auto encoded : Vec<_> = encoded_data.into_par_iter().map(| x | x.into()).collect();
 
-                                    let is_final = node_index == nodes_count;
+                                    auto is_final = node_index == nodes_count;
                                     builder_tx.send((encoded, is_final)).expect("failed to send encoded");
                                 }
                             }
                         });
 
                         {
-                            let tree_r_last_config = &tree_r_last_config;
+                            auto tree_r_last_config = &tree_r_last_config;
                             s.spawn(move | _ | {
-                                let mut tree_builder = TreeBuilder::<MerkleTreeType::base_arity>::new (
+                                auto mut tree_builder = TreeBuilder::<MerkleTreeType::base_arity>::new (
                                                            Some(BatcherType::GPU), nodes_count, max_gpu_tree_batch_size,
                                                            tree_r_last_config.rows_to_discard, )
                                                            .expect("failed to create TreeBuilder");
 
-                                let mut i = 0;
-                                let mut config = &configs[i];
+                                auto mut i = 0;
+                                auto mut config = &configs[i];
 
                                 // Loop until all trees for all configs have been built.
                                 while (i < configs.size()) {
-                                    let(encoded, is_final) = builder_rx.recv().expect("failed to recv encoded data");
+                                    auto(encoded, is_final) = builder_rx.recv().expect("failed to recv encoded data");
 
                                     // Just add non-final leaf batches.
                                     if (!is_final) {
@@ -687,10 +685,10 @@ namespace nil {
 
                                     // If we get here, this is a final leaf batch: build a sub-tree.
                                     info !("building base tree_r_last with GPU {}/{}", i + 1, tree_count);
-                                    let(_, tree_data) =
+                                    auto(_, tree_data) =
                                         tree_builder.add_final_leaves(&encoded).expect("failed to add final leaves");
-                                    let tree_data_len = tree_data.len();
-                                    let cache_size =
+                                    auto tree_data_len = tree_data.len();
+                                    auto cache_size =
                                         get_merkle_tree_cache_size(
                                             get_merkle_tree_leafs(config.size, MerkleTreeType::base_arity, )
                                                 .expect("failed to get merkle tree leaves"),
@@ -698,17 +696,17 @@ namespace nil {
                                             .expect("failed to get merkle tree cache size");
                                     assert_eq !(tree_data_len, cache_size);
 
-                                    let flat_tree_data
+                                    auto flat_tree_data
                                         : Vec<_> =
                                               tree_data.into_par_iter().flat_map(| el | fr_into_bytes(&el)).collect();
 
                                     // Persist the data to the store based on the current config.
-                                    let tree_r_last_path = StoreConfig::data_path(&config.path, &config.id);
+                                    auto tree_r_last_path = StoreConfig::data_path(&config.path, &config.id);
                                     trace !("persisting tree r of len {} with {} rows to discard at path {:?}",
                                             tree_data_len,
                                             config.rows_to_discard,
                                             tree_r_last_path);
-                                    let mut f = OpenOptions::new ()
+                                    auto mut f = OpenOptions::new ()
                                                     .create(true)
                                                     .write(true)
                                                     .open(&tree_r_last_path)
@@ -727,19 +725,19 @@ namespace nil {
                     });
                 } else {
                     info !("generating tree r last using the CPU");
-                    let size = Store::len(last_layer_labels);
+                    auto size = Store::len(last_layer_labels);
 
-                    let mut start = 0;
-                    let mut end = size / tree_count;
+                    auto mut start = 0;
+                    auto mut end = size / tree_count;
 
                     for ((i, config) : configs.iter().enumerate()) {
-                        let encoded_data = last_layer_labels.read_range(start..end) ?
+                        auto encoded_data = last_layer_labels.read_range(start..end) ?
                             .into_par_iter()
                             .zip(data.as_mut()[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE), )
                             .map(| (key, data_node_bytes) | {
-                                let data_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes)
+                                auto data_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes)
                                                     .expect("try from bytes failed");
-                                let encoded_node = encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
+                                auto encoded_node = encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
                                 data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
 
                                 encoded_node
@@ -764,7 +762,7 @@ namespace nil {
                                                const BinaryMerkleTree<G> &data_tree, const StoreConfig &config,
                                                const boost::filesystem::path &replica_path) {
                 // Generate key layers.
-                let(_, labels) =
+                auto(_, labels) =
                     measure_op(EncodeWindowTimeAll,
                                || {Self::generate_labels(graph, layer_challenges, replica_id, config.clone())}) ?
                     ;
@@ -824,21 +822,21 @@ namespace nil {
                 tree_c_config.rows_to_discard = default_rows_to_discard(nodes_count, MerkleTreeType::base_arity);
 
                 LabelsCache<tree_type> labels(&label_configs);
-                let configs = split_config(tree_c_config.clone(), tree_count) ? ;
+                auto configs = split_config(tree_c_config.clone(), tree_count) ? ;
 
                 typename tree_hash_type::digest_type tree_c_root;
                 if (layers == 2) {
-                    let tree_c =
+                    auto tree_c =
                         Self::generate_tree_c::<U2, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
                         ;
                     tree_c_root = tree_c.root();
                 } else if (layers == 8) {
-                    let tree_c =
+                    auto tree_c =
                         Self::generate_tree_c::<U8, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
                         ;
                     tree_c_root = tree_c.root();
                 } else if (layers == 11) {
-                    let tree_c =
+                    auto tree_c =
                         Self::generate_tree_c::<U11, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
                         ;
                     tree_c_root = tree_c.root();
@@ -862,25 +860,25 @@ namespace nil {
                 }    // namespace stacked
                 tree_d_config.size = Some(tree_d.len());
                 assert_eq !(tree_d_config.size, tree_d.size());
-                let tree_d_root = tree_d.root();
+                auto tree_d_root = tree_d.root();
                 drop(tree_d);
 
                 // Encode original data into the last layer.
                 info !("building tree_r_last");
-                let tree_r_last = measure_op(GenerateTreeRLast,
+                auto tree_r_last = measure_op(GenerateTreeRLast,
                                              || {Self::generate_tree_r_last::<MerkleTreeType::base_arity>(
                                                     &mut data, nodes_count, tree_count, tree_r_last_config.clone(),
                                                     replica_path.clone(), &labels, )}) ?
                     ;
                 info !("tree_r_last done");
 
-                let tree_r_last_root = tree_r_last.root();
+                auto tree_r_last_root = tree_r_last.root();
                 drop(tree_r_last);
 
                 data.drop_data();
 
                 // comm_r = H(comm_c || comm_r_last)
-                let comm_r : <typename MerkleTreeType::hash_type>::Domain =
+                auto comm_r : <typename MerkleTreeType::hash_type>::Domain =
                                  <typename MerkleTreeType::hash_type>::Function::hash2(&tree_c_root, &tree_r_last_root);
 
                 Ok((Tau {
@@ -906,7 +904,7 @@ namespace nil {
                                                const StoreConfig &config) {
                 info !("replicate_phase1");
 
-                let(_, labels) =
+                auto(_, labels) =
                     measure_op(EncodeWindowTimeAll,
                                || {Self::generate_labels(&pp.graph, &pp.layer_challenges, replica_id, config)}) ?
                     ;

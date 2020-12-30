@@ -110,18 +110,16 @@ namespace nil {
             for (int i = 0; i < configs.size(); i++) {
                 typename MerkleTreeType::Store store = typename MerkleTreeType::Store::new_with_config(
                     base_tree_len, MerkleTreeType::base_arity, configs[i]);
-                if let
-                    Some(lc_store) = Any::downcast_mut::<merkletree::store::LevelCacheStore
+                if (auto Some(lc_store) = Any::downcast_mut::<merkletree::store::LevelCacheStore
                                                          << typename MerkleTreeType::hash_type>::Domain,
-                    std::fs::File >, > (&mut store) {
-                        assert(("Cannot create LCTree without replica paths", replica_config));
-                        lc_store.set_external_reader(ExternalReader::new_from_config(&replica_config, i));
-                    }
+                    std::fs::File >, > (&mut store)) {
+                    assert(("Cannot create LCTree without replica paths", replica_config));
+                    lc_store.set_external_reader(ExternalReader::new_from_config(&replica_config, i));
+                }
 
                 if (configs.size() == 1) {
-                        return MerkleTreeType::from_data_store(store, base_tree_leafs);
-                    }
-                else {
+                    return MerkleTreeType::from_data_store(store, base_tree_leafs);
+                } else {
                     trees.push_back(
                         MerkleTreeType<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::arity, 0,
                                        0>::from_data_store(store, base_tree_leafs));
@@ -154,7 +152,7 @@ namespace nil {
             auto f = [&](std::size_t i) {
                 // TODO Replace `expect()` with `context()` (problem is the parallel iterator)
                 std::vector<std::uint8_t> d = data_at_node(data, i);
-                // TODO/FIXME: This can panic. FOR NOW, let's leave this since we're experimenting with
+                // TODO/FIXME: This can panic. FOR NOW, auto's leave this since we're experimenting with
                 // optimization paths. However, we need to ensure that bad input will not lead to a panic
                 // that isn't caught by the FPS API.
                 // Unfortunately, it's not clear how to perform this error-handling in the parallel
@@ -193,7 +191,7 @@ namespace nil {
             assert(("Invalid data length for merkle tree", data.size() == Hash::digest_bits / CHAR_BIT));
 
             auto f = [&](std::size_t i) {
-                let d = data_at_node(&data, i);
+                auto d = data_at_node(&data, i);
                 return Hash::digest_type(d);
             };
 
@@ -295,7 +293,7 @@ namespace nil {
         std::tuple<std::vector<std::uint8_t>, MerkleTreeType>
             generate_base_tree(UniformRandomGenerator &rng, std::size_t nodes,
                                boost::optional<const boost::filesystem::path &> temp_path) {
-            let elements =
+            auto elements =
                 (0..nodes).map(| _ | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect::<Vec<_>>();
 
             std::vector<std::uint8_t> data;
@@ -309,27 +307,26 @@ namespace nil {
                 StoreConfig config(*temp_path, format !("test-lc-tree-{}", id),
                                    default_rows_to_discard(nodes, MerkleTreeType::base_arity));
 
-                let mut tree =
+                auto mut tree =
                     MerkleTreeWrapper::try_from_iter_with_config(elements.iter().map(| v | (Ok(*v))), config).unwrap();
 
                 // Write out the replica data.
-                let mut f = std::fs::File::create(&replica_path).unwrap();
+                auto mut f = std::fs::File::create(&replica_path).unwrap();
                 f.write_all(&data).unwrap();
 
-                {
-                    // Beware: evil dynamic downcasting RUST MAGIC down below.
-                    use std::any::Any;
+                
+                // Beware: evil dynamic downcasting RUST MAGIC down below.
+                use std::any::Any;
 
-                    if let
-                        Some(lc_tree) =
-                            Any::downcast_mut::<merkle::MerkleTree << typename MerkleTreeType::hash_type>::Domain,
-                        <typename MerkleTreeType::hash_type>::Function,
-                        merkletree::store::LevelCacheStore << typename MerkleTreeType::hash_type> ::Domain,
-                        std::fs::File, >, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
-                        MerkleTreeType::top_tree_arity, >, > (&mut tree.inner) {
-                            lc_tree.set_external_reader_path(&replica_path).unwrap();
-                        }
-                }
+                if (auto
+                    Some(lc_tree) =
+                        Any::downcast_mut::<merkle::MerkleTree << typename MerkleTreeType::hash_type>::Domain,
+                    <typename MerkleTreeType::hash_type>::Function,
+                    merkletree::store::LevelCacheStore << typename MerkleTreeType::hash_type> ::Domain,
+                    std::fs::File, >, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                    MerkleTreeType::top_tree_arity, >, > (&mut tree.inner) ) {
+                        lc_tree.set_external_reader_path(&replica_path).unwrap();
+                    }
 
                 (data, tree)
             } else {
@@ -349,7 +346,7 @@ namespace nil {
             std::vector<std::uint8_t> data;
 
             for (int i = 0; i < base_tree_count) {
-                let(inner_data, tree) =
+                auto(inner_data, tree) =
                     generate_base_tree<UniformRandomGenerator, MerkleTreeType>(rng, base_tree_size, temp_path);
                 trees.push_back(tree);
                 data.extend(inner_data);
@@ -372,7 +369,7 @@ namespace nil {
                 std::vector<MerkleTreeType> sub_trees(top_tree_arity);
                 std::vector<std::uint8_t> data;
                 for (int i = 0; i < top_tree_arity; i++) {
-                    let(inner_data, tree) = generate_sub_tree<
+                    auto(inner_data, tree) = generate_sub_tree<
                         UniformRandomGenerator,
                         MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity,
                                           MerkleTreeType::sub_tree_arity, typenum::U0>>(rng, nodes / top_tree_arity,

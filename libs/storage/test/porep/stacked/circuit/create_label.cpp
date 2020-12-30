@@ -28,32 +28,32 @@ using namespace nil::filecoin;
 BOOST_AUTO_TEST_SUITE(stacked_circuit_test_suite)
 
 BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let nodes = 16;
-    let degree = BASE_DEGREE;
-    let challenge = 2;
+    auto nodes = 16;
+    auto degree = BASE_DEGREE;
+    auto challenge = 2;
 
-    let replica_id : Fr = Fr::random(rng);
+    auto replica_id : Fr = Fr::random(rng);
 
-    let data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir();
-    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    auto cache_dir = tempfile::tempdir();
+    auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
-    let replica_path = cache_dir.path().join("replica-path");
-    let mut mmapped_data = setup_replica(&data, &replica_path);
+    auto replica_path = cache_dir.path().join("replica-path");
+    auto mut mmapped_data = setup_replica(&data, &replica_path);
 
-    let data_node
+    auto data_node
         : Option<Fr> =
               Some(bytes_into_fr(data_at_node(&mmapped_data, challenge).expect("failed to read original data"), )
                        , );
 
-    let sp = drg::SetupParams {
+    auto sp = drg::SetupParams {
         drg : drg::DrgParams {
             nodes,
             degree,
@@ -64,49 +64,49 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
         challenges_count : 1,
     };
 
-    let pp = drg::DrgPoRep::<PedersenHasher, BucketGraph<_>>::setup(&sp).expect("failed to create drgporep setup");
-    let(tau, aux) = drg::DrgPoRep::<PedersenHasher, _>::replicate(
+    auto pp = drg::DrgPoRep::<PedersenHasher, BucketGraph<_>>::setup(&sp).expect("failed to create drgporep setup");
+    auto(tau, aux) = drg::DrgPoRep::<PedersenHasher, _>::replicate(
                         &pp, &replica_id.into(), (mmapped_data.as_mut()).into(), None, config, replica_path.clone(), )
                         .expect("failed to replicate");
 
-    let pub_inputs = drg::PublicInputs {
+    auto pub_inputs = drg::PublicInputs {
         replica_id : Some(replica_id.into()),
         challenges : vec ![challenge],
         tau : Some(tau.into()),
     };
 
-    let priv_inputs = drg::PrivateInputs::<PedersenHasher> {
+    auto priv_inputs = drg::PrivateInputs::<PedersenHasher> {
         tree_d : &aux.tree_d,
         tree_r : &aux.tree_r,
         tree_r_config_rows_to_discard : default_rows_to_discard(nodes, BINARY_ARITY),
     };
 
-    let proof_nc = drg::DrgPoRep::<PedersenHasher, _>::prove(&pp, &pub_inputs, &priv_inputs).expect("failed to prove");
+    auto proof_nc = drg::DrgPoRep::<PedersenHasher, _>::prove(&pp, &pub_inputs, &priv_inputs).expect("failed to prove");
 
     assert !(drg::DrgPoRep::<PedersenHasher, _>::verify(&pp, &pub_inputs, &proof_nc).expect("failed to verify"),
              "failed to verify (non circuit)");
 
-    let replica_node : Option<Fr> = Some(proof_nc.replica_nodes[0].data.into());
+    auto replica_node : Option<Fr> = Some(proof_nc.replica_nodes[0].data.into());
 
-    let replica_node_path = proof_nc.replica_nodes[0].proof.as_options();
-    let replica_root = Root::Val(Some(proof_nc.replica_root.into()));
-    let replica_parents = proof_nc.replica_parents.iter()
+    auto replica_node_path = proof_nc.replica_nodes[0].proof.as_options();
+    auto replica_root = Root::Val(Some(proof_nc.replica_root.into()));
+    auto replica_parents = proof_nc.replica_parents.iter()
                               .map(| v | {v.iter().map(| (_, parent) | Some(parent.data.into())).collect()})
                               .collect();
-    let replica_parents_paths : Vec<_> =
+    auto replica_parents_paths : Vec<_> =
                                     proof_nc.replica_parents.iter()
                                         .map(| v | {v.iter().map(| (_, parent) | parent.proof.as_options()).collect()})
                                         .collect();
 
-    let data_node_path = proof_nc.nodes[0].proof.as_options();
-    let data_root = Root::Val(Some(proof_nc.data_root.into()));
-    let replica_id = Some(replica_id);
+    auto data_node_path = proof_nc.nodes[0].proof.as_options();
+    auto data_root = Root::Val(Some(proof_nc.data_root.into()));
+    auto replica_id = Some(replica_id);
 
     assert !(proof_nc.nodes[0].proof.validate(challenge), "failed to verify data commitment");
     assert !(proof_nc.nodes[0].proof.validate_data(data_node.into()),
              "failed to verify data commitment with data");
 
-    let mut cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
+    auto mut cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
     DrgPoRepCircuit::<PedersenHasher>::synthesize(
         cs.namespace(|| "drgporep"), vec ![replica_node], vec ![replica_node_path], replica_root, replica_parents,
         replica_parents_paths, vec ![data_node], vec ![data_node_path], data_root, replica_id, false, )
@@ -125,10 +125,10 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     BOOST_CHECK_EQUAL(cs.get_input(1, "drgporep/replica_id/input variable"), replica_id);
 
-    let generated_inputs = <drg_porep_compound<_, _> as compound_proof::CompoundProof<_, _>>::generate_public_inputs(
+    auto generated_inputs = <drg_porep_compound<_, _> as compound_proof::CompoundProof<_, _>>::generate_public_inputs(
                                &pub_inputs, &pp, None, )
                                ;
-    let expected_inputs = cs.get_inputs();
+    auto expected_inputs = cs.get_inputs();
 
     for ((input, label), generated_input)
         in expected_inputs.iter().skip(1).zip(generated_inputs.iter()) {
@@ -141,14 +141,14 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 }
 
 BOOST_AUTO_TEST_CASE(drgporep_input_circuit_num_constraints) {
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
     // 1 GB
-    let n = (1 << 30) / 32;
-    let m = BASE_DEGREE;
-    let tree_depth = graph_height<2>(n);
+    auto n = (1 << 30) / 32;
+    auto m = BASE_DEGREE;
+    auto tree_depth = graph_height<2>(n);
 
-    let mut cs = TestConstraintSystem::<algebra::curves::bls12<381>>::new ();
+    auto mut cs = TestConstraintSystem::<algebra::curves::bls12<381>>::new ();
     DrgPoRepCircuit<PedersenHasher>::synthesize(
         cs.namespace(|| "drgporep"), vec ![Some(Fr::random(rng)); 1],
         vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; 1], Root::Val(Some(Fr::random(rng))),

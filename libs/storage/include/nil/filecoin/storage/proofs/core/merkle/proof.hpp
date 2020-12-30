@@ -145,12 +145,12 @@ namespace nil {
                 // that Proof::validate at the base layer cannot handle a
                 // proof this small, so this is a version specific for what we
                 // know we have in this case).
-                let mut a = A::default();
+                auto mut a = A::default();
                 a.reset();
-                let node_count = arity;
-                let h = {
-                    let mut nodes: Vec<T> = Vec::with_capacity(node_count);
-                    let mut cur_index = 0;
+                auto node_count = arity;
+                auto h = {
+                    auto mut nodes: Vec<T> = Vec::with_capacity(node_count);
+                    auto mut cur_index = 0;
                     for j in 0..node_count {
                         if j == self.path()[0] {
                             nodes.push(self.sub_tree_root().clone());
@@ -204,15 +204,15 @@ namespace nil {
                 }
 
                 std::size_t branches = BaseTreeArity;
-                let mut a = A::default();
-                let mut h = self.item();
-                let mut path_index = 1;
+                auto mut a = A::default();
+                auto mut h = self.item();
+                auto mut path_index = 1;
 
                 for i in (1..size - 1).step_by(branches - 1) {
                     a.reset();
                     h = {
-                        let mut nodes: Vec<T> = Vec::with_capacity(branches);
-                        let mut cur_index = 0;
+                        auto mut nodes: Vec<T> = Vec::with_capacity(branches);
+                        auto mut cur_index = 0;
                         for j in 0..branches {
                             if j == self.path[path_index - 1] {
                                 nodes.push(h.clone());
@@ -237,11 +237,11 @@ namespace nil {
                 /// Verifies MT inclusion proof and that leaf_data is the original leaf data for which proof was generated.
                 template<template<typename> class Algorithm>
                 bool validate_with_data(leaf_data: &dyn Hashable<A>) {
-                let mut a = A::default();
+                auto mut a = A::default();
                 leaf_data.hash(&mut a);
-                let item = a.hash();
+                auto item = a.hash();
                 a.reset();
-                let leaf_hash = a.leaf(item);
+                auto leaf_hash = a.leaf(item);
 
                 if (leaf_hash == item()) {
                     return validate<Algorithm>();
@@ -277,8 +277,8 @@ namespace nil {
 
             std::pair<fr_value_type, std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>>
                 into_options_with_leaf() {
-                let leaf = leaf();
-                let path = path();
+                auto leaf = leaf();
+                auto path = path();
                 (Some(leaf.into()),
                  path.into_iter()
                      .map(| (a, b) | {(a.iter().copied().map(Into::into).map(Some).collect(), Some(b), )})
@@ -351,14 +351,14 @@ namespace nil {
                                     typename std::vector<PathElement<Hash, BaseArity>>::value_type &v) {
 
                                 });
-                let mut a = H::Function::default();
+                auto mut a = H::Function::default();
                 (0..self.path.len())
                     .fold(
                         leaf, | h, height | {
                             a.reset();
 
-                            let index = self.path[height].index;
-                            let mut nodes = self.path[height].hashes.clone();
+                            auto index = self.path[height].index;
+                            auto mut nodes = self.path[height].hashes.clone();
                             nodes.insert(index, h);
 
                             a.multi_node(&nodes, height)
@@ -478,13 +478,13 @@ namespace nil {
                 assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
 
                 assert(("Cannot generate top proof without a sub-proof", p.sub_tree_proof));
-                let sub_p = p.sub_tree_proof;
+                auto sub_p = p.sub_tree_proof;
 
                 assert(("Cannot generate top proof without a base-proof", sub_p.sub_tree_proof));
-                let base_p = sub_p.sub_tree_proof.as_ref();
+                auto base_p = sub_p.sub_tree_proof.as_ref();
 
-                let root = p.root();
-                let leaf = base_p.item();
+                auto root = p.root();
+                auto leaf = base_p.item();
 
                 return {extract_path<Hash, BaseArity>(base_p.lemma(), base_p.path(), 1), extract_path<Hash, SubTreeArity>(sub_p.lemma(), sub_p.path(), 0), extract_path<Hash, TopTreeArity>(p.lemma(), p.path(), 0), root, leaf};
             }

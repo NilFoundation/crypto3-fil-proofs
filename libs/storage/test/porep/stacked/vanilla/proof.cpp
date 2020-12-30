@@ -36,10 +36,10 @@ using namespace nil::filecoin;
 BOOST_AUTO_TEST_SUITE(vanilla_proof_test_suite)
 
 BOOST_AUTO_TEST_CASE(test_calculate_fixed_challenges) {
-    let layer_challenges = LayerChallenges::new (10, 333);
-    let expected = 333;
+    auto layer_challenges = LayerChallenges::new (10, 333);
+    auto expected = 333;
 
-    let calculated_count = layer_challenges.challenges_count_all();
+    auto calculated_count = layer_challenges.challenges_count_all();
     assert_eq !(expected as usize, calculated_count);
 }
 
@@ -97,14 +97,14 @@ void test_extract_all() {
     //     .start(log::LevelFilter::Trace)
     //     .ok();
 
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
-    let replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    let nodes = 64 * get_base_tree_count::<Tree>();
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    auto nodes = 64 * get_base_tree_count::<Tree>();
 
     std::vector<std::uint8_t> data = (0..nodes)
                              .flat_map(| _ |
                                        {
-                                           let v : <typename MerkleTreeType::hash_type>::Domain =
+                                           auto v : <typename MerkleTreeType::hash_type>::Domain =
                                                        <typename MerkleTreeType::hash_type>::Domain::random(rng);
                                            v.into_bytes()
                                        })
@@ -112,30 +112,30 @@ void test_extract_all() {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir();
-    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    auto cache_dir = tempfile::tempdir();
+    auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
-    let replica_path = cache_dir.path().join("replica-path");
-    let mut mmapped_data = setup_replica(&data, &replica_path);
+    auto replica_path = cache_dir.path().join("replica-path");
+    auto mut mmapped_data = setup_replica(&data, &replica_path);
 
-    let layer_challenges = LayerChallenges::new (DEFAULT_STACKED_LAYERS, 5);
+    auto layer_challenges = LayerChallenges::new (DEFAULT_STACKED_LAYERS, 5);
 
-    let sp = SetupParams {
+    auto sp = SetupParams {
         nodes, degree : BASE_DEGREE, expansion_degree : EXP_DEGREE, porep_id : [32; 32], layer_challenges,
     };
 
-    let pp = StackedDrg<Tree, Blake2sHasher>::setup(&sp);
+    auto pp = StackedDrg<Tree, Blake2sHasher>::setup(&sp);
 
     StackedDrg<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(),
                                                  replica_path);
 
-    let mut copied = vec ![0; data.len()];
+    auto mut copied = vec ![0; data.len()];
     copied.copy_from_slice(&mmapped_data);
     assert_ne !(data, copied, "replication did not change data");
 
-    let decoded_data =
+    auto decoded_data =
         StackedDrg::<Tree, Blake2sHasher>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config), )
             .expect("failed to extract data");
 
@@ -145,7 +145,7 @@ void test_extract_all() {
 }
 
 void prove_verify_fixed(std::size_t n) {
-    let challenges = LayerChallenges::new (DEFAULT_STACKED_LAYERS, 5);
+    auto challenges = LayerChallenges::new (DEFAULT_STACKED_LAYERS, 5);
 
     test_prove_verify<DiskTree<PedersenHasher, 4, 0, 0>>(n, challenges);
     test_prove_verify<DiskTree<PedersenHasher, 4, 2, 0>>(n, challenges);
@@ -187,28 +187,28 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     //     .start(log::LevelFilter::Trace)
     //     .ok();
 
-    let nodes = n * get_base_tree_count::<Tree>();
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto nodes = n * get_base_tree_count::<Tree>();
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let degree = BASE_DEGREE;
-    let expansion_degree = EXP_DEGREE;
-    let replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    let data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    auto degree = BASE_DEGREE;
+    auto expansion_degree = EXP_DEGREE;
+    auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir();
-    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    auto cache_dir = tempfile::tempdir();
+    auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
-    let replica_path = cache_dir.path().join("replica-path");
-    let mut mmapped_data = setup_replica(&data, &replica_path);
+    auto replica_path = cache_dir.path().join("replica-path");
+    auto mut mmapped_data = setup_replica(&data, &replica_path);
 
-    let partitions = 2;
+    auto partitions = 2;
 
-    let arbitrary_porep_id = [92; 32];
-    let sp = SetupParams {
+    auto arbitrary_porep_id = [92; 32];
+    auto sp = SetupParams {
         nodes,
         degree,
         expansion_degree,
@@ -216,18 +216,18 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
         layer_challenges : challenges,
     };
 
-    let pp = StackedDrg::<Tree, Blake2sHasher>::setup(&sp).expect("setup failed");
-    let(tau, (p_aux, t_aux)) =
+    auto pp = StackedDrg::<Tree, Blake2sHasher>::setup(&sp).expect("setup failed");
+    auto(tau, (p_aux, t_aux)) =
         StackedDrg::<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config,
                                                      replica_path.clone(), )
             .expect("replication failed");
 
-    let mut copied = vec ![0; data.len()];
+    auto mut copied = vec ![0; data.len()];
     copied.copy_from_slice(&mmapped_data);
     assert_ne !(data, copied, "replication did not change data");
 
-    let seed = rng.gen();
-    let pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Blake2sHasher>::Domain > {
+    auto seed = rng.gen();
+    auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Blake2sHasher>::Domain > {
         replica_id,
         seed,
         tau : Some(tau),
@@ -235,20 +235,20 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     };
 
     // Store a copy of the t_aux for later resource deletion.
-    let t_aux_orig = t_aux.clone();
+    auto t_aux_orig = t_aux.clone();
 
     // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
     // elements based on the configs stored in TemporaryAux.
-    let t_aux = TemporaryAuxCache::<Tree, Blake2sHasher>::new (&t_aux, replica_path)
+    auto t_aux = TemporaryAuxCache::<Tree, Blake2sHasher>::new (&t_aux, replica_path)
                     .expect("failed to restore contents of t_aux");
 
-    let priv_inputs = PrivateInputs {p_aux, t_aux};
+    auto priv_inputs = PrivateInputs {p_aux, t_aux};
 
-    let all_partition_proofs =
+    auto all_partition_proofs =
         &StackedDrg::<Tree, Blake2sHasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, partitions, )
              .expect("failed to generate partition proofs");
 
-    let proofs_are_valid =
+    auto proofs_are_valid =
         StackedDrg::<Tree, Blake2sHasher>::verify_all_partitions(&pp, &pub_inputs, all_partition_proofs, )
             .expect("failed to verify partition proofs");
 
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(setup_terminates) {
 
     // When this fails, the call to setup should panic, but seems to actually hang (i.e. neither return nor panic) for
     // some reason. When working as designed, the call to setup returns without error.
-    let _pp = StackedDrg<DiskTree<PedersenHasher, 8, 0, 0>, Blake2sHasher>::setup(sp);
+    auto _pp = StackedDrg<DiskTree<PedersenHasher, 8, 0, 0>, Blake2sHasher>::setup(sp);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

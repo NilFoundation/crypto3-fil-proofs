@@ -29,29 +29,29 @@ BOOST_AUTO_TEST_SUITE(stacked_circuit_test_suite)
 
 template<typename MerkleTreeType>
 void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_constraints) {
-    let nodes = 8 * get_base_tree_count::<Tree>();
-    let degree = BASE_DEGREE;
-    let expansion_degree = EXP_DEGREE;
-    let num_layers = 2;
-    let layer_challenges = LayerChallenges::new (num_layers, 1);
+    auto nodes = 8 * get_base_tree_count::<Tree>();
+    auto degree = BASE_DEGREE;
+    auto expansion_degree = EXP_DEGREE;
+    auto num_layers = 2;
+    auto layer_challenges = LayerChallenges::new (num_layers, 1);
 
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let replica_id : Fr = Fr::random(rng);
-    let data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    auto replica_id : Fr = Fr::random(rng);
+    auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir();
-    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    auto cache_dir = tempfile::tempdir();
+    auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
-    let replica_path = cache_dir.path().join("replica-path");
-    let mut mmapped_data = setup_replica(&data, &replica_path);
+    auto replica_path = cache_dir.path().join("replica-path");
+    auto mut mmapped_data = setup_replica(&data, &replica_path);
 
-    let arbitrary_porep_id = [44; 32];
-    let sp = SetupParams {
+    auto arbitrary_porep_id = [44; 32];
+    auto sp = SetupParams {
         nodes,
         degree,
         expansion_degree,
@@ -59,18 +59,18 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
         layer_challenges,
     };
 
-    let pp = StackedDrg<Tree, Sha256Hasher>::setup(&sp).expect("setup failed");
-    let(tau, (p_aux, t_aux)) =
+    auto pp = StackedDrg<Tree, Sha256Hasher>::setup(&sp).expect("setup failed");
+    auto(tau, (p_aux, t_aux)) =
         StackedDrg<Tree, Sha256Hasher>::replicate(&pp, &replica_id.into(), (mmapped_data.as_mut()).into(), None, config,
                                                   replica_path.clone(), )
             .expect("replication failed");
 
-    let mut copied = vec ![0; data.len()];
+    auto mut copied = vec ![0; data.len()];
     copied.copy_from_slice(&mmapped_data);
     assert_ne !(data, copied, "replication did not change data");
 
-    let seed = rng.gen();
-    let pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Sha256Hasher>::Domain > {
+    auto seed = rng.gen();
+    auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Sha256Hasher>::Domain > {
         replica_id : replica_id.into(),
         seed,
         tau : Some(tau),
@@ -78,19 +78,19 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     };
 
     // Store copy of original t_aux for later resource deletion.
-    let t_aux_orig = t_aux.clone();
+    auto t_aux_orig = t_aux.clone();
 
     // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
     // elements based on the configs stored in TemporaryAux.
-    let t_aux = TemporaryAuxCache::<Tree, Sha256Hasher>::new (&t_aux, replica_path)
+    auto t_aux = TemporaryAuxCache::<Tree, Sha256Hasher>::new (&t_aux, replica_path)
                     .expect("failed to restore contents of t_aux");
 
-    let priv_inputs = PrivateInputs::<Tree, Sha256Hasher> {p_aux, t_aux};
+    auto priv_inputs = PrivateInputs::<Tree, Sha256Hasher> {p_aux, t_aux};
 
-    let proofs = StackedDrg::<Tree, Sha256Hasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, 1, )
+    auto proofs = StackedDrg::<Tree, Sha256Hasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, 1, )
                      .expect("failed to generate partition proofs");
 
-    let proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs)
+    auto proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs)
                                .expect("failed while trying to verify partition proofs");
 
     assert !(proofs_are_valid);
@@ -98,19 +98,18 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     // Discard cached MTs that are no longer needed.
     TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig).expect("t_aux delete failed");
 
-    {
-        // Verify that MetricCS returns the same metrics as TestConstraintSystem.
-        let mut cs = MetricCS::<Bls12>::new ();
+    // Verify that MetricCS returns the same metrics as TestConstraintSystem.
+    auto mut cs = MetricCS::<Bls12>::new ();
 
-        StackedCompound::<Tree, Sha256Hasher>::circuit(&pub_inputs, (), &proofs[0], &pp, None)
-            .expect("circuit failed")
-            .synthesize(&mut cs.namespace(|| "stacked drgporep"))
-            .expect("failed to synthesize circuit");
+    StackedCompound::<Tree, Sha256Hasher>::circuit(&pub_inputs, (), &proofs[0], &pp, None)
+        .expect("circuit failed")
+        .synthesize(&mut cs.namespace(|| "stacked drgporep"))
+        .expect("failed to synthesize circuit");
 
-        BOOST_CHECK_EQUAL(cs.num_inputs(), expected_inputs, "wrong number of inputs");
-        BOOST_CHECK_EQUAL(cs.num_constraints(), expected_constraints, "wrong number of constraints");
-    }
-    let mut cs = TestConstraintSystem::<Bls12>::new ();
+    BOOST_CHECK_EQUAL(cs.num_inputs(), expected_inputs, "wrong number of inputs");
+    BOOST_CHECK_EQUAL(cs.num_constraints(), expected_constraints, "wrong number of constraints");
+    
+    auto mut cs = TestConstraintSystem::<Bls12>::new ();
 
     StackedCompound::<Tree, Sha256Hasher>::circuit(&pub_inputs, (), &proofs[0], &pp, None)
         .expect("circuit failed")
@@ -123,11 +122,11 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
 
     BOOST_CHECK_EQUAL(cs.get_input(0, "ONE"), Fr::one());
 
-    let generated_inputs =
+    auto generated_inputs =
         <StackedCompound<Tree, Sha256Hasher>
              as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::generate_public_inputs(&pub_inputs, &pp, None)
             .expect("failed to generate public inputs");
-    let expected_inputs = cs.get_inputs();
+    auto expected_inputs = cs.get_inputs();
 
     for (((input, label), generated_input) : expected_inputs.iter().skip(1).zip(generated_inputs.iter())) {
         BOOST_CHECK_EQUAL(input, generated_input, "{}", label);
@@ -160,21 +159,21 @@ BOOST_AUTO_TEST_CASE(stacked_input_circuit_poseidon_top_8_4_2) {
 
 template<typename MerkleTreeType>
 void stacked_test_compound() {
-    let nodes = 8 * get_base_tree_count::<Tree>();
+    auto nodes = 8 * get_base_tree_count::<Tree>();
 
-    let degree = BASE_DEGREE;
-    let expansion_degree = EXP_DEGREE;
-    let num_layers = 2;
-    let layer_challenges = LayerChallenges::new (num_layers, 1);
-    let partition_count = 1;
+    auto degree = BASE_DEGREE;
+    auto expansion_degree = EXP_DEGREE;
+    auto num_layers = 2;
+    auto layer_challenges = LayerChallenges::new (num_layers, 1);
+    auto partition_count = 1;
 
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let replica_id : Fr = Fr::random(rng);
-    let data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    auto replica_id : Fr = Fr::random(rng);
+    auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
-    let arbitrary_porep_id = [55; 32];
-    let setup_params = compound_proof::SetupParams {
+    auto arbitrary_porep_id = [55; 32];
+    auto setup_params = compound_proof::SetupParams {
         vanilla_params : SetupParams {
             nodes,
             degree,
@@ -188,26 +187,26 @@ void stacked_test_compound() {
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    let cache_dir = tempfile::tempdir();
-    let config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    auto cache_dir = tempfile::tempdir();
+    auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
-    let replica_path = cache_dir.path().join("replica-path");
-    let mut mmapped_data = setup_replica(&data, &replica_path);
+    auto replica_path = cache_dir.path().join("replica-path");
+    auto mut mmapped_data = setup_replica(&data, &replica_path);
 
-    let public_params = StackedCompound::setup(&setup_params).expect("setup failed");
-    let(tau, (p_aux, t_aux)) =
+    auto public_params = StackedCompound::setup(&setup_params).expect("setup failed");
+    auto(tau, (p_aux, t_aux)) =
         StackedDrg::<Tree, _>::replicate(&public_params.vanilla_params, &replica_id.into(),
                                          (mmapped_data.as_mut()).into(), None, config, replica_path.clone(), )
             .expect("replication failed");
 
-    let mut copied = vec ![0; data.len()];
+    auto mut copied = vec ![0; data.len()];
     copied.copy_from_slice(&mmapped_data);
     assert_ne !(data, copied, "replication did not change data");
 
-    let seed = rng.gen();
-    let public_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Sha256Hasher>::Domain > {
+    auto seed = rng.gen();
+    auto public_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Sha256Hasher>::Domain > {
         replica_id : replica_id.into(),
         seed,
         tau : Some(tau),
@@ -215,53 +214,50 @@ void stacked_test_compound() {
     };
 
     // Store a copy of the t_aux for later resource deletion.
-    let t_aux_orig = t_aux.clone();
+    auto t_aux_orig = t_aux.clone();
 
     // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
     // elements based on the configs stored in TemporaryAux.
-    let t_aux = TemporaryAuxCache::<Tree, _>::new (&t_aux, replica_path).expect("failed to restore contents of t_aux");
+    auto t_aux = TemporaryAuxCache::<Tree, _>::new (&t_aux, replica_path).expect("failed to restore contents of t_aux");
 
-    let private_inputs = PrivateInputs::<Tree, Sha256Hasher> {p_aux, t_aux};
+    auto private_inputs = PrivateInputs::<Tree, Sha256Hasher> {p_aux, t_aux};
 
-    {
-        let(circuit, inputs) =
-            StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
+    
+    auto(circuit, inputs) =
+        StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
 
-        let mut cs = TestConstraintSystem::new ();
+    auto mut cs = TestConstraintSystem::new ();
 
-        circuit.synthesize(&mut cs).expect("failed to synthesize");
+    circuit.synthesize(&mut cs).expect("failed to synthesize");
 
-        if
-            !cs.is_satisfied() {
-                panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
-            }
-        assert !(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
-    }
+    if
+        !cs.is_satisfied() {
+            panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
+        }
+    assert !(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
 
     // Use this to debug differences between blank and regular circuit generation.
-    {
-        let(circuit1, _inputs) =
-            StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
-        let blank_circuit =
-            <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::blank_circuit(
-                &public_params.vanilla_params);
+    
+    auto(circuit1, _inputs) =
+        StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
+    auto blank_circuit =
+        <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::blank_circuit(
+            &public_params.vanilla_params);
 
-        let mut cs_blank = MetricCS::new ();
-        blank_circuit.synthesize(&mut cs_blank).expect("failed to synthesize");
+    auto mut cs_blank = MetricCS::new ();
+    blank_circuit.synthesize(&mut cs_blank).expect("failed to synthesize");
 
-        let a = cs_blank.pretty_print_list();
+    auto a = cs_blank.pretty_print_list();
 
-        let mut cs1 = TestConstraintSystem::new ();
-        circuit1.synthesize(&mut cs1).expect("failed to synthesize");
-        let b = cs1.pretty_print_list();
+    auto mut cs1 = TestConstraintSystem::new ();
+    circuit1.synthesize(&mut cs1).expect("failed to synthesize");
+    auto b = cs1.pretty_print_list();
 
-        for (i, (a, b))
-            in a.chunks(100).zip(b.chunks(100)).enumerate() {
-                BOOST_CHECK_EQUAL(a, b, "failed at chunk {}", i);
-            }
+    for (i, (a, b)) in a.chunks(100).zip(b.chunks(100)).enumerate() {
+        BOOST_CHECK_EQUAL(a, b, "failed at chunk {}", i);
     }
 
-    let blank_groth_params =
+    auto blank_groth_params =
         <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::groth_params(
             Some(rng), &public_params.vanilla_params)
             .expect("failed to generate groth params");
@@ -269,10 +265,10 @@ void stacked_test_compound() {
     // Discard cached MTs that are no longer needed.
     TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig).expect("t_aux delete failed");
 
-    let proof = StackedCompound::prove(&public_params, &public_inputs, &private_inputs, &blank_groth_params, )
+    auto proof = StackedCompound::prove(&public_params, &public_inputs, &private_inputs, &blank_groth_params, )
                     .expect("failed while proving");
 
-    let verified = StackedCompound::verify(&public_params, &public_inputs, &proof, &ChallengeRequirements {
+    auto verified = StackedCompound::verify(&public_params, &public_inputs, &proof, &ChallengeRequirements {
                        minimum_challenges : 1,
                    }, )
                        .expect("failed while verifying");

@@ -32,13 +32,13 @@ BOOST_AUTO_TEST_SUITE(feistel_test_suite)
 const BAD_NS : &[Index] = &[ 5, 6, 8, 12, 17 ];    //
 //
 void encode_decode(n : Index, expect_success : bool) {
-    let mut failed = false;
-    let precomputed = precompute(n);
-    for (int i = 0; i < n; i++) {
-        let p = encode(i, &[ 1, 2, 3, 4 ], precomputed);
-        let v = decode(p, &[ 1, 2, 3, 4 ], precomputed);
-        let equal = i == v;
-        let in_range = p <= n;
+    auto mut failed = false;
+    auto precomputed = precompute(n);
+    for (std::size_t i = 0; i < n; i++) {
+        auto p = encode(i, &[ 1, 2, 3, 4 ], precomputed);
+        auto v = decode(p, &[ 1, 2, 3, 4 ], precomputed);
+        auto equal = i == v;
+        auto in_range = p <= n;
         if (expect_success) {
             BOOST_CHECK(equal, "failed to permute (n = {})", n);
             BOOST_CHECK(in_range, "output number is too big (n = {})", n);
@@ -56,37 +56,33 @@ void encode_decode(n : Index, expect_success : bool) {
 BOOST_AUTO_TEST_CASE(test_feistel_power_of_4) {
     // Our implementation is guaranteed to produce a permutation when input size (number of elements)
     // is a power of our.
-    let mut n = 1;
+    auto mut n = 1;
 
     // Powers of 4 always succeed.
-    for
-        _ in 0..4 {
-            n *= 4;
-            encode_decode(n, true);
-        }
+    for (std::size_t i = 0; i < 4; ++i) {
+        n *= 4;
+        encode_decode(n, true);
+    }
 
     // Some non-power-of 4 also succeed, but here is a selection of examples values showing
     // that this is not guaranteed.
-    for
-        i in BAD_NS.iter() {
-            encode_decode(*i, false);
-        }
+    for (i in BAD_NS.iter()) {
+        encode_decode(*i, false);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_feistel_on_arbitrary_set) {
-    for
-        n in BAD_NS.iter() {
-            let precomputed = precompute(*n as Index);
-        for
-            i in 0.. * n {
-                let p = permute(*n, i, &[ 1, 2, 3, 4 ], precomputed);
-                let v = invert_permute(*n, p, &[ 1, 2, 3, 4 ], precomputed);
-                // Since every element in the set is reversibly mapped to another element also in the set,
-                // this is indeed a permutation.
-                assert_eq !(i, v, "failed to permute");
-                assert !(p <= *n, "output number is too big");
-            }
+    for (n in BAD_NS.iter()) {
+            auto precomputed = precompute(*n as Index);
+        for (i in 0.. * n) {
+            auto p = permute(*n, i, &[ 1, 2, 3, 4 ], precomputed);
+            auto v = invert_permute(*n, p, &[ 1, 2, 3, 4 ], precomputed);
+            // Since every element in the set is reversibly mapped to another element also in the set,
+            // this is indeed a permutation.
+            assert_eq !(i, v, "failed to permute");
+            assert !(p <= *n, "output number is too big");
         }
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

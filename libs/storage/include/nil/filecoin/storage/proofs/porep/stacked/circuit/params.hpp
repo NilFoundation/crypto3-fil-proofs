@@ -64,15 +64,15 @@ namespace nil {
                         }
 
                         Proof(const vanilla::Proof<MerkleTreeType, Hash> &vanilla_proof) {
-                            let VanillaProof {comm_d_proofs, comm_r_last_proof, replica_column_proofs, labeling_proofs,
+                            auto VanillaProof {comm_d_proofs, comm_r_last_proof, replica_column_proofs, labeling_proofs,
                                               ..} = vanilla_proof;
-                            let VanillaReplicaColumnProof {
+                            auto VanillaReplicaColumnProof {
                                 c_x,
                                 drg_parents,
                                 exp_parents,
                             } = replica_column_proofs;
 
-                            let data_leaf = Some(comm_d_proofs.leaf().into());
+                            auto data_leaf = Some(comm_d_proofs.leaf().into());
 
                             Proof {
                             comm_d_path:
@@ -91,7 +91,7 @@ namespace nil {
                         void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs, std::size_t layers, AllocatedNumber<algebra::curves::bls12<381>> &comm_d,
                                         AllocatedNumber<algebra::curves::bls12<381>> &comm_c, AllocatedNumber<algebra::curves::bls12<381>> &comm_r_last,
                                         const std::vector<bool> &replica_id) {
-                            let Proof {comm_d_path, data_leaf,          challenge,          comm_r_last_path,
+                            auto Proof {comm_d_path, data_leaf,          challenge,          comm_r_last_path,
                                        comm_c_path, drg_parents_proofs, exp_parents_proofs, ..} = self;
 
                             assert(!drg_parents_proofs.empty());
@@ -100,7 +100,7 @@ namespace nil {
                             // -- verify initial data layer
 
                             // PrivateInput: data_leaf
-                            let data_leaf_num = num::AllocatedNumber::alloc(
+                            auto data_leaf_num = num::AllocatedNumber::alloc(
                                 cs.namespace(|| "data_leaf"),
                                 || {data_leaf.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                                 ;
@@ -113,62 +113,59 @@ namespace nil {
                             // -- verify replica column openings
 
                             // Private Inputs for the DRG parent nodes.
-                            let mut drg_parents = Vec::with_capacity(layers);
+                            auto mut drg_parents = Vec::with_capacity(layers);
 
                             for ((i, parent) : drg_parents_proofs.into_iter().enumerate()) {
-                                let(parent_col, inclusion_path) =
-                                    parent.alloc(cs.namespace(|| format !("drg_parent_{}_num", i))) ?
-                                    ;
+                                auto(parent_col, inclusion_path) =
+                                    parent.alloc(cs.namespace(|| format !("drg_parent_{}_num", i))) ?;
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
-                                let val = parent_col.hash(cs.namespace(|| format !("drg_parent_{}_constraint", i))) ? ;
+                                auto val = parent_col.hash(cs.namespace(|| format !("drg_parent_{}_constraint", i))) ? ;
                                 // enforce inclusion of the column hash in the tree C
                                 enforce_inclusion(cs.namespace(|| format !("drg_parent_{}_inclusion", i)),
-                                                  inclusion_path, comm_c, &val, ) ?
-                                    ;
+                                                  inclusion_path, comm_c, &val, ) ?;
                                 drg_parents.push(parent_col);
                             }
 
                             // Private Inputs for the Expander parent nodes.
-                            let mut exp_parents = Vec::new ();
+                            auto mut exp_parents = Vec::new ();
 
                             for ((i, parent) : exp_parents_proofs.into_iter().enumerate()) {
-                                let(parent_col, inclusion_path) =
+                                auto(parent_col, inclusion_path) =
                                     parent.alloc(cs.namespace(|| format !("exp_parent_{}_num", i))) ?
                                     ;
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
-                                let val = parent_col.hash(cs.namespace(|| format !("exp_parent_{}_constraint", i))) ? ;
+                                auto val = parent_col.hash(cs.namespace(|| format !("exp_parent_{}_constraint", i))) ? ;
                                 // enforce inclusion of the column hash in the tree C
                                 enforce_inclusion(cs.namespace(|| format !("exp_parent_{}_inclusion", i)),
-                                                  inclusion_path, comm_c, &val, ) ?
-                                    ;
+                                                  inclusion_path, comm_c, &val, ) ?;
                                 exp_parents.push_back(parent_col);
                             }
 
                             // -- Verify labeling and encoding
 
                             // stores the labels of the challenged column
-                            let mut column_labels = Vec::new ();
+                            auto mut column_labels = Vec::new ();
 
                             // PublicInput: challenge index
-                            let challenge_num = uint64::UInt64::alloc(cs.namespace(|| "challenge"), challenge) ? ;
+                            auto challenge_num = uint64::UInt64::alloc(cs.namespace(|| "challenge"), challenge) ? ;
                             challenge_num.pack_into_input(cs.namespace(|| "challenge input")) ? ;
 
                             for (uint32_t layer = 1; layer != layers; layer++) {
-                                let layer_num = uint32::UInt32::constant(layer as u32);
+                                auto layer_num = uint32::UInt32::constant(layer as u32);
 
-                                let mut cs = cs.namespace(|| format !("labeling_{}", layer));
+                                auto mut cs = cs.namespace(|| format !("labeling_{}", layer));
 
                                 // Collect the parents
-                                let mut parents = Vec::new ();
+                                auto mut parents = Vec::new ();
 
                                 // all layers have drg parents
                                 for (parent_col : &drg_parents) {
-                                    let parent_val_num = parent_col.get_value(layer);
-                                    let parent_val_bits =
+                                    auto parent_val_num = parent_col.get_value(layer);
+                                    auto parent_val_bits =
                                         reverse_bit_numbering(parent_val_num.to_bits_le(
                                     cs.namespace(|| format!("drg_parent_{}_bits", parents.len())),
                                     )?);
@@ -180,8 +177,8 @@ namespace nil {
                                     for (parent_col : exp_parents) {
                                         // subtract 1 from the layer index, as the exp parents, are shifted by one,
                                         // as they do not store a value for the first layer
-                                        let parent_val_num = parent_col.get_value(layer - 1);
-                                        let parent_val_bits = reverse_bit_numbering(parent_val_num.to_bits_le(
+                                        auto parent_val_num = parent_col.get_value(layer - 1);
+                                        auto parent_val_bits = reverse_bit_numbering(parent_val_num.to_bits_le(
                                         cs.namespace(|| format!("exp_parent_{}_bits", parents.len())),
                                         )?);
                                         parents.push(parent_val_bits);
@@ -189,7 +186,7 @@ namespace nil {
                                 }
 
                                 // Duplicate parents, according to the hashing algorithm.
-                                let mut expanded_parents = parents.clone();
+                                auto mut expanded_parents = parents.clone();
                                 if (layer > 1) {
                                     expanded_parents.extend_from_slice(&parents);         // 28
                                     expanded_parents.extend_from_slice(&parents[..9]);    // 37
@@ -204,38 +201,32 @@ namespace nil {
                                 };
 
                                 // Reconstruct the label
-                                let label = create_label(cs.namespace(|| "create_label"), replica_id, expanded_parents,
+                                auto label = create_label(cs.namespace(|| "create_label"), replica_id, expanded_parents,
                                                          layer_num, challenge_num.clone(), ) ?
                                     ;
                                 column_labels.push(label);
                             }
 
                             // -- encoding node
-                            {
-                                // encode the node
+                            // encode the node
 
-                                // key is the last label
-                                let key = &column_labels[column_labels.len() - 1];
-                                let encoded_node = encode(cs.namespace(|| "encode_node"), key, &data_leaf_num) ? ;
+                            // key is the last label
+                            auto key = &column_labels[column_labels.len() - 1];
+                            auto encoded_node = encode(cs.namespace(|| "encode_node"), key, &data_leaf_num) ? ;
 
-                                // verify inclusion of the encoded node
-                                enforce_inclusion(cs.namespace(|| "comm_r_last_data_inclusion"), comm_r_last_path,
-                                                  comm_r_last, &encoded_node, ) ?
-                                    ;
-                            }
+                            // verify inclusion of the encoded node
+                            enforce_inclusion(cs.namespace(|| "comm_r_last_data_inclusion"), comm_r_last_path,
+                                              comm_r_last, &encoded_node, ) ?;
 
                             // -- ensure the column hash of the labels is included
-                            {
-                                // calculate column_hash
-                                let column_hash =
-                                    hash_single_column(cs.namespace(|| "c_x_column_hash"), &column_labels) ?
-                                    ;
+                            // calculate column_hash
+                            auto column_hash =
+                                hash_single_column(cs.namespace(|| "c_x_column_hash"), &column_labels) ?
+                                ;
 
-                                // enforce inclusion of the column hash in the tree C
-                                enforce_inclusion(cs.namespace(|| "c_x_inclusion"), comm_c_path, comm_c,
-                                                  &column_hash, ) ?
-                                    ;
-                            }
+                            // enforce inclusion of the column hash in the tree C
+                            enforce_inclusion(cs.namespace(|| "c_x_inclusion"), comm_c_path, comm_c,
+                                              &column_hash, ) ?;
                         }
 
                         /// Inclusion path for the challenged data node in tree D.
@@ -262,8 +253,8 @@ namespace nil {
                                            const AuthPath<Hash, BaseArity, SubTreeArity, TopTreeArity> &path,
                                            const AllocatedNumber<algebra::curves::bls12<381>> &root,
                                            const AllocatedNumber<algebra::curves::bls12<381>> &leaf) {
-                        let root = Root::from_allocated::<CS>(root.clone());
-                        let leaf = Root::from_allocated::<CS>(leaf.clone());
+                        auto root = Root::from_allocated::<CS>(root.clone());
+                        auto leaf = Root::from_allocated::<CS>(leaf.clone());
 
                         PoRCircuitMerkleTreeWrapper<H, DiskStore<H::Domain>, U, V, W> >
                             ::synthesize(cs, leaf, path, root, true);

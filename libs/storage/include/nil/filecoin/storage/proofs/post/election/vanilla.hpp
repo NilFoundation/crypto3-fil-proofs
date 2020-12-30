@@ -142,7 +142,7 @@ namespace nil {
 
                         trace !("Generating proof for tree of len {} with leafs {}", tree.len(), tree_leafs, );
 
-                        let inclusion_proofs = measure_op(
+                        auto inclusion_proofs = measure_op(
                             Operation::PostInclusionProofs,
                             || {(0..pub_params.challenge_count)
                                     .into_par_iter()
@@ -150,7 +150,7 @@ namespace nil {
                                         | n |
                                         {
                                             // TODO: replace unwrap with proper error handling
-                                            let challenged_leaf_start =
+                                            auto challenged_leaf_start =
                                                 generate_leaf_challenge(pub_params, pub_inputs.randomness,
                                                                         pub_inputs.sector_challenge_index, std::uint64_t(n))
                                                     ;
@@ -162,7 +162,7 @@ namespace nil {
                                     .collect::<Result<Vec<_>>>()});
 
                         // 2. correct generation of the ticket from the partial_ticket (add this to the candidate)
-                        let ticket =
+                        auto ticket =
                             measure_op(Operation::PostFinalizeTicket, || {finalize_ticket(&pub_inputs.partial_ticket)});
 
                         return {inclusion_proofs, ticket, pinputs.comm_c};
@@ -171,9 +171,9 @@ namespace nil {
                                         const proof_type &pr) override {
                         // verify that H(Comm_c || Comm_r_last) == Comm_R
                         // comm_r_last is the root of the proof
-                        let comm_r_last = pr.inclusion_proofs[0].root();
-                        let comm_c = pr.comm_c;
-                        let comm_r = &pub_inputs.comm_r;
+                        auto comm_r_last = pr.inclusion_proofs[0].root();
+                        auto comm_c = pr.comm_c;
+                        auto comm_r = &pub_inputs.comm_r;
 
                         if (AsRef ::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type>::Function::hash2(
                                 &comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(comm_r)) {
@@ -181,10 +181,10 @@ namespace nil {
                         }
 
                         for (int n = 0; n < pub_params.challenge_count; n++) {
-                            let challenged_leaf_start = generate_leaf_challenge(pub_params, pub_inputs.randomness,
+                            auto challenged_leaf_start = generate_leaf_challenge(pub_params, pub_inputs.randomness,
                                                                                 pub_inputs.sector_challenge_index, n);
                             for (int i = 0; i < pub_params.challenged_nodes; i++) {
-                                let merkle_proof = &proof.inclusion_proofs[n * pub_params.challenged_nodes + i];
+                                auto merkle_proof = &proof.inclusion_proofs[n * pub_params.challenged_nodes + i];
 
                                 // validate all comm_r_lasts match
                                 if (merkle_proof.root() != comm_r_last) {
@@ -192,7 +192,7 @@ namespace nil {
                                 }
 
                                 // validate the path length
-                                let expected_path_length =
+                                auto expected_path_length =
                                     merkle_proof.expected_len(pub_params.sector_size / NODE_SIZE);
 
                                 if (expected_path_length != merkle_proof.path().size()) {
@@ -223,7 +223,7 @@ namespace nil {
                         .enumerate()
                         .map(| (sector_challenge_index, sector_id) |
                              {
-                                 let tree = match trees.get(sector_id) {
+                                 auto tree = match trees.get(sector_id) {
                                      Some(tree) = > tree,
                                      None = > bail !(Error::MissingPrivateInput("tree", (*sector_id).into())),
                                  };
@@ -273,8 +273,8 @@ namespace nil {
 
                 template<typename FinalizationHash = crypto3::hashes::sha2<256>>
                 std::array<std::uint8_t, 32> finalize_ticket(const Fr &partial_ticket) {
-                    let bytes = fr_into_bytes(partial_ticket);
-                    let ticket_hash = Sha256::digest(&bytes);
+                    auto bytes = fr_into_bytes(partial_ticket);
+                    auto ticket_hash = Sha256::digest(&bytes);
                     std::array<std::uint8_t, 32> ticket;
                     ticket.fill(0);
                     ticket.copy_from_slice(&ticket_hash[..]);
@@ -298,14 +298,14 @@ namespace nil {
                 template<typename Domain, typename FinalizationHash = crypto3::hashes::sha2<256>>
                 sector_id_type generate_sector_challenge(const Domain &randomness, std::size_t n,
                                                          const ordered_sector_set &sectors) {
-                    let mut hasher = Sha256::new ();
+                    auto mut hasher = Sha256::new ();
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));
                     hasher.input(&n.to_le_bytes()[..]);
-                    let hash = hasher.result();
+                    auto hash = hasher.result();
 
-                    let sector_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
+                    auto sector_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
                     std::uint sector_index = (std::uint64_t(sector_challenge % sectors.len()));
-                    let sector = *sectors.iter().nth(sector_index).context("invalid challenge generated") ? ;
+                    auto sector = *sectors.iter().nth(sector_index).context("invalid challenge generated") ? ;
 
                     return sector;
                 }
@@ -333,13 +333,13 @@ namespace nil {
                     assert(
                         ("sector size is too small", pub_params.sector_size > pub_params.challenged_nodes * NODE_SIZE));
 
-                    let mut hasher = Sha256::new ();
+                    auto mut hasher = Sha256::new ();
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));
                     hasher.input(&sector_challenge_index.to_le_bytes()[..]);
                     hasher.input(&leaf_challenge_index.to_le_bytes()[..]);
-                    let hash = hasher.result();
+                    auto hash = hasher.result();
 
-                    let leaf_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
+                    auto leaf_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
 
                     std::uint64_t challenged_range_index =
                         leaf_challenge % (pub_params.sector_size / (pub_params.challenged_nodes * NODE_SIZE));

@@ -31,10 +31,10 @@ namespace nil {
         template<typename FrInputIterator>
         Fr hash_single_column(FrInputIterator column_first, FrInputIterator column_last) {
             if (std::distance(column_first, column_last) == 2) {
-                let mut hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_2);
+                auto mut hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_2);
                 return hasher.hash();
             } else if (std::distance(column_first, column_last) == 11) {
-                let mut hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_11);
+                auto mut hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_11);
                 return hasher.hash();
             } else {
                 assert(("unsupported column size: " std::distance(column_first, column_last)));

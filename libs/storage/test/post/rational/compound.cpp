@@ -31,13 +31,13 @@ BOOST_AUTO_TEST_SUITE(post_rational_compound_test_suite)
 
 template<typename MerkleTreeType>
 void rational_post_test_compound() {
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let leaves = 32 * get_base_tree_count::<Tree>();
-    let sector_size = (leaves * NODE_SIZE) as u64;
-    let challenges_count = 2;
+    auto leaves = 32 * get_base_tree_count::<Tree>();
+    auto sector_size = (leaves * NODE_SIZE) as u64;
+    auto challenges_count = 2;
 
-    let setup_params = compound_proof::SetupParams {
+    auto setup_params = compound_proof::SetupParams {
         vanilla_params : rational::SetupParams {
             sector_size,
             challenges_count,
@@ -46,69 +46,67 @@ void rational_post_test_compound() {
         priority : true,
     };
 
-    let pub_params = RationalPoStCompound::<Tree>::setup(&setup_params).expect("setup failed");
+    auto pub_params = RationalPoStCompound::<Tree>::setup(&setup_params).expect("setup failed");
 
     // Construct and store an MT using a named DiskStore.
-    let temp_dir = tempfile::tempdir();
-    let temp_path = temp_dir.path();
+    auto temp_dir = tempfile::tempdir();
+    auto temp_path = temp_dir.path();
 
-    let(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
-    let(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+    auto(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+    auto(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
 
-    let faults = OrderedSectorSet::new ();
-    let mut sectors = OrderedSectorSet::new ();
+    auto faults = OrderedSectorSet::new ();
+    auto mut sectors = OrderedSectorSet::new ();
     sectors.insert(0.into());
     sectors.insert(1.into());
 
-    let seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
+    auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
+    auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
 
-    let comm_r_lasts_raw = vec ![ tree1.root(), tree2.root() ];
-    let comm_r_lasts : Vec<_> = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
+    auto comm_r_lasts_raw = vec ![ tree1.root(), tree2.root() ];
+    auto comm_r_lasts : Vec<_> = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
 
-    let comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    let comm_rs
+    auto comm_rs
         : Vec<_> = comm_cs.iter()
                        .zip(comm_r_lasts.iter())
                        .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
                        .collect();
 
-    let pub_inputs = rational::PublicInputs {
+    auto pub_inputs = rational::PublicInputs {
         challenges : &challenges,
         faults : &faults,
         comm_rs : &comm_rs,
     };
 
-    let mut trees = BTreeMap::new ();
+    auto mut trees = BTreeMap::new ();
     trees.insert(0.into(), &tree1);
     trees.insert(1.into(), &tree2);
 
-    let priv_inputs = rational::PrivateInputs::<Tree> {
+    auto priv_inputs = rational::PrivateInputs::<Tree> {
         trees : &trees,
         comm_r_lasts : &comm_r_lasts,
         comm_cs : &comm_cs,
     };
 
-    let gparams = RationalPoStCompound::<Tree>::groth_params(Some(rng), &pub_params.vanilla_params)
+    auto gparams = RationalPoStCompound::<Tree>::groth_params(Some(rng), &pub_params.vanilla_params)
                       .expect("failed to create groth params");
 
-    let proof =
+    auto proof =
         RationalPoStCompound::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs, &gparams).expect("proving failed");
 
-    let(circuit, inputs) =
+    auto(circuit, inputs) =
         RationalPoStCompound::<Tree>::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
 
-    {
-        let mut cs = TestConstraintSystem::new ();
+    auto mut cs = TestConstraintSystem::new ();
 
-        circuit.synthesize(&mut cs).expect("failed to synthesize");
-        assert !(cs.is_satisfied());
-        assert !(cs.verify(&inputs));
-    }
+    circuit.synthesize(&mut cs).expect("failed to synthesize");
+    assert !(cs.is_satisfied());
+    assert !(cs.verify(&inputs));
 
-    let verified = RationalPoStCompound::<Tree>::verify(&pub_params, &pub_inputs, &proof, &NoRequirements)
+    auto verified = RationalPoStCompound::<Tree>::verify(&pub_params, &pub_inputs, &proof, &NoRequirements)
                        .expect("failed while verifying");
 
     assert !(verified);

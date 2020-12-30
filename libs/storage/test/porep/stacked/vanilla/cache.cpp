@@ -36,38 +36,37 @@ using namespace nil::filecoin;
 BOOST_AUTO_TEST_SUITE(vanilla_cache_test_suite)
 
 BOOST_AUTO_TEST_CASE(test_read_full_range) {
-    let nodes = 24u32;
-    let graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], )
+    auto nodes = 24u32;
+    auto graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], )
                     ;
 
-    let mut cache = ParentCache::new (nodes, nodes, &graph);
+    auto mut cache = ParentCache::new (nodes, nodes, &graph);
 
-    for
-        node in 0..nodes {
-            let mut expected_parents = [0; DEGREE];
+    for (node in 0..nodes) {
+            auto mut expected_parents = [0; DEGREE];
             graph.parents(std::uint(node), &mut expected_parents);
-            let parents = cache.read(node);
+            auto parents = cache.read(node);
 
             BOOST_CHECK_EQUAL(expected_parents, parents);
         }
 }
 
 BOOST_AUTO_TEST_CASE(test_read_partial_range) {
-    let nodes = 48u32;
-    let graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], )
+    auto nodes = 48u32;
+    auto graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], )
                     ;
 
-    let mut half_cache = ParentCache::new (nodes / 2, nodes, &graph);
-    let mut quarter_cache = ParentCache::new (nodes / 4, nodes, &graph);
+    auto mut half_cache = ParentCache::new (nodes / 2, nodes, &graph);
+    auto mut quarter_cache = ParentCache::new (nodes / 4, nodes, &graph);
 
     for(node in 0..nodes) {
-        let mut expected_parents = [0; DEGREE];
+        auto mut expected_parents = [0; DEGREE];
         graph.parents(std::uint(node), &mut expected_parents);
 
-        let parents = half_cache.read(node);
+        auto parents = half_cache.read(node);
         BOOST_CHECK_EQUAL(expected_parents, parents);
 
-        let parents = quarter_cache.read(node);
+        auto parents = quarter_cache.read(node);
         BOOST_CHECK_EQUAL(expected_parents, parents);
 
         // some internal checks to make sure the cache works as expected
@@ -79,13 +78,13 @@ BOOST_AUTO_TEST_CASE(test_read_partial_range) {
     quarter_cache.reset();
 
     for (node : nodes) {
-        let mut expected_parents = [0; DEGREE];
+        auto mut expected_parents = [0; DEGREE];
         graph.parents(std::uint(node), &mut expected_parents);
 
-        let parents = half_cache.read(node);
+        auto parents = half_cache.read(node);
         BOOST_CHECK_EQUAL(expected_parents, parents);
 
-        let parents = quarter_cache.read(node);
+        auto parents = quarter_cache.read(node);
         BOOST_CHECK_EQUAL(expected_parents, parents);
     }
 }

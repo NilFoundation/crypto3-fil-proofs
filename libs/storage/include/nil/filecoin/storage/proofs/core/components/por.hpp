@@ -92,12 +92,12 @@ namespace nil {
                     std::size_t optional_index =
                         path[i].index;    // Optional because of Bellman blank-circuit construction mechanics.
 
-                    let cs = &mut cs.namespace(|| format !("merkle tree hash {}", i));
+                    auto cs = &mut cs.namespace(|| format !("merkle tree hash {}", i));
 
                     std::vector<bool> index_bits(index_bit_count);
 
                     for (int i = 0; i < index_bit_count; i++) {
-                        let bit = AllocatedBit::alloc(cs.namespace(|| format !("index bit {}", i)),
+                        auto bit = AllocatedBit::alloc(cs.namespace(|| format !("index bit {}", i)),
                                                       {optional_index.map(| index | ((index >> i) & 1) == 1)});
 
                         index_bits.push_back(bit);
@@ -106,7 +106,7 @@ namespace nil {
                     auth_path_bits.extend_from_slice(&index_bits);
 
                     // Witness the authentication path elements adjacent at this depth.
-                    let path_hash_nums = path_hashes.iter()
+                    auto path_hash_nums = path_hashes.iter()
                                              .enumerate()
                                              .map(| (i, elt) |
                                                   {num::AllocatedNumber::alloc(
@@ -114,7 +114,7 @@ namespace nil {
                                                       || {elt.ok_or_else(|| SynthesisError::AssignmentMissing)})})
                                              .collect::<Result<Vec<_>, _>>();
 
-                    let inserted = insert(cs, &cur, &index_bits, &path_hash_nums);
+                    auto inserted = insert(cs, &cur, &index_bits, &path_hash_nums);
 
                     // Compute the new subtree value
                     cur = H::Function::hash_multi_leaf_circuit::<Arity, _>(
@@ -155,9 +155,9 @@ namespace nil {
                     x = 0;
                 }
 
-                let mut opts = base_opts.split_off(len - x);
+                auto mut opts = base_opts.split_off(len - x);
 
-                let base = base_opts.into_iter()
+                auto base = base_opts.into_iter()
                                .map(| (hashes, index) | PathElement {
                                    hashes,
                                    index,
@@ -166,8 +166,8 @@ namespace nil {
                                })
                                .collect();
 
-                let top = if has_top {
-                    let(hashes, index) = opts.pop();
+                auto top = if has_top {
+                    auto(hashes, index) = opts.pop();
                     vec ![PathElement {
                         hashes,
                         index,
@@ -177,8 +177,8 @@ namespace nil {
                 }
                 else {Vec::new ()};
 
-                let sub = if has_sub {
-                    let(hashes, index) = opts.pop();
+                auto sub = if has_sub {
+                    auto(hashes, index) = opts.pop();
                     vec ![PathElement {
                         hashes,
                         index,
@@ -209,6 +209,27 @@ namespace nil {
             using auth_path_type = AuthPath<typename MerkleTreeType::hash_type, 
                 base_arity, sub_tree_arity, top_tree_arity, field_type>;
 
+            void generate_r1cs_constraints() {
+                // base tree
+                auth_path.base.generate_r1cs_constraints();
+
+                // sub
+                auth_path.sub.generate_r1cs_constraints();
+
+                // top
+                auth_path.top.generate_r1cs_constraints();
+            }
+            void generate_r1cs_witness() {
+                // base tree
+                auth_path.base.generate_r1cs_witness();
+
+                // sub
+                auth_path.sub.generate_r1cs_witness();
+
+                // top
+                auth_path.top.generate_r1cs_witness();
+            }
+
             /// # Public Inputs
             ///
             /// This circuit expects the following public inputs.
@@ -235,37 +256,34 @@ namespace nil {
                     assert(("top tree arity must be power of two", 1 == top_arity.count_ones()));
                 }
 
-                {
-                    let value_num = value.allocated(cs.namespace(|| "value")) ? ;
-                    let cur = value_num;
+                
+                auto value_num = value.allocated(cs.namespace(|| "value")) ? ;
+                auto cur = value_num;
 
-                    // Ascend the merkle tree authentication path
+                // Ascend the merkle tree authentication path
 
-                    // base tree
-                    let(cur, base_auth_path_bits) = auth_path.base.synthesize(cs.namespace(|| "base"), cur) ? ;
+                // base tree
+                auto(cur, base_auth_path_bits) = auth_path.base.synthesize(cs.namespace(|| "base"), cur) ? ;
 
-                    // sub
-                    let(cur, sub_auth_path_bits) = auth_path.sub.synthesize(cs.namespace(|| "sub"), cur) ? ;
+                // sub
+                auto(cur, sub_auth_path_bits) = auth_path.sub.synthesize(cs.namespace(|| "sub"), cur) ? ;
 
-                    // top
-                    let(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur) ? ;
+                // top
+                auto(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur) ? ;
 
-                    let mut auth_path_bits = Vec::new ();
-                    auth_path_bits.extend(base_auth_path_bits);
-                    auth_path_bits.extend(sub_auth_path_bits);
-                    auth_path_bits.extend(top_auth_path_bits);
+                auto mut auth_path_bits = Vec::new ();
+                auth_path_bits.extend(base_auth_path_bits);
+                auth_path_bits.extend(sub_auth_path_bits);
+                auth_path_bits.extend(top_auth_path_bits);
 
-                    multipack::pack_into_inputs(cs.namespace(|| "path"), &auth_path_bits) ? ;
-                    {
-                        // Validate that the root of the merkle tree that we calculated is the same as the input.
-                        let rt = root.allocated(cs.namespace(|| "root_value")) ? ;
-                        constraint::equal(cs, || "enforce root is correct", &computed_root, &rt);
+                multipack::pack_into_inputs(cs.namespace(|| "path"), &auth_path_bits) ? ;
+                // Validate that the root of the merkle tree that we calculated is the same as the input.
+                auto rt = root.allocated(cs.namespace(|| "root_value")) ? ;
+                constraint::equal(cs, || "enforce root is correct", &computed_root, &rt);
 
-                        if (!priv) {
-                            // Expose the root
-                            rt.inputize(cs.namespace(|| "root")) ? ;
-                        }
-                    }
+                if (!priv) {
+                    // Expose the root
+                    rt.inputize(cs.namespace(|| "root")) ? ;
                 }
             }
 

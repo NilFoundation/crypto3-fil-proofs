@@ -31,72 +31,72 @@ BOOST_AUTO_TEST_SUITE(post_rational_vanilla_test_suite)
 
 template<typename MerkleTreeType>
 void test_rational_post() {
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let leaves = 64 * get_base_tree_count::<Tree>();
-    let sector_size = leaves as u64 * 32;
-    let challenges_count = 8;
+    auto leaves = 64 * get_base_tree_count::<Tree>();
+    auto sector_size = leaves as u64 * 32;
+    auto challenges_count = 8;
 
-    let pub_params = PublicParams {
+    auto pub_params = PublicParams {
         sector_size,
         challenges_count,
     };
 
     // Construct and store an MT using a named store.
-    let temp_dir = tempfile::tempdir();
-    let temp_path = temp_dir.path();
+    auto temp_dir = tempfile::tempdir();
+    auto temp_path = temp_dir.path();
 
-    let(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
-    let(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+    auto(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+    auto(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
 
-    let seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    let mut faults = OrderedSectorSet::new ();
+    auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
+    auto mut faults = OrderedSectorSet::new ();
     faults.insert(139.into());
     faults.insert(1.into());
     faults.insert(32.into());
 
-    let mut sectors = OrderedSectorSet::new ();
+    auto mut sectors = OrderedSectorSet::new ();
     sectors.insert(891.into());
     sectors.insert(139.into());
     sectors.insert(32.into());
     sectors.insert(1.into());
 
-    let mut trees = BTreeMap::new ();
+    auto mut trees = BTreeMap::new ();
     trees.insert(139.into(), &tree1);    // faulty with tree
     trees.insert(891.into(), &tree2);
     // other two faults don't have a tree available
 
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
+    auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
 
     // the only valid sector to challenge is 891
     assert !(challenges.iter().all(| c | c.sector == 891.into()), "invalid challenge generated");
 
-    let comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
+    auto comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
-    let comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    let comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    auto comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
               .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
               .collect();
 
-    let pub_inputs = PublicInputs {
+    auto pub_inputs = PublicInputs {
         challenges : &challenges,
         comm_rs : &comm_rs,
         faults : &faults,
     };
 
-    let priv_inputs = PrivateInputs::<Tree> {
+    auto priv_inputs = PrivateInputs::<Tree> {
         trees : &trees,
         comm_cs : &comm_cs,
         comm_r_lasts : &comm_r_lasts,
     };
 
-    let proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    auto proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    let is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
+    auto is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
 
     assert !(is_valid);
 }
@@ -127,78 +127,78 @@ BOOST_AUTO_TEST_CASE(rational_post_poseidon_8_8_2) {
 
 template<typename MerkleTreeType>
 void test_rational_post_validates_challenge_identity() {
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
-    let leaves = 64 * get_base_tree_count::<Tree>();
-    let sector_size = leaves as u64 * 32;
-    let challenges_count = 2;
+    auto leaves = 64 * get_base_tree_count::<Tree>();
+    auto sector_size = leaves as u64 * 32;
+    auto challenges_count = 2;
 
-    let pub_params = PublicParams {
+    auto pub_params = PublicParams {
         sector_size,
         challenges_count,
     };
 
     // Construct and store an MT using a named store.
-    let temp_dir = tempfile::tempdir();
-    let temp_path = temp_dir.path();
+    auto temp_dir = tempfile::tempdir();
+    auto temp_path = temp_dir.path();
 
-    let(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
-    let seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    let mut faults = OrderedSectorSet::new ();
+    auto(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+    auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
+    auto mut faults = OrderedSectorSet::new ();
     faults.insert(1.into());
-    let mut sectors = OrderedSectorSet::new ();
+    auto mut sectors = OrderedSectorSet::new ();
     sectors.insert(0.into());
     sectors.insert(1.into());
 
-    let mut trees = BTreeMap::new ();
+    auto mut trees = BTreeMap::new ();
     trees.insert(0.into(), &tree);
 
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
-    let comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
+    auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
+    auto comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
-    let comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    let comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    auto comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
               .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
               .collect();
 
-    let pub_inputs = PublicInputs {
+    auto pub_inputs = PublicInputs {
         challenges : &challenges,
         faults : &faults,
         comm_rs : &comm_rs,
     };
 
-    let priv_inputs = PrivateInputs::<Tree> {
+    auto priv_inputs = PrivateInputs::<Tree> {
         trees : &trees,
         comm_cs : &comm_cs,
         comm_r_lasts : &comm_r_lasts,
     };
 
-    let proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    auto proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    let seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    let challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
-    let comm_r_lasts = challenges.iter().map(| _c | tree.root()).collect::<Vec<_>>();
+    auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
+    auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
+    auto comm_r_lasts = challenges.iter().map(| _c | tree.root()).collect::<Vec<_>>();
 
-    let comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    let comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    auto comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
               .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
               .collect();
 
-    let different_pub_inputs = PublicInputs {
+    auto different_pub_inputs = PublicInputs {
         challenges : &challenges,
         faults : &faults,
         comm_rs : &comm_rs,
     };
 
-    let verified =
+    auto verified =
         RationalPoSt::<Tree>::verify(&pub_params, &different_pub_inputs, &proof).expect("verification failed");
 
     // A proof created with a the wrong challenge not be verified!
@@ -232,15 +232,15 @@ BOOST_AUTO_TEST_CASE(rational_post_actually_validates_challenge_identity_poseido
 BOOST_AUTO_TEST_CASE(test_derive_challenges_fails_on_all_faulty) {
     use std::collections::BTreeSet;
 
-    let mut sectors = BTreeSet::new ();
+    auto mut sectors = BTreeSet::new ();
     sectors.insert(SectorId::from(1));
     sectors.insert(SectorId::from(2));
 
-    let mut faults = BTreeSet::new ();
+    auto mut faults = BTreeSet::new ();
     faults.insert(SectorId::from(1));
     faults.insert(SectorId::from(2));
 
-    let seed = vec ![0u8];
+    auto seed = vec ![0u8];
 
     assert !(derive_challenges(10, 1024, &sectors, &seed, &faults).is_err());
 }

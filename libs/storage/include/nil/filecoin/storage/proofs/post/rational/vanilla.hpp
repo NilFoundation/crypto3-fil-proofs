@@ -140,16 +140,16 @@ namespace nil {
                             ("mismatched challenges and comm_cs", inputs.challenges.size() == pinputs.comm_cs.size()));
                         assert(("mismatched challenges and comm_r_lasts",
                                 pub_inputs.challenges.size() == priv_inputs.comm_r_lasts.size()));
-                        let challenges = pub_inputs.challenges;
+                        auto challenges = pub_inputs.challenges;
 
-                        let proofs =
+                        auto proofs =
                             challenges.iter()
                                 .zip(priv_inputs.comm_r_lasts.iter())
                                 .map(| (challenge, comm_r_last) |
                                      {
-                                         let challenged_leaf = challenge.leaf;
+                                         auto challenged_leaf = challenge.leaf;
 
-                                         if let
+                                         if auto
                                              Some(tree) = priv_inputs.trees.get(&challenge.sector) {
                                                  ensure !(comm_r_last == &tree.root(), Error::InvalidCommitment);
 
@@ -166,7 +166,7 @@ namespace nil {
                     virtual bool verify(const public_params_type &pub_params,
                                         const public_inputs_type &pub_inputs,
                                         const proof_type &pr) override {
-                        let challenges = pub_inputs.challenges;
+                        auto challenges = pub_inputs.challenges;
 
                         assert(challenges.size() == pub_inputs.comm_rs.size());
 
@@ -177,11 +177,11 @@ namespace nil {
                                                                                  .zip(challenges.iter())
                                                                                  .zip(pub_inputs.comm_rs.iter())
                                                                                  .zip(proof.comm_cs.iter())) {
-                            let challenged_leaf = challenge.leaf;
+                            auto challenged_leaf = challenge.leaf;
 
                             // verify that H(Comm_c || Comm_r_last) == Comm_R
                             // comm_r_last is the root of the proof
-                            let comm_r_last = merkle_proof.root();
+                            auto comm_r_last = merkle_proof.root();
 
                             if (AsRef::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type>::Function::hash2(
                                     comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(&comm_r)) {
@@ -189,7 +189,7 @@ namespace nil {
                             }
 
                             // validate the path length
-                            let expected_path_length =
+                            auto expected_path_length =
                                 merkle_proof.expected_len(pub_params.sector_size as usize / NODE_SIZE);
 
                             if (expected_path_length != merkle_proof.path().size()) {
@@ -208,17 +208,17 @@ namespace nil {
                 Challenge derive_challenge(const std::vector<std::uint8_t> &seed, std::uint64_t n,
                                            std::uint64_t attempt, std::uin64_t sector_size,
                                            const ordered_sector_set &sectors) {
-                    let mut data = seed.to_vec();
+                    auto mut data = seed.to_vec();
                     data.extend_from_slice(&n.to_le_bytes()[..]);
                     data.extend_from_slice(&attempt.to_le_bytes()[..]);
 
-                    let hash = blake2b_simd::blake2b(&data);
-                    let challenge_bytes = hash.as_bytes();
-                    let sector_challenge = LittleEndian::read_u64(&challenge_bytes[..8]);
-                    let leaf_challenge = LittleEndian::read_u64(&challenge_bytes[8..16]);
+                    auto hash = blake2b_simd::blake2b(&data);
+                    auto challenge_bytes = hash.as_bytes();
+                    auto sector_challenge = LittleEndian::read_u64(&challenge_bytes[..8]);
+                    auto leaf_challenge = LittleEndian::read_u64(&challenge_bytes[8..16]);
 
-                    let sector_index = (std::uint64_t(sector_challenge % sectors.len())) as usize;
-                    let sector = *sectors.iter().nth(sector_index).context("invalid challenge generated") ? ;
+                    auto sector_index = (std::uint64_t(sector_challenge % sectors.len())) as usize;
+                    auto sector = *sectors.iter().nth(sector_index).context("invalid challenge generated") ? ;
 
                     return {sector, leaf_challenge % (sector_size / NODE_SIZE)};
                 }
@@ -231,10 +231,10 @@ namespace nil {
                     (0..challenge_count)
                         .map(| n |
                              {
-                                 let mut attempt = 0;
-                                 let mut attempted_sectors = HashSet::new ();
+                                 auto mut attempt = 0;
+                                 auto mut attempted_sectors = HashSet::new ();
                                  loop {
-                                     let c = derive_challenge(seed, std::uint64_t(n), attempt, sector_size, sectors);
+                                     auto c = derive_challenge(seed, std::uint64_t(n), attempt, sector_size, sectors);
 
                                      // check for faulty sector
                                      if (!faults.contains(&c.sector)) {

@@ -36,69 +36,66 @@ using namespace nil::filecoin;
 BOOST_AUTO_TEST_SUITE(vanilla_challenges_test_suite)
 
 BOOST_AUTO_TEST_CASE(challenge_derivation) {
-    let n = 200;
-    let layers = 100;
+    auto n = 200;
+    auto layers = 100;
 
-    let challenges = LayerChallenges::new (layers, n);
-    let leaves = 1 << 30;
-    let rng = &mut thread_rng();
-    let replica_id : PedersenDomain = PedersenDomain::random(rng);
-    let seed : [u8; 32] = rng.gen();
-    let partitions = 5;
-    let total_challenges = partitions * n;
+    auto challenges = LayerChallenges::new (layers, n);
+    auto leaves = 1 << 30;
+    auto rng = &mut thread_rng();
+    auto replica_id : PedersenDomain = PedersenDomain::random(rng);
+    auto seed : [u8; 32] = rng.gen();
+    auto partitions = 5;
+    auto total_challenges = partitions * n;
 
-    let mut layers_with_duplicates = 0;
+    auto mut layers_with_duplicates = 0;
 
-for
-    _layer in 1.. = layers {
-        let mut histogram = HashMap::new ();
-for
-    k in 0..partitions {
-        let challenges = challenges.derive(leaves, &replica_id, &seed, k as u8);
+    for (_layer in 1.. = layers) {
+        auto mut histogram = HashMap::new ();
+        for (k in 0..partitions) {
+            auto challenges = challenges.derive(leaves, &replica_id, &seed, k as u8);
 
-for
-    challenge in challenges {
-        let counter = histogram.entry(challenge).or_insert(0);
-        *counter += 1;
-    }
-    }
-let unique_challenges = histogram.len();
-if unique_challenges
-    < total_challenges {
-        layers_with_duplicates += 1;
-    }
+            for (challenge in challenges) {
+                auto counter = histogram.entry(challenge).or_insert(0);
+                *counter += 1;
+            }
+        }
+
+        auto unique_challenges = histogram.len();
+        
+        if (unique_challenges < total_challenges) {
+                layers_with_duplicates += 1;
+        }
     }
 
-// If we generate 100 layers with 1,000 challenges in each, at most two layers can contain
-// any duplicates for this assertion to succeed.
-//
-// This test could randomly fail (anything's possible), but if it happens regularly something is wrong.
-assert !(layers_with_duplicates < 3);
+    // If we generate 100 layers with 1,000 challenges in each, at most two layers can contain
+    // any duplicates for this assertion to succeed.
+    //
+    // This test could randomly fail (anything's possible), but if it happens regularly something is wrong.
+    assert !(layers_with_duplicates < 3);
 }
 
 // This test shows that partitioning (k = 0..partitions) generates the same challenges as
 // generating the same number of challenges with only one partition (k = 0).
 BOOST_AUTO_TEST_CASE(challenge_partition_equivalence) {
-    let n = 40;
-    let leaves = 1 << 30;
-    let rng = &mut thread_rng();
-    let replica_id : PedersenDomain = PedersenDomain::random(rng);
-    let seed : [u8; 32] = rng.gen();
-    let partitions = 5;
-    let layers = 100;
-    let total_challenges = n * partitions;
+    auto n = 40;
+    auto leaves = 1 << 30;
+    auto rng = &mut thread_rng();
+    auto replica_id : PedersenDomain = PedersenDomain::random(rng);
+    auto seed : [u8; 32] = rng.gen();
+    auto partitions = 5;
+    auto layers = 100;
+    auto total_challenges = n * partitions;
 
-    for
-        _layer in 1.. = layers {
-            let one_partition_challenges =
-                LayerChallenges::new (layers, total_challenges).derive(leaves, &replica_id, &seed, 0, );
-            let many_partition_challenges =
-                (0..partitions)
-                    .flat_map(| k | {LayerChallenges::new (layers, n).derive(leaves, &replica_id, &seed, k as u8)})
-                    .collect::<Vec<_>>();
+    for (_layer in 1.. = layers) {
+        auto one_partition_challenges =
+            LayerChallenges::new (layers, total_challenges).derive(leaves, &replica_id, &seed, 0, );
+        auto many_partition_challenges =
+            (0..partitions)
+                .flat_map(| k | {LayerChallenges::new (layers, n).derive(leaves, &replica_id, &seed, k as u8)})
+                .collect::<Vec<_>>();
 
-            assert_eq !(one_partition_challenges, many_partition_challenges);
-        }
+        assert_eq !(one_partition_challenges, many_partition_challenges);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

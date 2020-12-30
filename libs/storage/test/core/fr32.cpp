@@ -26,11 +26,11 @@
 using namespace nil::filecoin;
 
 void bytes_fr_test(const fr32_array &bytes, bool expect_success) {
-    let mut b = &bytes[..];
-    let fr_result = bytes_into_fr(&mut b);
+    auto mut b = &bytes[..];
+    auto fr_result = bytes_into_fr(&mut b);
     if (expect_success) {
-        let f = fr_result.expect("Failed to convert bytes to `Fr`");
-        let b2 = fr_into_bytes(&f);
+        auto f = fr_result.expect("Failed to convert bytes to `Fr`");
+        auto b2 = fr_into_bytes(&f);
 
         BOOST_CHECK_EQUAL(bytes, b2);
     } else {
@@ -39,10 +39,10 @@ void bytes_fr_test(const fr32_array &bytes, bool expect_success) {
 }
 
 void bytes_into_frs_into_bytes_test(const fr32 &bytes) {
-    let mut bytes = bytes.clone();
-    let frs = bytes_into_frs(&mut bytes).expect("Failed to convert bytes into a `Vec<Fr>`");
+    auto mut bytes = bytes.clone();
+    auto frs = bytes_into_frs(&mut bytes).expect("Failed to convert bytes into a `Vec<Fr>`");
     BOOST_CHECK(frs.len() == 3);
-    let bytes_back = frs_into_bytes(&frs);
+    auto bytes_back = frs_into_bytes(&frs);
     BOOST_CHECK(bytes.to_vec() == bytes_back);
 }
 
@@ -86,10 +86,10 @@ BOOST_AUTO_TEST_CASE(test_bytes_into_fr_into_bytes) {
 }
 
 BOOST_AUTO_TEST_CASE(test_bytes_into_frs_into_bytes) {
-    let bytes = b "012345678901234567890123456789--012345678901234567890123456789--012345678901234567890123456789--";
+    auto bytes = b "012345678901234567890123456789--012345678901234567890123456789--012345678901234567890123456789--";
     bytes_into_frs_into_bytes_test(&bytes[..]);
 
-    let _short_bytes = b "012345678901234567890123456789--01234567890123456789";
+    auto _short_bytes = b "012345678901234567890123456789--01234567890123456789";
     // This will panic because _short_bytes is not a multiple of 32 bytes.
     // bytes_into_frs_into_bytes_test(&_short_bytes[..]);
 }

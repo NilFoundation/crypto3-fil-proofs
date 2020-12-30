@@ -61,7 +61,7 @@ namespace nil {
                     std::vector<Fr> generate_public_inputs(const public_inputs_type &pub_in,
                                                            const public_params_type &pub_params,
                                                            std::size_t k = std::size_t()) {
-                        let replica_id = pub_in.replica_id.context("missing replica id");
+                        auto replica_id = pub_in.replica_id.context("missing replica id");
                         std::vector<typename public_inputs_type::challenge_type> challenges = pub_in.challenges;
 
                         assert(("Public input parameter tau must be unset", pub_in.tau.is_none() == pub_params.priv));
@@ -70,7 +70,7 @@ namespace nil {
 
                         }
 
-                        let(comm_r, comm_d) = match pub_in.tau {
+                        auto(comm_r, comm_d) = match pub_in.tau {
                             None = > (None, None),
                             Some(tau) = > (Some(tau.comm_r), Some(tau.comm_d)),
                         };
@@ -90,7 +90,7 @@ namespace nil {
 
                             for (const std::uint32_t node : por_nodes) {
                                 public_inputs por_pub_inputs = {comm_r, node};
-                                let por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
+                                auto por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
                                     &por_pub_inputs, &por_pub_params, None);
 
                                 input.extend(por_inputs);
@@ -98,7 +98,7 @@ namespace nil {
 
                             public_inputs por_pub_inputs = {comm_d, challenge};
 
-                            let por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
+                            auto por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
                                 por_pub_inputs, por_pub_params, None);
                             input.extend(por_inputs);
                         }
@@ -116,15 +116,15 @@ namespace nil {
                         assert(("Number of replica parents must match", proof.replica_parents.size() == len));
                         assert(("Number of replica nodes must match", proof.replica_nodes.size() == len));
 
-                        let replica_nodes
+                        auto replica_nodes
                             : Vec<_> = proof.replica_nodes.iter().map(| node | Some(node.data.into())).collect();
 
-                        let replica_nodes_paths
+                        auto replica_nodes_paths
                             : Vec<_> = proof.replica_nodes.iter().map(| node | node.proof.as_options()).collect();
 
                         bool is_private = public_params.priv;
 
-                        let(data_root, replica_root) = if is_private {
+                        auto(data_root, replica_root) = if is_private {
                 (
                     component_private_inputs.comm_d.context("is_private")?,
                         component_private_inputs.comm_r.context("is_private")?,
@@ -132,30 +132,30 @@ namespace nil {
                         }
                         else {(Root::Val(Some(proof.data_root.into())), Root::Val(Some(proof.replica_root.into())), )};
 
-                        let replica_id = public_inputs.replica_id;
+                        auto replica_id = public_inputs.replica_id;
 
-                        let replica_parents
+                        auto replica_parents
                             : Vec<_> =
                                   proof.replica_parents.iter()
                                       .map(| parents |
                                            {parents.iter().map(| (_, parent) | Some(parent.data.into())).collect()})
                                       .collect();
 
-                        let replica_parents_paths
+                        auto replica_parents_paths
                             : Vec<Vec<_>> =
                                   proof.replica_parents.iter()
                                       .map(| parents |
                                            {
-                                               let p : Vec<_> = parents.iter()
+                                               auto p : Vec<_> = parents.iter()
                                                                     .map(| (_, parent) | parent.proof.as_options())
                                                                     .collect();
                                                p
                                            })
                                       .collect();
 
-                        let data_nodes : Vec<_> = proof.nodes.iter().map(| node | Some(node.data.into())).collect();
+                        auto data_nodes : Vec<_> = proof.nodes.iter().map(| node | Some(node.data.into())).collect();
 
-                        let data_nodes_paths : Vec<_> =
+                        auto data_nodes_paths : Vec<_> =
                                                    proof.nodes.iter().map(| node | node.proof.as_options()).collect();
 
                         assert(("inconsistent private state", public_inputs.tau.is_none() == public_params.priv));
@@ -181,18 +181,18 @@ namespace nil {
 
                         std::size_t challenges_count = public_params.challenges_count;
 
-                        let replica_nodes = vec ![None; challenges_count];
-                        let replica_nodes_paths =
+                        auto replica_nodes = vec ![None; challenges_count];
+                        auto replica_nodes_paths =
                             vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; challenges_count];
 
-                        let replica_root = Root::Val(None);
-                        let replica_parents = vec ![vec ![None; degree]; challenges_count];
-                        let replica_parents_paths =
+                        auto replica_root = Root::Val(None);
+                        auto replica_parents = vec ![vec ![None; degree]; challenges_count];
+                        auto replica_parents_paths =
                             vec ![vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; degree]; challenges_count];
-                        let data_nodes = vec ![None; challenges_count];
-                        let data_nodes_paths =
+                        auto data_nodes = vec ![None; challenges_count];
+                        auto data_nodes_paths =
                             vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; challenges_count];
-                        let data_root = Root::Val(None);
+                        auto data_root = Root::Val(None);
 
                         return {
                             replica_nodes,

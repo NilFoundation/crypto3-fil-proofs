@@ -29,39 +29,39 @@ BOOST_AUTO_TEST_SUITE(post_election_circuit_test_suite)
 
 template<typename MerkleTreeType>
 void test_election_post_circuit(std::size_t expected_constraints) {
-    let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
     std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
     std::size_t sector_size = leaves * NODE_SIZE;
 
-    let randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    let prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
 
     election::PublicParams pub_params = {sector_size, 20, 1};
 
     std::vector<sector_id_type> sectors;
-    let mut trees = BTreeMap::new ();
+    auto mut trees = BTreeMap::new ();
 
     // Construct and store an MT using a named store.
-    let temp_dir = tempfile::tempdir();
-    let temp_path = temp_dir.path();
+    auto temp_dir = tempfile::tempdir();
+    auto temp_path = temp_dir.path();
 
-    for (int i = 0; i < 5; i++) {
+    for (std::size_t i = 0; i < 5; i++) {
         sectors.push(i.into());
-        let(_data, tree) = generate_tree<MerkleTreeType>(rng, leaves, Some(temp_path.to_path_buf()));
+        auto(_data, tree) = generate_tree<MerkleTreeType>(rng, leaves, Some(temp_path.to_path_buf()));
         trees.insert(i.into(), tree);
     }
 
-    let candidates =
+    auto candidates =
         election::generate_candidates<MerkleTreeType>(&pub_params, &sectors, &trees, prover_id, randomness, );
 
-    let candidate = &candidates[0];
-    let tree = trees.remove(&candidate.sector_id);
-    let comm_r_last = tree.root();
-    let comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    let comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
+    auto candidate = &candidates[0];
+    auto tree = trees.remove(&candidate.sector_id);
+    auto comm_r_last = tree.root();
+    auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
 
-    let pub_inputs = election::PublicInputs {
+    auto pub_inputs = election::PublicInputs {
         randomness,
         sector_id : candidate.sector_id,
         prover_id,
@@ -72,25 +72,25 @@ void test_election_post_circuit(std::size_t expected_constraints) {
 
     election::PrivateInputs<MerkleTreeType> priv_inputs {tree, comm_c, comm_r_last};
 
-    let proof = ElectionPoSt<MerkleTreeType>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    auto proof = ElectionPoSt<MerkleTreeType>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    let is_valid = ElectionPoSt<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
+    auto is_valid = ElectionPoSt<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
     BOOST_CHECK(is_valid);
 
     // actual circuit test
 
-    let paths = proof.paths()
+    auto paths = proof.paths()
                     .iter()
                     .map(| p |
                          {p.iter()
                               .map(| v | {(v .0.iter().copied().map(Into::into).map(Some).collect(), Some(v .1), )})
                               .collect::<Vec<_>>()})
                     .collect();
-    let leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
+    auto leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
 
-    let mut cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
+    auto mut cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
 
-    let instance = ElectionPoStCircuit<MerkleTreeType> {
+    auto instance = ElectionPoStCircuit<MerkleTreeType> {
         leafs,
         paths,
         comm_r : Some(comm_r.into()),
@@ -111,9 +111,9 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     BOOST_CHECK_EQUAL(cs.num_constraints(), expected_constraints, "wrong number of constraints");
     BOOST_CHECK_EQUAL(cs.get_input(0, "ONE"), Fr::one());
 
-    let generated_inputs =
+    auto generated_inputs =
         ElectionPoStCompound<MerkleTreeType>::generate_public_inputs(&pub_inputs, &pub_params, None);
-    let expected_inputs = cs.get_inputs();
+    auto expected_inputs = cs.get_inputs();
 
     for (((input, label), generated_input) : expected_inputs.iter().skip(1).zip(generated_inputs.iter())) {
         assert_eq !(input, generated_input, "{}", label);

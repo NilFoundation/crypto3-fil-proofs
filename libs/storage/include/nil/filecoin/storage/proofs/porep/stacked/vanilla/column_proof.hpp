@@ -67,7 +67,7 @@ namespace nil {
                          ColumnProof make_proof(const Column &columnself, tree_c
                                                 : &Tree, )
                              ->Result<ColumnProof<MerkleTreeType::Proof>> {
-                    let inclusion_proof = generate_proof(tree_c, std::size_t(self.index())) ? ;
+                    auto inclusion_proof = generate_proof(tree_c, std::size_t(self.index())) ? ;
                     ColumnProof::<MerkleTreeType::Proof>::from_column(self, inclusion_proof)
                 }
             }    // namespace vanilla

@@ -218,7 +218,7 @@ namespace nil {
 
                         std::size_t tree_count = get_base_tree_count<MerkleTreeType>();
                         std::size_t tree_c_size = t_aux.tree_c_config.size;
-                        let configs = split_config(t_aux.tree_c_config.clone(), tree_count);
+                        auto configs = split_config(t_aux.tree_c_config.clone(), tree_count);
 
                         if (cached(&t_aux.tree_c_config)) {
                             delete_tree_c_store(&t_aux.tree_c_config, tree_c_size);
@@ -380,7 +380,7 @@ namespace nil {
                         // tree_r_last_size stored in the config is the base tree size
                         std::size_t tree_r_last_size = t_aux.tree_r_last_config.size;
                         std::size_t tree_r_last_config_rows_to_discard = t_aux.tree_r_last_config.rows_to_discard;
-                        let(configs, replica_config) = split_config_and_replica(
+                        auto(configs, replica_config) = split_config_and_replica(
                             t_aux.tree_r_last_config,
                             replica_path,
                             get_merkle_tree_leafs(tree_r_last_size, MerkleTreeType::base_arity),
