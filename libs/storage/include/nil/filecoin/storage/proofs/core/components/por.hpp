@@ -46,7 +46,7 @@ namespace nil {
         struct SubPath : public crypto3::zk::snark::components::component<FieldType> {
             std::vector<PathElement<Hash, FieldType, BaseArity>> path;
 
-            SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, crypto3::zk::snark::bp_variable<FieldType> cur,
+            SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, crypto3::zk::snark::blueprint_variable<FieldType> cur,
                     std::size_t capacity) :
                 path(capacity),
                 crypto3::zk::snark::components::component<FieldType>(bp) {
@@ -72,7 +72,8 @@ namespace nil {
             template<template<typename> class ConstraintSystem>
             std::pair<AllocatedNumber<algebra::curves::bls12<381>>, std::vector<bool>>
                 synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
-                           crypto3::zk::snark::bp_variable<algebra::curves::bls12<381>> &cur) {
+                           crypto3::zk::snark::blueprint_variable<algebra::curves::bls12<381>> &cur) {
+
                 std::size_t arity = BaseArity;
 
                 if (arity == 0) {
@@ -199,7 +200,15 @@ namespace nil {
 
         template<typename MerkleTreeType, template<typename> class Circuit>
         struct PoRCircuit : public cacheable_parameters<Circuit<algebra::curves::bls12<381>>, parameter_set_metadata>,
-                            public Circuit<algebra::curves::bls12<381>> {
+                            public crypto3::zk::snark::components::component<FieldType> {
+
+            constexpr static const std::size_t base_arity = MerkleTreeType::arity;
+            constexpr static const std::size_t sub_arity = MerkleTreeType::arity;
+            constexpr static const std::size_t top_arity = MerkleTreeType::arity;
+
+            using auth_path_type = AuthPath<typename MerkleTreeType::hash_type, 
+                base_arity, sub_tree_arity, top_tree_arity, field_type>;
+
             /// # Public Inputs
             ///
             /// This circuit expects the following public inputs.
@@ -214,14 +223,8 @@ namespace nil {
             template<template<typename> class ConstraintSystem>
             void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
                 root<algebra::curves::bls12<381>> value = value;
-                AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
-                         MerkleTreeType::top_tree_arity>
-                    auth_path = auth_path;
+                auth_path_type auth_path = auth_path;
                 root<algebra::curves::bls12<381>> root = root;
-
-                std::size_t base_arity = MerkleTreeType::base_arity;
-                std::size_t sub_arity = MerkleTreeType::sub_tree_arity;
-                std::size_t top_arity = MerkleTreeType::top_tree_arity;
 
                 // All arities must be powers of two or circuits cannot be generated.
                 assert(("base arity must be power of two", 1 == base_arity.count_ones()));
@@ -269,8 +272,7 @@ namespace nil {
             template<template<typename> class ConstraintSystem>
             void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
                             const root<algebra::curves::bls12<381>> &value,
-                            const AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
-                                           MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity> &auth_path,
+                            auth_path_type &auth_path,
                             root<algebra::curves::bls12<381>> root, bool priv) {
                 this->value = value;
                 this->auth_path = auth_path;
@@ -281,9 +283,7 @@ namespace nil {
             }
 
             root<algebra::curves::bls12<381>> value;
-            AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
-                     MerkleTreeType::top_tree_arity>
-                auth_path;
+            auth_path_type auth_path;
             root<algebra::curves::bls12<381>> root;
             bool priv;
         };

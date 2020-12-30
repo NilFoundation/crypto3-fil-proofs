@@ -68,7 +68,8 @@ namespace nil {
 
         template<typename Hash, std::size_t Arity = 2>
         struct merkle_tree {
-            typedef typename Hash::digest_type digest_type;
+            using hash_type = Hash;
+            typedef typename hash_type::digest_type digest_type;
 
             constexpr static const std::size_t arity = Arity;
 
@@ -84,16 +85,16 @@ namespace nil {
                 depth(depth), value_size(value_size) {
                 assert(depth < sizeof(std::size_t) * 8);
 
-                digest_size = Hash::digest_bits;
+                digest_size = hash_type::digest_bits;
                 assert(value_size <= digest_size);
 
                 digest_type last;
                 hash_defaults.reserve(depth + 1);
                 hash_defaults.emplace_back(last);
                 for (std::size_t i = 0; i < depth; ++i) {
-                    std::array<const typename Hash::digest_type, Arity> childs_input;
+                    std::array<const typename hash_type::digest_type, Arity> childs_input;
                     input.fil(last);
-                    last = hash_children_to_one<Hash>(childs_input);
+                    last = hash_children_to_one<hash_type, arity>(childs_input);
                     hash_defaults.emplace_back(last);
                 }
 
@@ -101,7 +102,7 @@ namespace nil {
             }
             merkle_tree(const std::size_t depth, const std::size_t value_size,
                         const std::vector<std::vector<bool>> &contents_as_vector) :
-                merkle_tree<Hash>(depth, value_size) {
+                merkle_tree(depth, value_size) {
 
                 assert(static_cast<std::size_t>(std::ceil(std::log2(contents_as_vector.size()))) <= depth);
                 for (std::size_t address = 0; address < contents_as_vector.size(); ++address) {
@@ -120,7 +121,7 @@ namespace nil {
                             hashes[idx];    // this is sound, because idx_begin is always a left child
                         digest_type r = (idx + 1 < idx_end ? hashes[idx + 1] : hash_defaults[layer]);
 
-                        digest_type h = hash_children_to_one<Hash>(l, r);
+                        digest_type h = hash_children_to_one<hash_type, arity>(l, r);
                         hashes[(idx - 1) / 2] = h;
                     }
 
@@ -131,7 +132,7 @@ namespace nil {
 
             merkle_tree(size_t depth, std::size_t value_size,
                         const std::map<std::size_t, std::vector<bool>> &contents) :
-                merkle_tree<Hash>(depth, value_size) {
+                merkle_tree(depth, value_size) {
 
                 if (!contents.empty()) {
                     assert(contents.rbegin()->first < 1ul << depth);
@@ -158,15 +159,15 @@ namespace nil {
                             if (idx % 2 == 0) {
                                 // this is the right child of its parent and by invariant we are missing the
                                 // left child
-                                hashes[(idx - 1) / 2] = hash_children_to_one<Hash>(hash_defaults[layer], hash);
+                                hashes[(idx - 1) / 2] = hash_children_to_one<hash_type, arity>(hash_defaults[layer], hash);
                             } else {
                                 if (std::next(it) == last_it || std::next(it)->first != idx + 1) {
                                     // this is the left child of its parent and is missing its right child
-                                    hashes[(idx - 1) / 2] = hash_children_to_one<Hash>(hash, hash_defaults[layer]);
+                                    hashes[(idx - 1) / 2] = hash_children_to_one<hash_type, arity>(hash, hash_defaults[layer]);
                                 } else {
                                     // typical case: this is the left child of the parent and adjacent to it
                                     // there is a right child
-                                    hashes[(idx - 1) / 2] = hash_children_to_one<Hash>(hash, std::next(it)->second);
+                                    hashes[(idx - 1) / 2] = hash_children_to_one<hash_type, arity>(hash, std::next(it)->second);
                                     ++it;
                                 }
                             }
@@ -205,7 +206,7 @@ namespace nil {
                     it = hashes.find(2 * idx + 2);
                     digest_type r = (it == hashes.end() ? hash_defaults[layer + 1] : it->second);
 
-                    digest_type h = hash_children_to_one<Hash>(l, r);
+                    digest_type h = hash_children_to_one<hash_type, arity>(l, r);
                     hashes[idx] = h;
                 }
             }

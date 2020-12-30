@@ -36,7 +36,7 @@
 #include <nil/filecoin/storage/proofs/core/utilities.hpp>
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
 
-#include <nil/filecoin/storage/proofs/core/crypto/mod.hpp>
+#include <nil/filecoin/storage/proofs/core/crypto/domain_seed.hpp>
 
 namespace nil {
     namespace filecoin {

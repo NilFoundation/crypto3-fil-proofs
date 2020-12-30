@@ -28,7 +28,7 @@
 
 #include <boost/variant.hpp>
 
-#include <nil/crypto3/zk/snark/bp_variable.hpp>
+#include <nil/crypto3/zk/snark/blueprint_variable.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -43,7 +43,7 @@ namespace nil {
         struct root {
             typedef FieldType field_type;
 
-            typedef boost::variant<crypto3::zk::snark::bp_variable<field_type>, typename field_type::value_type>
+            typedef boost::variant<crypto3::zk::snark::blueprint_variable<field_type>, typename field_type::value_type>
                 value_type;
         };
     }    // namespace filecoin

@@ -23,11 +23,13 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_MOD_HPP
-#define FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_MOD_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_DOMAIN_SEED_HPP
+#define FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_DOMAIN_SEED_HPP
 
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
+
+#include <nil/filecoin/storage/proofs/core/crypto/domain_seed.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -49,4 +51,4 @@ namespace nil {
     }    // namespace filecoin
 }    // namespace nil
 
-#endif
+#endif // FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_DOMAIN_SEED_HPP
