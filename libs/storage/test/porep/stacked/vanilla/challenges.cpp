@@ -36,22 +36,22 @@ using namespace nil::filecoin;
 BOOST_AUTO_TEST_SUITE(vanilla_challenges_test_suite)
 
 BOOST_AUTO_TEST_CASE(challenge_derivation) {
-    auto n = 200;
-    auto layers = 100;
+    const std::size_t n = 200;
+    const std::size_t layers = 100;
 
     auto challenges = LayerChallenges::new (layers, n);
     auto leaves = 1 << 30;
     auto rng = &mut thread_rng();
     auto replica_id : PedersenDomain = PedersenDomain::random(rng);
     auto seed : [u8; 32] = rng.gen();
-    auto partitions = 5;
-    auto total_challenges = partitions * n;
+    const std::size_t partitions = 5;
+    const std::size_t total_challenges = partitions * n;
 
     auto mut layers_with_duplicates = 0;
 
     for (_layer in 1.. = layers) {
         auto mut histogram = HashMap::new ();
-        for (k in 0..partitions) {
+        for (std::size_t k = 0; k < partitions; ++k) {
             auto challenges = challenges.derive(leaves, &replica_id, &seed, k as u8);
 
             for (challenge in challenges) {

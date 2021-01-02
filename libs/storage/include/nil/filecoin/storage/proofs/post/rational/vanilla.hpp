@@ -233,7 +233,7 @@ namespace nil {
                              {
                                  auto mut attempt = 0;
                                  auto mut attempted_sectors = HashSet::new ();
-                                 loop {
+                                 while (true) {
                                      auto c = derive_challenge(seed, std::uint64_t(n), attempt, sector_size, sectors);
 
                                      // check for faulty sector

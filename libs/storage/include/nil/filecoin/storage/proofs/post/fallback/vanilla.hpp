@@ -182,22 +182,22 @@ namespace nil {
 
                             for ((i, (pub_sector, priv_sector)) :
                                  pub_sectors_chunk.iter().zip(priv_sectors_chunk.iter()).enumerate()) {
-                                auto tree = priv_sector.tree;
-                                auto sector_id = pub_sector.id;
-                                auto tree_leafs = tree.leafs();
+                                const auto tree = priv_sector.tree;
+                                const auto sector_id = pub_sector.id;
+                                const auto tree_leafs = tree.leafs();
 
                                 trace !("Generating proof for tree leafs {} and arity {}", tree_leafs,
                                         MerkleTreeType::base_arity, );
 
-                                auto inclusion_proofs =
+                                const auto inclusion_proofs =
                                     (0..pub_params.challenge_count)
                                         .into_par_iter()
                                         .map(| n |
                                              {
-                                                 auto challenge_index =
+                                                 const auto challenge_index =
                                                      ((j * num_sectors_per_chunk + i) * pub_params.challenge_count + n)
                                                          as u64;
-                                                 auto challenged_leaf_start =
+                                                 const auto challenged_leaf_start =
                                                      generate_leaf_challenge(pub_params, pub_inputs.randomness,
                                                                              sector_id.into(), challenge_index);
 
@@ -240,15 +240,15 @@ namespace nil {
                                     proof.sectors.size() == num_sectors_per_chunk));
                             for ((i, (pub_sector, sector_proof)) :
                                  pub_sectors_chunk.iter().zip(proof.sectors.iter()).enumerate()) {
-                                auto sector_id = pub_sector.id;
-                                auto comm_r = &pub_sector.comm_r;
-                                auto comm_c = sector_proof.comm_c;
-                                auto inclusion_proofs = &sector_proof.inclusion_proofs;
+                                const auto sector_id = pub_sector.id;
+                                const auto comm_r = &pub_sector.comm_r;
+                                const auto comm_c = sector_proof.comm_c;
+                                const auto inclusion_proofs = &sector_proof.inclusion_proofs;
 
                                 // Verify that H(Comm_c || Comm_r_last) == Comm_R
 
                                 // comm_r_last is the root of the proof
-                                auto comm_r_last = inclusion_proofs[0].root();
+                                const auto comm_r_last = inclusion_proofs[0].root();
 
                                 if (AsRef ::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type>::Function::hash2(
                                         &comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(comm_r)) {
@@ -261,9 +261,9 @@ namespace nil {
                                          inclusion_proofs.len());
 
                                 for ((n, inclusion_proof) : inclusion_proofs.iter().enumerate()) {
-                                    auto challenge_index =
+                                    const auto challenge_index =
                                         ((j * num_sectors_per_chunk + i) * pub_params.challenge_count + n) as u64;
-                                    auto challenged_leaf_start = generate_leaf_challenge(
+                                    const auto challenged_leaf_start = generate_leaf_challenge(
                                         pub_params, pub_inputs.randomness, sector_id.into(), challenge_index);
 
                                     // validate all comm_r_lasts match
@@ -272,7 +272,7 @@ namespace nil {
                                     }
 
                                     // validate the path length
-                                    auto expected_path_length =
+                                    const auto expected_path_length =
                                         inclusion_proof.expected_len(pub_params.sector_size as usize / NODE_SIZE);
 
                                     if (expected_path_length != inclusion_proof.path().size()) {
@@ -293,9 +293,14 @@ namespace nil {
                                              const public_inputs_type &inputs,
                                              const private_inputs_type &pinputs) override {
                         std::vector<proof_type> proofs = prove_all_partitions(params, inputs, pinputs, 1);
-                        auto k = match pub_inputs.k {
-                            None = > 0,
-                            Some(k) = > k,
+                        auto k;
+                        switch (pub_inputs.k) {
+                            case None:
+                                k = 0;
+                                break;
+                            case Some(k):
+                                k = k;
+                                break;
                         };
                         // Because partition proofs require a common setup, the general ProofScheme implementation,
                         // which makes use of `ProofScheme::prove` cannot be used here. Instead, we need to prove all
@@ -336,14 +341,14 @@ namespace nil {
                 template<typename Domain, typename ChallengeHash = crypto3::hashes::sha2<256>>
                 std::uint64_t generate_sector_challenge(Domain randomness, std::size_t n, std::uint64_t sector_set_len,
                                                         Domain prover_id) {
-                    auto mut hasher = Sha256::new ();
+                    auto hasher = Sha256::new ();
                     hasher.input(AsRef::<[u8]>::as_ref(&prover_id));
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));
                     hasher.input(&n.to_le_bytes()[..]);
 
-                    auto hash = hasher.result();
+                    const auto hash = hasher.result();
 
-                    auto sector_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
+                    const auto sector_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
                     std::uint64_t sector_index = sector_challenge % sector_set_len;
 
                     return sector_index;
@@ -353,13 +358,13 @@ namespace nil {
                 template<typename Domain, typename ChallengeHash = crypto3::hashes::sha2<256>>
                 std::uint64_t generate_leaf_challenge(const PublicParams &pub_params, const Domain &randomness,
                                                       std::uint64_t sector_id, std::uint64_t leaf_challenge_index) {
-                    auto mut hasher = Sha256::new ();
+                    auto hasher = Sha256::new ();
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));
                     hasher.input(&sector_id.to_le_bytes()[..]);
                     hasher.input(&leaf_challenge_index.to_le_bytes()[..]);
-                    auto hash = hasher.result();
+                    const auto hash = hasher.result();
 
-                    auto leaf_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
+                    const auto leaf_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
 
                     std::uint64_t challenged_range_index = leaf_challenge % (pub_params.sector_size / NODE_SIZE);
 

@@ -872,13 +872,13 @@ namespace nil {
                     ;
                 info !("tree_r_last done");
 
-                auto tree_r_last_root = tree_r_last.root();
+                const auto tree_r_last_root = tree_r_last.root();
                 drop(tree_r_last);
 
                 data.drop_data();
 
                 // comm_r = H(comm_c || comm_r_last)
-                auto comm_r : <typename MerkleTreeType::hash_type>::Domain =
+                const auto comm_r : <typename MerkleTreeType::hash_type>::Domain =
                                  <typename MerkleTreeType::hash_type>::Function::hash2(&tree_c_root, &tree_r_last_root);
 
                 Ok((Tau {

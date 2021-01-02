@@ -113,7 +113,7 @@ namespace nil {
                 assert(("Expansion degree must be zero.", expansion_degree == 0));
 
                 // The number of metagraph nodes must be less than `2u64^54` as to not incur rounding errors
-                // when casting metagraph node indexes from `u64` to `f64` during parent generation.
+                // when casting metagraph node indexes from `std::uint64_t` to `double` during parent generation.
                 std::size_t m_prime = base_degree - 1;
                 std::size_t n_metagraph_nodes = nodes * m_prime;
                 assert(("The number of metagraph nodes must be precisely castable to `double`",

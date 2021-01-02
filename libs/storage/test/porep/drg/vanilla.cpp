@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
     copied.copy_from_slice(&mmapped_data);
     assert_ne !(data, copied, "replication did not change data");
 
-    for (i in 0..nodes) {
+    for (i = 0; i < nodes; ++i) {
         auto decoded_data = DrgPoRep::extract(&pp, &replica_id, &mmapped_data, i, Some(config.clone()))
                                .expect("failed to extract node data from PoRep");
 
@@ -150,7 +150,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
     assert !(i < nodes);
 
     // The loop is here in case we need to retry because of an edge case in the test design.
-    loop {
+    while (true) {
         auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
         auto degree = BASE_DEGREE;
         auto expansion_degree = 0;

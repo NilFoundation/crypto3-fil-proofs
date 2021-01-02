@@ -36,13 +36,12 @@ using namespace nil::filecoin;
 BOOST_AUTO_TEST_SUITE(vanilla_cache_test_suite)
 
 BOOST_AUTO_TEST_CASE(test_read_full_range) {
-    auto nodes = 24u32;
-    auto graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], )
-                    ;
+    const std::uint32_t nodes = 24;
+    auto graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], );
 
     auto mut cache = ParentCache::new (nodes, nodes, &graph);
 
-    for (node in 0..nodes) {
+    for (node = 0; node < nodes; ++node) {
             auto mut expected_parents = [0; DEGREE];
             graph.parents(std::uint(node), &mut expected_parents);
             auto parents = cache.read(node);
@@ -52,14 +51,13 @@ BOOST_AUTO_TEST_CASE(test_read_full_range) {
 }
 
 BOOST_AUTO_TEST_CASE(test_read_partial_range) {
-    auto nodes = 48u32;
-    auto graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], )
-                    ;
+    const std::uint32_t nodes = 48;
+    auto graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], );
 
     auto mut half_cache = ParentCache::new (nodes / 2, nodes, &graph);
     auto mut quarter_cache = ParentCache::new (nodes / 4, nodes, &graph);
 
-    for(node in 0..nodes) {
+    for (node = 0; node < nodes; ++node) {
         auto mut expected_parents = [0; DEGREE];
         graph.parents(std::uint(node), &mut expected_parents);
 

@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(test_feistel_power_of_4) {
 BOOST_AUTO_TEST_CASE(test_feistel_on_arbitrary_set) {
     for (n in BAD_NS.iter()) {
             auto precomputed = precompute(*n as Index);
-        for (i in 0.. * n) {
+        for (i = 0; i < * n; ++i) {
             auto p = permute(*n, i, &[ 1, 2, 3, 4 ], precomputed);
             auto v = invert_permute(*n, p, &[ 1, 2, 3, 4 ], precomputed);
             // Since every element in the set is reversibly mapped to another element also in the set,

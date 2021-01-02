@@ -70,9 +70,17 @@ namespace nil {
 
                         }
 
-                        auto(comm_r, comm_d) = match pub_in.tau {
-                            None = > (None, None),
-                            Some(tau) = > (Some(tau.comm_r), Some(tau.comm_d)),
+                        auto comm_r, comm_d;
+
+                        switch (pub_in.tau) {
+                            case None:
+                                comm_r = None;
+                                comm_d = None;
+                                break;
+                            case Some(tau):
+                                comm_r = Some(tau.comm_r);
+                                comm_d = Some(tau.comm_d);
+                                break;
                         };
 
                         std::size_t leaves = pub_params.graph.size();

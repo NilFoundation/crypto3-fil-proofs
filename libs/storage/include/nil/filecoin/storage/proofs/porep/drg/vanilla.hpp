@@ -172,21 +172,21 @@ namespace nil {
                             std::size_t challenge = inputs.challenges[i] % params.graph.size();
                             assert(("cannot prove the first node", challenge != 0));
 
-                            auto tree_d = &priv_inputs.tree_d;
-                            auto tree_r = &priv_inputs.tree_r;
-                            auto tree_r_config_rows_to_discard = priv_inputs.tree_r_config_rows_to_discard;
+                            const auto tree_d = &priv_inputs.tree_d;
+                            const auto tree_r = &priv_inputs.tree_r;
+                            const auto tree_r_config_rows_to_discard = priv_inputs.tree_r_config_rows_to_discard;
 
-                            auto data = tree_r.read_at(challenge) ? ;
-                            auto tree_proof = tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard)) ? ;
+                            const auto data = tree_r.read_at(challenge) ? ;
+                            const auto tree_proof = tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard)) ? ;
                             replica_nodes.emplace_back(tree_proof, data);
 
-                            auto mut parents = vec ![0; pub_params.graph.degree()];
+                            auto parents = vec ![0; pub_params.graph.degree()];
                             pub_params.graph.parents(challenge, &mut parents) ? ;
-                            auto mut replica_parentsi = Vec::with_capacity(parents.len());
+                            auto replica_parentsi = Vec::with_capacity(parents.len());
 
                             for (p : parents) {
                                 replica_parentsi.push_back((*p, {
-                                    auto proof =
+                                    const auto proof =
                                         tree_r.gen_cached_proof(std::size_t(*p), Some(tree_r_config_rows_to_discard));
                                     DataProof {
                                         proof, data : tree_r.read_at(std::size_t(*p))
@@ -196,7 +196,7 @@ namespace nil {
 
                             replica_parents.push(replica_parentsi);
 
-                            auto node_proof = generate_proof(tree_d, challenge);
+                            const auto node_proof = generate_proof(tree_d, challenge);
 
                             // TODO: use this again, I can't make lifetimes work though atm and I do not know
                             // why auto extracted = Self::extract(
@@ -206,14 +206,14 @@ namespace nil {
                             //     challenge,
                             // )?;
 
-                                auto extracted = decode_domain_block::<H>(
-                                    &pub_inputs.replica_id.context("missing replica_id")?,
-                                        tree_r,
-                                        challenge,
-                                        tree_r.read_at(challenge)?,
-                                        &parents,
-                                );
-                                data_nodes.emplace_back(extracted, node_proof);
+                            const auto extracted = decode_domain_block::<H>(
+                                &pub_inputs.replica_id.context("missing replica_id")?,
+                                    tree_r,
+                                    challenge,
+                                    tree_r.read_at(challenge)?,
+                                    &parents,
+                            );
+                            data_nodes.emplace_back(extracted, node_proof);
                         }
 
                         return {replica_nodes, replica_parents, data_nodes};
@@ -222,7 +222,7 @@ namespace nil {
                     virtual bool verify(const public_params_type &pub_params,
                                         const public_inputs_type &pub_inputs,
                                         const proof_type &pr) override {
-                        auto mut hasher = Sha256::new ();
+                        auto hasher = Sha256::new ();
 
                         for (int i = 0; i < pub_inputs.challenges.size(); i++) {
                             // This was verify_proof_meta.
@@ -238,7 +238,7 @@ namespace nil {
                                 return false;
                             }
 
-                            auto mut expected_parents = vec ![0; pub_params.graph.degree()];
+                            auto expected_parents = vec ![0; pub_params.graph.degree()];
                             pub_params.graph.parents(pub_inputs.challenges[i], &mut expected_parents);
                             if (proof.replica_parents[i].size() != expected_parents.size()) {
                                 println !(
@@ -249,7 +249,7 @@ namespace nil {
                                 return false;
                             }
 
-                            auto parents_as_expected = proof.replica_parents[i]
+                            const auto parents_as_expected = proof.replica_parents[i]
                                                           .iter()
                                                           .zip(&expected_parents)
                                                           .all(| (actual, expected) | actual .0 == *expected);
@@ -260,7 +260,7 @@ namespace nil {
                             }
                         }
 
-                        auto challenge = pub_inputs.challenges[i] % pub_params.graph.size();
+                        const auto challenge = pub_inputs.challenges[i] % pub_params.graph.size();
                         ensure !(challenge != 0, "cannot prove the first node");
 
                         if (!proof.replica_nodes[i].proof.validate(challenge)) {
@@ -273,17 +273,17 @@ namespace nil {
                             }
                         }
 
-                        auto prover_bytes = pub_inputs.replica_id.context("missing replica_id");
+                        const auto prover_bytes = pub_inputs.replica_id.context("missing replica_id");
                         hasher.input(AsRef::<[u8]>::as_ref(&prover_bytes));
 
                         for (p : proof.replica_parents[i].iter()) {
                             hasher.input(AsRef::<[u8]>::as_ref(&p .1.data));
                         }
 
-                        auto hash = hasher.result_reset();
-                        auto key = bytes_into_fr_repr_safe(hash.as_ref()).into();
+                        const auto hash = hasher.result_reset();
+                        const auto key = bytes_into_fr_repr_safe(hash.as_ref()).into();
 
-                        auto unsealed = encode::decode(key, proof.replica_nodes[i].data);
+                        const auto unsealed = encode::decode(key, proof.replica_nodes[i].data);
 
                         if (unsealed != proof.nodes[i].data) {
                             return false;
@@ -306,11 +306,17 @@ namespace nil {
                                   const BinaryMerkleTree<G> &data_tree = BinaryMerkleTree<G>()) override {
                         use storage_proofs_core::cache_key::CacheKey;
 
-                        auto tree_d = match data_tree {
-                            Some(tree) = > tree, None = > create_base_merkle_tree<BinaryMerkleTree<Hash>>(
-                                                              Some(config.clone()), pp.graph.size(), data.as_ref())};
+                        auto tree_d;
+                        switch (data_tree) {
+                            case Some(tree): 
+                                tree_d = tree;
+                                break;
+                            case None:
+                                tree_d = create_base_merkle_tree<BinaryMerkleTree<Hash>>(
+                                                              Some(config.clone()), pp.graph.size(), data.as_ref());
+                        };
 
-                        auto graph = &pp.graph;
+                        const auto graph = &pp.graph;
                         // encode(&pp.graph, replica_id, data, None)?;
                         // Because a node always follows all of its parents in the data,
                         // the nodes are by definition already topologically sorted.
@@ -318,7 +324,7 @@ namespace nil {
                         // we can always get each parent's encodings with a simple lookup --
                         // since we will already have encoded the parent earlier in the traversal.
 
-                        auto mut parents = vec ![0; graph.degree()];
+                        auto parents = vec ![0; graph.degree()];
                         for (int node = 0; node < graph.size(); node++) {
                             graph.parents(node, &mut parents);
                             auto key = graph.create_key(replica_id, node, &parents, data.as_ref(), None);
@@ -331,17 +337,17 @@ namespace nil {
                             encoded.write_bytes(&mut data.as_mut()[start..end]);
                         }
 
-                        auto replica_config = ReplicaConfig {
+                        const auto replica_config = ReplicaConfig {
                             path : replica_path,
                             offsets : vec ![0],
                         };
-                        auto tree_r_last_config =
+                        const auto tree_r_last_config =
                             StoreConfig::from_config(&config, cache_key::CommRLastTree.to_string(), None);
-                        auto tree_r = create_base_lcmerkle_tree::<H, <BinaryLCMerkleTree<H> as MerkleTreeTrait>::Arity>(
+                        const auto tree_r = create_base_lcmerkle_tree::<H, <BinaryLCMerkleTree<H> as MerkleTreeTrait>::Arity>(
                             tree_r_last_config, pp.graph.size(), &data.as_ref(), &replica_config);
 
-                        auto comm_d = tree_d.root();
-                        auto comm_r = tree_r.root();
+                        const auto comm_d = tree_d.root();
+                        const auto comm_r = tree_r.root();
 
                         return std::make_tuple<tau_type, aux_type>({comm_d, comm_r}, {tree_d, tree_r});
                     }
@@ -365,12 +371,13 @@ namespace nil {
                     decode_block(Graph<Hash> &graph, typename Hash::digest_type &replica_id,
                                  const std::vector<std::uint8_t> &data, std::size_t v,
                                  const std::vector<std::uint8_t> &exp_parents_data = std::vector<std::uint8_t>()) {
+
                     std::vector<std::uint8_t> parents(graph.degree());
                     graph.parents(v, parents);
-                    auto key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
-                        auto node_data = <H>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
+                    const auto key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
+                    const auto node_data = <H>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
 
-                        return encode::decode(*key.as_ref(), node_data);
+                    return encode::decode(*key.as_ref(), node_data);
                 }
 
                 template<typename Hash, template<typename> class Graph>
@@ -379,7 +386,7 @@ namespace nil {
                            const std::vector<std::uint8_t> &data,
                            const std::vector<std::uint8_t> &exp_parents_data = std::vector<std::uint8_t>()) {
                     // TODO: proper error handling
-                    auto result = (0..graph.size())
+                    const auto result = (0..graph.size())
                                      .into_par_iter()
                                      .flat_map(| i |
                                                {decode_block<Hash, Graph>(graph, replica_id, data, exp_parents_data, i)
@@ -415,7 +422,7 @@ namespace nil {
                         }
                     }
 
-                    auto hash = hasher.result();
+                    const auto hash = hasher.result();
                     return bytes_into_fr_repr_safe(hash.as_ref()).into();
                 }
 

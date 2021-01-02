@@ -151,7 +151,7 @@ namespace nil {
                 auto h = {
                     auto mut nodes: Vec<T> = Vec::with_capacity(node_count);
                     auto mut cur_index = 0;
-                    for j in 0..node_count {
+                    for (auto j = 0; j < node_count; ++j) {
                         if j == self.path()[0] {
                             nodes.push(self.sub_tree_root().clone());
                         } else {
@@ -208,12 +208,12 @@ namespace nil {
                 auto mut h = self.item();
                 auto mut path_index = 1;
 
-                for i in (1..size - 1).step_by(branches - 1) {
+                for (i in (1..size - 1).step_by(branches - 1)) {
                     a.reset();
                     h = {
                         auto mut nodes: Vec<T> = Vec::with_capacity(branches);
                         auto mut cur_index = 0;
-                        for j in 0..branches {
+                        for (j = 0; j < branches; ++j) {
                             if j == self.path[path_index - 1] {
                                 nodes.push(h.clone());
                             } else {
