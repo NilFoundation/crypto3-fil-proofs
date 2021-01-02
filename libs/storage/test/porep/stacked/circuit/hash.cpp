@@ -28,55 +28,55 @@ using namespace nil::filecoin;
 BOOST_AUTO_TEST_SUITE(stacked_circuit_hash_test_suite)
 
 BOOST_AUTO_TEST_CASE(test_hash2_circuit) {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     for (std::size_t i=0; i < 10; ++i) {
-        auto mut cs = TestConstraintSystem::<Bls12>::new ();
+        auto cs = TestConstraintSystem::<Bls12>::new ();
 
-        auto a = Fr::random(rng);
-        auto b = Fr::random(rng);
+        const auto a = Fr::random(rng);
+        const auto b = Fr::random(rng);
 
-        auto a_num = { auto mut cs = cs.namespace(|| "a");
-        num::AllocatedNumber::alloc(&mut cs, || Ok(a))
+        const auto a_num = { auto cs = cs.namespace(|| "a");
+        num::AllocatedNumber::alloc(cs, || Ok(a))
     };
 
-    auto b_num = { auto mut cs = cs.namespace(|| "b");
-    num::AllocatedNumber::alloc(&mut cs, || Ok(b))
+    const auto b_num = { auto cs = cs.namespace(|| "b");
+    num::AllocatedNumber::alloc(cs, || Ok(b))
 };
 
-auto out = <PedersenHasher>::Function::hash2_circuit(cs.namespace(|| "hash2"), &a_num, &b_num, )
+const auto out = <PedersenHasher>::Function::hash2_circuit(cs.namespace(|| "hash2"), &a_num, &b_num, )
               .expect("hash2 function failed");
 
 BOOST_CHECK(cs.is_satisfied(), "constraints not satisfied");
 BOOST_CHECK_EQUAL(cs.num_constraints(), 1371);
 
-auto expected : Fr = <PedersenHasher>::Function::hash2(&a.into(), &b.into()).into();
+const auto expected : Fr = <PedersenHasher>::Function::hash2(&a.into(), &b.into()).into();
 
 BOOST_CHECK_EQUAL(expected, out.get_value(), "circuit and non circuit do not match");
 }
 }
 
 BOOST_AUTO_TEST_CASE(test_hash_single_column_circuit) {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
         for (std::size_t i=0; i < 1; ++i) {
-                auto mut cs = TestConstraintSystem::<Bls12>::new ();
+                auto cs = TestConstraintSystem::<Bls12>::new ();
 
-                auto vals = vec ![Fr::random(rng); 11];
-                auto vals_opt =
+                const auto vals = vec ![Fr::random(rng); 11];
+                const auto vals_opt =
                     vals.iter()
                         .enumerate()
                         .map(| (i, v) |
                              {num::AllocatedNumber::alloc(cs.namespace(|| format !("num_{}", i)), || Ok(*v))})
                         .collect::<Vec<_>>();
 
-                auto out = hash_single_column(cs.namespace(|| "hash_single_column"), &vals_opt)
+                const auto out = hash_single_column(cs.namespace(|| "hash_single_column"), &vals_opt)
                               .expect("hash_single_column function failed");
 
                 assert !(cs.is_satisfied(), "constraints not satisfied");
                 assert_eq !(cs.num_constraints(), 598);
 
-                auto expected : Fr = vanilla_hash_single_column(&vals);
+                const auto expected : Fr = vanilla_hash_single_column(&vals);
 
                 assert_eq !(expected, out.get_value(), "circuit and non circuit do not match");
             }

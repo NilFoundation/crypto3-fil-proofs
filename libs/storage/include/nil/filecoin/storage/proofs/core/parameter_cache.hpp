@@ -174,7 +174,7 @@ namespace nil {
                                                                               const C &circuit, const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
-                auto generate = [&]() {
+                const auto generate = [&]() {
                     return groth16::generate_random_parameters<algebra::curves::bls12<381>>(circuit, r);
                 };
 
@@ -192,7 +192,7 @@ namespace nil {
                 get_verifying_key(UniformRandomGenerator &r, const C &circuit, const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
-                auto generate = [&]() -> r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> {
+                const auto generate = [&]() -> r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>> {
                     return get_groth_params(r, circuit, pub_params).vk;
                 };
 

@@ -37,16 +37,16 @@ void merklepath() {
     std::size_t node_size = 32;
     std::size_t nodes = 64 * get_base_tree_count<MerkleTreeType>();
 
-    auto mut rng = rand::thread_rng();
-    auto(data, tree) = generate_tree<MerkleTreeType>(&mut rng, nodes, None);
+    auto rng = rand::thread_rng();
+    const auto(data, tree) = generate_tree<MerkleTreeType>(rng, nodes, None);
 
     for (std::size_t i = 0; i < nodes; i++) {
-        auto proof = tree.gen_proof(i);
+        const auto proof = tree.gen_proof(i);
 
         assert !(proof.verify(), "failed to validate");
 
         assert !(proof.validate(i), "failed to validate valid merkle path");
-        auto data_slice = &data[i * node_size..(i + 1) * node_size].to_vec();
+        const auto data_slice = &data[i * node_size..(i + 1) * node_size].to_vec();
         assert !(proof.validate_data(<typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_slice)),
                  "failed to validate valid data");
     }

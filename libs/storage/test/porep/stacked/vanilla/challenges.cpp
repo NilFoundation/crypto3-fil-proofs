@@ -39,28 +39,28 @@ BOOST_AUTO_TEST_CASE(challenge_derivation) {
     const std::size_t n = 200;
     const std::size_t layers = 100;
 
-    auto challenges = LayerChallenges::new (layers, n);
-    auto leaves = 1 << 30;
-    auto rng = &mut thread_rng();
-    auto replica_id : PedersenDomain = PedersenDomain::random(rng);
-    auto seed : [u8; 32] = rng.gen();
+    const auto challenges = LayerChallenges::new (layers, n);
+    const std::size_t leaves = 1 << 30;
+    const auto rng = thread_rng();
+    const auto replica_id : PedersenDomain = PedersenDomain::random(rng);
+    const auto seed : [u8; 32] = rng.gen();
     const std::size_t partitions = 5;
     const std::size_t total_challenges = partitions * n;
 
-    auto mut layers_with_duplicates = 0;
+    auto layers_with_duplicates = 0;
 
     for (_layer in 1.. = layers) {
-        auto mut histogram = HashMap::new ();
+        auto histogram = HashMap::new ();
         for (std::size_t k = 0; k < partitions; ++k) {
-            auto challenges = challenges.derive(leaves, &replica_id, &seed, k as u8);
+            const auto challenges = challenges.derive(leaves, &replica_id, &seed, k as u8);
 
             for (challenge in challenges) {
-                auto counter = histogram.entry(challenge).or_insert(0);
+                const auto counter = histogram.entry(challenge).or_insert(0);
                 *counter += 1;
             }
         }
 
-        auto unique_challenges = histogram.len();
+        const auto unique_challenges = histogram.len();
         
         if (unique_challenges < total_challenges) {
                 layers_with_duplicates += 1;
@@ -77,19 +77,19 @@ BOOST_AUTO_TEST_CASE(challenge_derivation) {
 // This test shows that partitioning (k = 0..partitions) generates the same challenges as
 // generating the same number of challenges with only one partition (k = 0).
 BOOST_AUTO_TEST_CASE(challenge_partition_equivalence) {
-    auto n = 40;
-    auto leaves = 1 << 30;
-    auto rng = &mut thread_rng();
-    auto replica_id : PedersenDomain = PedersenDomain::random(rng);
-    auto seed : [u8; 32] = rng.gen();
-    auto partitions = 5;
-    auto layers = 100;
-    auto total_challenges = n * partitions;
+    const std::size_t n = 40;
+    const std::size_t leaves = 1 << 30;
+    const auto rng = thread_rng();
+    const auto replica_id : PedersenDomain = PedersenDomain::random(rng);
+    const auto seed : [u8; 32] = rng.gen();
+    const std::size_t partitions = 5;
+    const std::size_t layers = 100;
+    const std::size_t total_challenges = n * partitions;
 
     for (_layer in 1.. = layers) {
-        auto one_partition_challenges =
+        const auto one_partition_challenges =
             LayerChallenges::new (layers, total_challenges).derive(leaves, &replica_id, &seed, 0, );
-        auto many_partition_challenges =
+        const auto many_partition_challenges =
             (0..partitions)
                 .flat_map(| k | {LayerChallenges::new (layers, n).derive(leaves, &replica_id, &seed, k as u8)})
                 .collect::<Vec<_>>();

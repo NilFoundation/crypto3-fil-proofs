@@ -136,7 +136,7 @@ namespace nil {
                     // references, the second node only references the first node.
                     // Use the degree of the current graph (`m`) as `parents.len()` might be bigger than
                     // that (that's the case for Stacked Graph).
-                    for (auto parent = parents.begin(); parent < parents.begin() + m; ++parent) {
+                    for (const auto parent = parents.begin(); parent < parents.begin() + m; ++parent) {
                         *parent = 0;
                     }
                 } else {

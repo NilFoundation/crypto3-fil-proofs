@@ -55,10 +55,10 @@ namespace nil {
                     bool verify(const typename hash_type::digest_type &replica_id,
                                 const typename hash_type::digest_type &exp_encoded_node,
                                 const typename VerifyingHash::digest_type &decoded_node) {
-                        auto key = create_key(replica_id);
+                        const auto key = create_key(replica_id);
 
-                        auto fr : Fr = (*decoded_node).into();
-                        auto encoded_node = encode(key, fr.into());
+                        const auto fr : Fr = (*decoded_node).into();
+                        const auto encoded_node = encode(key, fr.into());
 
                         return exp_encoded_node == encoded_node;
                     }

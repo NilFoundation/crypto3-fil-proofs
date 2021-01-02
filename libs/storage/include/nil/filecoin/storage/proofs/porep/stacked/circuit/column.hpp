@@ -64,9 +64,9 @@ namespace nil {
                     /// Consume this column, and allocate its values in the circuit.
                     template<template<typename> class ConstraintSystem>
                     AllocatedColumn alloc(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
-                        auto Self {rows} = self;
+                        const auto Self {rows} = self;
 
-                        auto rows = rows.into_iter()
+                        const auto rows = rows.into_iter()
                                        .enumerate()
                                        .map(| (i, val) |
                                             {num::AllocatedNumber::alloc(

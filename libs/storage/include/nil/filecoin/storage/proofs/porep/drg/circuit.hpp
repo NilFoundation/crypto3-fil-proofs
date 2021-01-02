@@ -111,11 +111,11 @@ namespace nil {
                         std::size_t replica_id_bits =
                             reverse_bit_numbering(replica_node_num.to_bits_le(cs.namespace(|| "replica_id_bits")));
 
-                        auto replica_root_var = Root::Var(replica_root.allocated(cs.namespace(|| "replica_root")));
-                        auto data_root_var = Root::Var(data_root.allocated(cs.namespace(|| "data_root")));
+                        const auto replica_root_var = Root::Var(replica_root.allocated(cs.namespace(|| "replica_root")));
+                        const auto data_root_var = Root::Var(data_root.allocated(cs.namespace(|| "data_root")));
 
                         for (int i = 0; i < data_nodes.size(); i++) {
-                            auto mut cs = cs.namespace(|| format !("challenge_{}", i));
+                            auto cs = cs.namespace(|| format !("challenge_{}", i));
                             // ensure that all inputs are well formed
                             std::vector<std::pair<Fr, std::size_t>> replica_node_path = this->replica_nodes_paths[i];
                             std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> replica_parents_paths =
@@ -132,7 +132,7 @@ namespace nil {
                             assert(replica_node.is_some() == data_node.is_some());
 
                             // Inclusion checks
-                            auto mut cs = cs.namespace(|| "inclusion_checks");
+                            auto cs = cs.namespace(|| "inclusion_checks");
                             PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
                                 cs.namespace(|| "replica_inclusion"), Root::Val(*replica_node),
                                 replica_node_path.clone().into(), replica_root_var.clone(), self.priv);
@@ -151,12 +151,12 @@ namespace nil {
                                 data_node_path.clone().into(), data_root_var.clone(), self.priv);
 
                             // Encoding checks
-                            auto mut cs = cs.namespace(|| "encoding_checks");
+                            auto cs = cs.namespace(|| "encoding_checks");
                             // get the parents into bits
                             std::vector<std::vector<bool>> parents_bits;
 
                             for (int i = 0; i < replica_parents.size(); i++) {
-                                auto num = num::AllocatedNumber::alloc(
+                                const auto num = num::AllocatedNumber::alloc(
                                     cs.namespace(|| format !("parents_{}_num", i)),
                                     || {replica_parents[i]
                                             .map(Into::into)
@@ -166,26 +166,26 @@ namespace nil {
                             }
 
                             // generate the encryption key
-                            auto key = kdf(cs.namespace(|| "kdf"), &replica_id_bits, parents_bits, None, None);
+                            const auto key = kdf(cs.namespace(|| "kdf"), &replica_id_bits, parents_bits, None, None);
 
-                            auto replica_node_num = num::AllocatedNumber::alloc(
+                            const auto replica_node_num = num::AllocatedNumber::alloc(
                                 cs.namespace(|| "replica_node"),
                                 || {(*replica_node).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                                 ;
 
-                            auto decoded = encode::decode(cs.namespace(|| "decode"), &key, &replica_node_num) ? ;
+                            const auto decoded = encode::decode(cs.namespace(|| "decode"), &key, &replica_node_num) ? ;
 
                             // TODO this should not be here, instead, this should be the leaf Fr in the
                             // data_auth_path
                             // TODO also note that we need to change/makesurethat the leaves are the data, instead
                             // of hashes of the data
-                            auto expected = num::AllocatedNumber::alloc(
+                            const auto expected = num::AllocatedNumber::alloc(
                                 cs.namespace(|| "data node"),
                                 || {data_node.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
                                 ;
 
                             // ensure the encrypted data and data_node match
-                            constraint::equal(&mut cs, || "equality", &expected, &decoded);
+                            constraint::equal(cs, || "equality", &expected, &decoded);
                         }
                     }
                 };
@@ -213,15 +213,15 @@ namespace nil {
                         ciphertexts.extend_from_slice(parent);
                     }
 
-                    auto alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]);
+                    const auto alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]);
                     Fr fr;
 
                     if (alloc_bits[0].get_value().is_some()) {
-                        auto be_bits = alloc_bits.iter()
+                        const auto be_bits = alloc_bits.iter()
                                           .map(| v | v.get_value().ok_or(SynthesisError::AssignmentMissing))
                                           .collect::<Result<Vec<bool>, SynthesisError>>() ?;
 
-                        auto le_bits = be_bits.chunks(8)
+                        const auto le_bits = be_bits.chunks(8)
                                           .flat_map(| chunk | chunk.iter().rev())
                                           .copied()
                                           .take(std::size_t(ScalarEngine::Fr::CAPACITY))

@@ -32,13 +32,13 @@ BOOST_AUTO_TEST_SUITE(feistel_test_suite)
 const BAD_NS : &[Index] = &[ 5, 6, 8, 12, 17 ];    //
 //
 void encode_decode(n : Index, expect_success : bool) {
-    auto mut failed = false;
-    auto precomputed = precompute(n);
+    auto failed = false;
+    const auto precomputed = precompute(n);
     for (std::size_t i = 0; i < n; i++) {
-        auto p = encode(i, &[ 1, 2, 3, 4 ], precomputed);
-        auto v = decode(p, &[ 1, 2, 3, 4 ], precomputed);
-        auto equal = i == v;
-        auto in_range = p <= n;
+        const auto p = encode(i, &[ 1, 2, 3, 4 ], precomputed);
+        const auto v = decode(p, &[ 1, 2, 3, 4 ], precomputed);
+        const auto equal = i == v;
+        const auto in_range = p <= n;
         if (expect_success) {
             BOOST_CHECK(equal, "failed to permute (n = {})", n);
             BOOST_CHECK(in_range, "output number is too big (n = {})", n);
@@ -56,7 +56,7 @@ void encode_decode(n : Index, expect_success : bool) {
 BOOST_AUTO_TEST_CASE(test_feistel_power_of_4) {
     // Our implementation is guaranteed to produce a permutation when input size (number of elements)
     // is a power of our.
-    auto mut n = 1;
+    auto n = 1;
 
     // Powers of 4 always succeed.
     for (std::size_t i = 0; i < 4; ++i) {
@@ -73,10 +73,10 @@ BOOST_AUTO_TEST_CASE(test_feistel_power_of_4) {
 
 BOOST_AUTO_TEST_CASE(test_feistel_on_arbitrary_set) {
     for (n in BAD_NS.iter()) {
-            auto precomputed = precompute(*n as Index);
+            const auto precomputed = precompute(*n as Index);
         for (i = 0; i < * n; ++i) {
-            auto p = permute(*n, i, &[ 1, 2, 3, 4 ], precomputed);
-            auto v = invert_permute(*n, p, &[ 1, 2, 3, 4 ], precomputed);
+            const auto p = permute(*n, i, &[ 1, 2, 3, 4 ], precomputed);
+            const auto v = invert_permute(*n, p, &[ 1, 2, 3, 4 ], precomputed);
             // Since every element in the set is reversibly mapped to another element also in the set,
             // this is indeed a permutation.
             assert_eq !(i, v, "failed to permute");

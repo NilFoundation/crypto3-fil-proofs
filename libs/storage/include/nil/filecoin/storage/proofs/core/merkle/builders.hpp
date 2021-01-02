@@ -110,9 +110,9 @@ namespace nil {
             for (int i = 0; i < configs.size(); i++) {
                 typename MerkleTreeType::Store store = typename MerkleTreeType::Store::new_with_config(
                     base_tree_len, MerkleTreeType::base_arity, configs[i]);
-                if (auto Some(lc_store) = Any::downcast_mut::<merkletree::store::LevelCacheStore
+                if (const auto Some(lc_store) = Any::downcast_mut::<merkletree::store::LevelCacheStore
                                                          << typename MerkleTreeType::hash_type>::Domain,
-                    std::fs::File >, > (&mut store)) {
+                    std::fs::File >, > (store)) {
                     assert(("Cannot create LCTree without replica paths", replica_config));
                     lc_store.set_external_reader(ExternalReader::new_from_config(&replica_config, i));
                 }
@@ -149,10 +149,10 @@ namespace nil {
             assert(("Invalid merkle tree size given the arity",
                     is_merkle_tree_size_valid(size, MerkleTreeType::base_arity)));
 
-            auto f = [&](std::size_t i) {
+            const auto f = [&](std::size_t i) {
                 // TODO Replace `expect()` with `context()` (problem is the parallel iterator)
                 std::vector<std::uint8_t> d = data_at_node(data, i);
-                // TODO/FIXME: This can panic. FOR NOW, auto's leave this since we're experimenting with
+                // TODO/FIXME: This can panic. FOR NOW, const auto's leave this since we're experimenting with
                 // optimization paths. However, we need to ensure that bad input will not lead to a panic
                 // that isn't caught by the FPS API.
                 // Unfortunately, it's not clear how to perform this error-handling in the parallel
@@ -190,8 +190,8 @@ namespace nil {
             assert(("Invalid merkle tree size given the arity", is_merkle_tree_size_valid(size, BaseTreeArity)));
             assert(("Invalid data length for merkle tree", data.size() == Hash::digest_bits / CHAR_BIT));
 
-            auto f = [&](std::size_t i) {
-                auto d = data_at_node(&data, i);
+            const auto f = [&](std::size_t i) {
+                const auto d = data_at_node(&data, i);
                 return Hash::digest_type(d);
             };
 
@@ -293,7 +293,7 @@ namespace nil {
         std::tuple<std::vector<std::uint8_t>, MerkleTreeType>
             generate_base_tree(UniformRandomGenerator &rng, std::size_t nodes,
                                boost::optional<const boost::filesystem::path &> temp_path) {
-            auto elements =
+            const auto elements =
                 (0..nodes).map(| _ | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect::<Vec<_>>();
 
             std::vector<std::uint8_t> data;
@@ -307,24 +307,24 @@ namespace nil {
                 StoreConfig config(*temp_path, format !("test-lc-tree-{}", id),
                                    default_rows_to_discard(nodes, MerkleTreeType::base_arity));
 
-                auto mut tree =
+                auto tree =
                     MerkleTreeWrapper::try_from_iter_with_config(elements.iter().map(| v | (Ok(*v))), config).unwrap();
 
                 // Write out the replica data.
-                auto mut f = std::fs::File::create(&replica_path).unwrap();
+                auto f = std::fs::File::create(&replica_path).unwrap();
                 f.write_all(&data).unwrap();
 
                 
                 // Beware: evil dynamic downcasting RUST MAGIC down below.
                 use std::any::Any;
 
-                if (auto
+                if (const auto
                     Some(lc_tree) =
                         Any::downcast_mut::<merkle::MerkleTree << typename MerkleTreeType::hash_type>::Domain,
                     <typename MerkleTreeType::hash_type>::Function,
                     merkletree::store::LevelCacheStore << typename MerkleTreeType::hash_type> ::Domain,
                     std::fs::File, >, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
-                    MerkleTreeType::top_tree_arity, >, > (&mut tree.inner) ) {
+                    MerkleTreeType::top_tree_arity, >, > (tree.inner) ) {
                         lc_tree.set_external_reader_path(&replica_path).unwrap();
                     }
 
@@ -346,7 +346,7 @@ namespace nil {
             std::vector<std::uint8_t> data;
 
             for (int i = 0; i < base_tree_count) {
-                auto(inner_data, tree) =
+                const auto(inner_data, tree) =
                     generate_base_tree<UniformRandomGenerator, MerkleTreeType>(rng, base_tree_size, temp_path);
                 trees.push_back(tree);
                 data.extend(inner_data);
@@ -369,7 +369,7 @@ namespace nil {
                 std::vector<MerkleTreeType> sub_trees(top_tree_arity);
                 std::vector<std::uint8_t> data;
                 for (int i = 0; i < top_tree_arity; i++) {
-                    auto(inner_data, tree) = generate_sub_tree<
+                    const auto(inner_data, tree) = generate_sub_tree<
                         UniformRandomGenerator,
                         MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity,
                                           MerkleTreeType::sub_tree_arity, typenum::U0>>(rng, nodes / top_tree_arity,

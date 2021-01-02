@@ -29,43 +29,43 @@ BOOST_AUTO_TEST_SUITE(post_fallback_circuit_test_suite)
 
 template<typename MerkleTreeType>
 void test_fallback_post_circuit(std::size_t expected_constraints) {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     std::size_t leaves = 64 * get_base_tree_count<Tree>();
     std::size_t sector_size = leaves * NODE_SIZE;
 
-    auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
 
-    auto pub_params = fallback::PublicParams {
+    const auto pub_params = fallback::PublicParams {
         sector_size : sector_size as u64,
         challenge_count : 20,
         challenged_nodes : 1,
     };
 
-    auto mut sectors : Vec<SectorId> = Vec::new ();
-    auto mut trees = BTreeMap::new ();
+    auto sectors : Vec<SectorId> = Vec::new ();
+    auto trees = BTreeMap::new ();
 
     // Construct and store an MT using a named store.
-    auto temp_dir = tempfile::tempdir();
-    auto temp_path = temp_dir.path();
+    const auto temp_dir = tempfile::tempdir();
+    const auto temp_path = temp_dir.path();
 
     for (std::size_t i = 0; i < 5; i++) {
         sectors.push(i.into());
-        auto(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+        const auto(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
         trees.insert(i.into(), tree);
     }
 
-    auto candidates =
+    const auto candidates =
         fallback::generate_candidates::<Tree>(&pub_params, &sectors, &trees, prover_id, randomness, );
 
-    auto candidate = &candidates[0];
-    auto tree = trees.remove(&candidate.sector_id);
-    auto comm_r_last = tree.root();
-    auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
+    const auto candidate = &candidates[0];
+    const auto tree = trees.remove(&candidate.sector_id);
+    const auto comm_r_last = tree.root();
+    const auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
 
-    auto pub_inputs = fallback::PublicInputs {
+    const auto pub_inputs = fallback::PublicInputs {
         randomness,
         sector_id : candidate.sector_id,
         prover_id,
@@ -74,31 +74,31 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
         sector_challenge_index : 0,
     };
 
-    auto priv_inputs = fallback::PrivateInputs::<Tree> {
+    const auto priv_inputs = fallback::PrivateInputs::<Tree> {
         tree,
         comm_c,
         comm_r_last,
     };
 
-    auto proof = ElectionPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    const auto proof = ElectionPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    auto is_valid = ElectionPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
+    const auto is_valid = ElectionPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
     BOOST_CHECK(is_valid);
 
     // actual circuit test
 
-    auto paths = proof.paths()
+    const auto paths = proof.paths()
                     .iter()
                     .map(| p |
                          {p.iter()
                               .map(| v | {(v .0.iter().copied().map(Into::into).map(Some).collect(), Some(v .1), )})
                               .collect::<Vec<_>>()})
                     .collect();
-    auto leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
+    const auto leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
 
-    auto mut cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
+    auto cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
 
-    auto instance = ElectionPoStCircuit::<Tree> {
+    const auto instance = ElectionPoStCircuit::<Tree> {
         leafs,
         paths,
         comm_r : Some(comm_r.into()),
@@ -111,7 +111,7 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
         _t : PhantomData,
     };
 
-    instance.synthesize(&mut cs).expect("failed to synthesize circuit");
+    instance.synthesize(cs).expect("failed to synthesize circuit");
 
     BOOST_CHECK(cs.is_satisfied(), "constraints not satisfied");
 
@@ -119,9 +119,9 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
     BOOST_CHECK_EQUAL(cs.num_constraints(), expected_constraints, "wrong number of constraints");
     BOOST_CHECK_EQUAL(cs.get_input(0, "ONE"), Fr::one());
 
-    auto generated_inputs =
+    const auto generated_inputs =
         ElectionPoStCompound::<Tree>::generate_public_inputs(&pub_inputs, &pub_params, None);
-    auto expected_inputs = cs.get_inputs();
+    const auto expected_inputs = cs.get_inputs();
 
     for (((input, label), generated_input) : expected_inputs.iter().skip(1).zip(generated_inputs.iter())) {
         assert_eq !(input, generated_input, "{}", label);

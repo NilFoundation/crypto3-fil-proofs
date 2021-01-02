@@ -28,33 +28,33 @@ BOOST_AUTO_TEST_SUITE(por_test_suite)
 
 template<typename MerkleTreeType>
 void test_merklepor() {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
-    auto leaves = 16;
-    auto pub_params = PublicParams {
+    const std::size_t leaves = 16;
+    const auto pub_params = PublicParams {
         leaves,
         private : false,
     };
 
-    auto data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
-    auto porep_id = [3; 32];
-    auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
-    auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
+    const auto data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    const auto porep_id = [3; 32];
+    const auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
+    const auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
-    auto pub_inputs = PublicInputs {
+    const auto pub_inputs = PublicInputs {
         challenge : 3,
         commitment : Some(tree.root()),
     };
 
-    auto leaf =
+    const auto leaf =
         <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
-    auto priv_inputs = PrivateInputs::new (leaf, &tree);
+    const auto priv_inputs = PrivateInputs::new (leaf, &tree);
 
-    auto proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    const auto proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    auto is_valid = PoR::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
+    const auto is_valid = PoR::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
 
     assert !(is_valid);
 }
@@ -94,50 +94,49 @@ BOOST_AUTO_TEST_CASE(merklepor_blake2s_quad) {
 }
 
 // Takes a valid proof and breaks it.
-fn make_bogus_proof<Proof : BasicMerkleProof>(rng
-                                              : &mut XorShiftRng, mut proof
-                                              : DataProof<Proof>)
-    ->DataProof<Proof> {
-    auto bogus_leaf = <Proof::Hasher>::Domain::random(rng);
+DataProof<Proof> make_bogus_proof<Proof : BasicMerkleProof>(rng
+                                              : XorShiftRng, proof
+                                              : DataProof<Proof>) {
+    const auto bogus_leaf = <Proof::Hasher>::Domain::random(rng);
     proof.proof.break_me(bogus_leaf);
-    proof
+    return proof;
 }
 
-fn test_merklepor_validates<Tree : MerkleTreeTrait>() {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+void test_merklepor_validates<Tree : MerkleTreeTrait>() {
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
-    auto leaves = 64;
-    auto pub_params = PublicParams {
+    const std::size_t leaves = 64;
+    const auto pub_params = PublicParams {
         leaves,
         private : false,
     };
 
-    auto data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    const auto data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
-    auto porep_id = [99; 32];
+    const auto porep_id = [99; 32];
 
-    auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
-    auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
+    const auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
+    const auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
-    auto pub_inputs = PublicInputs {
+    const auto pub_inputs = PublicInputs {
         challenge : 3,
         commitment : Some(tree.root()),
     };
 
-    auto leaf =
+    const auto leaf =
         <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
-    auto priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
+    const auto priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
 
-    auto good_proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    const auto good_proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    auto verified = PoR::<Tree>::verify(&pub_params, &pub_inputs, &good_proof).expect("verification failed");
+    const auto verified = PoR::<Tree>::verify(&pub_params, &pub_inputs, &good_proof).expect("verification failed");
     assert !(verified);
 
-    auto bad_proof = make_bogus_proof::<MerkleTreeType::Proof>(rng, good_proof);
+    const auto bad_proof = make_bogus_proof::<MerkleTreeType::Proof>(rng, good_proof);
 
-    auto verified = PoR::<Tree>::verify(&pub_params, &pub_inputs, &bad_proof).expect("verification failed");
+    const auto verified = PoR::<Tree>::verify(&pub_params, &pub_inputs, &bad_proof).expect("verification failed");
 
     // A bad proof should not be verified!
     assert !(!verified);
@@ -177,40 +176,40 @@ BOOST_AUTO_TEST_CASE(merklepor_actually_validates_poseidon_quad) {
 
 template<typename MerkleTreeType>
 void test_merklepor_validates_challenge_identity() {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
-    auto leaves = 64;
+    const std::size_t leaves = 64;
 
-    auto pub_params = PublicParams {
+    const auto pub_params = PublicParams {
         leaves,
         private : false,
     };
 
     std::vector<std::uint8_t> data = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
-    auto porep_id = [32; 32];
-    auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
-    auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
+    const auto porep_id = [32; 32];
+    const auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
+    const auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
-    auto pub_inputs = PublicInputs {
+    const auto pub_inputs = PublicInputs {
         challenge : 3,
         commitment : Some(tree.root()),
     };
 
-    auto leaf =
+    const auto leaf =
         <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
-    auto priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
+    const auto priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
 
-    auto proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    const auto proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    auto different_pub_inputs = PublicInputs {
+    const auto different_pub_inputs = PublicInputs {
         challenge : 999,
         commitment : Some(tree.root()),
     };
 
-    auto verified = PoR::<Tree>::verify(&pub_params, &different_pub_inputs, &proof).expect("verification failed");
+    const auto verified = PoR::<Tree>::verify(&pub_params, &different_pub_inputs, &proof).expect("verification failed");
 
     // A proof created with a the wrong challenge not be verified!
     assert !(!verified);

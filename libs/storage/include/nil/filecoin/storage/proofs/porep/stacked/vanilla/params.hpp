@@ -185,11 +185,11 @@ namespace nil {
                     // 'clear_temp' will discard all persisted merkle and layer data
                     // that is no longer required.
                     void clear_temp(TemporaryAux<MerkleTreeType, Hash> t_aux) {
-                        auto cached = [&](const StoreConfig &config) -> bool {
+                        const auto cached = [&](const StoreConfig &config) -> bool {
                             return boost::filesystem::path(StoreConfig::data_path(config.path, config.id)).exists();
                         };
 
-                        auto delete_tree_c_store = [&](const StoreConfig &config, std::size_t tree_c_size) {
+                        const auto delete_tree_c_store = [&](const StoreConfig &config, std::size_t tree_c_size) {
                             DiskStore<typename MerkleTreeType::hash_type::digest_type> tree_c_store =
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::new_from_disk(
                                     tree_c_size, MerkleTreeType::base_arity, config);
@@ -218,7 +218,7 @@ namespace nil {
 
                         std::size_t tree_count = get_base_tree_count<MerkleTreeType>();
                         std::size_t tree_c_size = t_aux.tree_c_config.size;
-                        auto configs = split_config(t_aux.tree_c_config.clone(), tree_count);
+                        const auto configs = split_config(t_aux.tree_c_config.clone(), tree_count);
 
                         if (cached(&t_aux.tree_c_config)) {
                             delete_tree_c_store(&t_aux.tree_c_config, tree_c_size);
@@ -380,7 +380,7 @@ namespace nil {
                         // tree_r_last_size stored in the config is the base tree size
                         std::size_t tree_r_last_size = t_aux.tree_r_last_config.size;
                         std::size_t tree_r_last_config_rows_to_discard = t_aux.tree_r_last_config.rows_to_discard;
-                        auto(configs, replica_config) = split_config_and_replica(
+                        const auto(configs, replica_config) = split_config_and_replica(
                             t_aux.tree_r_last_config,
                             replica_path,
                             get_merkle_tree_leafs(tree_r_last_size, MerkleTreeType::base_arity),
@@ -499,7 +499,7 @@ namespace nil {
                             assert(labeling_proofs.get(layer - 1).is_some());
                             LabellingProof<typename MerkleTreeType::hash_type> labeling_proof =
                                 labeling_proofs.get(layer - 1);
-                            auto labeled_node = replica_column_proofs.c_x.get_node_at_layer(layer);
+                            const auto labeled_node = replica_column_proofs.c_x.get_node_at_layer(layer);
                             assert(labeling_proof.verify(replica_id, labeled_node));
                         }
 

@@ -31,44 +31,44 @@ BOOST_AUTO_TEST_SUITE(post_fallback_vanilla_test_suite)
 
 template<typename MerkleTreeType>
 void test_fallback_post() {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
     std::size_t sector_size = leaves * NODE_SIZE;
 
     PublicParams pub_params = {sector_size, 40, 1};
 
-    auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
 
     std::vector<sector_id_type> sectors;
-    auto mut trees = BTreeMap::new ();
+    auto trees = BTreeMap::new ();
 
     // Construct and store an MT using a named store.
-    auto temp_dir = tempfile::tempdir();
-    auto temp_path = temp_dir.path();
+    const auto temp_dir = tempfile::tempdir();
+    const auto temp_path = temp_dir.path();
 
     for (int i = 0; i < 5; i++) {
         sectors.push_back(i.into());
-        auto(_data, tree) = generate_tree<MerkleTreeType>(rng, leaves, Some(temp_path.to_path_buf()));
+        const auto(_data, tree) = generate_tree<MerkleTreeType>(rng, leaves, Some(temp_path.to_path_buf()));
         trees.insert(i.into(), tree);
     }
 
-    auto candidates = generate_candidates<MerkleTreeType>(pub_params, sectors, trees, prover_id, randomness);
+    const auto candidates = generate_candidates<MerkleTreeType>(pub_params, sectors, trees, prover_id, randomness);
 
-    auto candidate = &candidates[0];
-    auto tree = trees.remove(&candidate.sector_id);
-    auto comm_r_last = tree.root();
-    auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
+    const auto candidate = &candidates[0];
+    const auto tree = trees.remove(&candidate.sector_id);
+    const auto comm_r_last = tree.root();
+    const auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
 
     PublicInputs pub_inputs = {randomness, candidate.sector_id, prover_id, comm_r, candidate.partial_ticket, 0};
 
     PrivateInputs<MerkleTreeType> priv_inputs = {tree, comm_c, comm_r_last};
 
-    auto proof = ElectionPoSt<MerkleTreeType>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    const auto proof = ElectionPoSt<MerkleTreeType>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
-    auto is_valid = ElectionPoSt<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof)
+    const auto is_valid = ElectionPoSt<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof)
                        .expect(
                            "verification "
                            "failed");

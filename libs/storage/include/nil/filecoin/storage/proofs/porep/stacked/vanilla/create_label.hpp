@@ -60,7 +60,7 @@ namespace nil {
                     typename LabelHash::digest_type hash;
                     if (node > 0) {
                         // prefetch previous node, which is always a parent
-                        auto prev = &layer_labels[(node - 1) * NODE_SIZE..node * NODE_SIZE];
+                        const auto prev = &layer_labels[(node - 1) * NODE_SIZE..node * NODE_SIZE];
                         _mm_prefetch(prev.as_ptr() as *const i8, _MM_HINT_T0);
                         hash = graph.copy_parents_data(node as u32, &*layer_labels, hasher, cache);
                     } else {
@@ -68,8 +68,8 @@ namespace nil {
                     }
 
                     // store the newly generated key
-                    auto start = data_at_node_offset(node);
-                    auto end = start + NODE_SIZE;
+                    const auto start = data_at_node_offset(node);
+                    const auto end = start + NODE_SIZE;
                     layer_labels[start..end].copy_from_slice(&hash[..]);
 
                     // strip last two bits, to ensure result is in Fr.
@@ -100,7 +100,7 @@ namespace nil {
                     typename LabelHash::digest_type hash;
                     if (node > 0) {
                         // prefetch previous node, which is always a parent
-                        auto prev = &layer_labels[(node - 1) * NODE_SIZE..node * NODE_SIZE];
+                        const auto prev = &layer_labels[(node - 1) * NODE_SIZE..node * NODE_SIZE];
                         unsafe {
                             _mm_prefetch(prev.as_ptr() as *const i8, _MM_HINT_T0);
                         }
@@ -111,8 +111,8 @@ namespace nil {
                     }
 
                     // store the newly generated key
-                    auto start = data_at_node_offset(node);
-                    auto end = start + NODE_SIZE;
+                    const auto start = data_at_node_offset(node);
+                    const auto end = start + NODE_SIZE;
                     layer_labels[start..end].copy_from_slice(&hash[..]);
 
                     // strip last two bits, to ensure result is in Fr.

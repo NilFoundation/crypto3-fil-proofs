@@ -104,13 +104,13 @@ namespace nil {
             std::size_t parts = std::ceil(static_cast<double>(padded_piece_size) / static_cast<double>(NODE_SIZE));
 
             BinaryMerkleTree<Hash> tree = BinaryMerkleTree<Hash>::try_from_iter((0..parts).map(| _ | {
-                source.read_exact(&mut buf);
+                source.read_exact(buf);
                 <H::Domain as Domain>::try_from_bytes(&buf)
             }));
 
             std::array<std::uint32_t, NODE_SIZE> comm_p_bytes;
             comm_p_bytes.fill(0);
-            auto comm_p = tree.root();
+            const auto comm_p = tree.root();
             comm_p.write_bytes(comm_p_bytes);
 
             return comm_p_bytes;

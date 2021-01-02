@@ -31,12 +31,12 @@ BOOST_AUTO_TEST_SUITE(post_fallback_compound_test_suite)
 
 template<typename MerkleTreeType>
 void fallback_post_test_compound() {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
     std::uint64_t sector_size = (leaves * NODE_SIZE);
-    auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
 
     compound_proof::SetupParams setup_params = {
         fallback::SetupParams {
@@ -49,40 +49,40 @@ void fallback_post_test_compound() {
     };
 
     std::vector<sector_id_type> sectors;
-    auto mut trees = BTreeMap::new ();
+    auto trees = BTreeMap::new ();
 
     // Construct and store an MT using a named store.
-    auto temp_dir = tempfile::tempdir();
-    auto temp_path = temp_dir.path();
+    const auto temp_dir = tempfile::tempdir();
+    const auto temp_path = temp_dir.path();
 
     for (std::size_t i = 0; i < 5; i++) {
         sectors.push_back(i.into());
-        auto(_data, tree) = generate_tree<MerkleTreeType>(rng, leaves, Some(temp_path.to_path_buf()));
+        const auto(_data, tree) = generate_tree<MerkleTreeType>(rng, leaves, Some(temp_path.to_path_buf()));
         trees.insert(i.into(), tree);
     }
 
-    auto pub_params = ElectionPoStCompound<MerkleTreeType>::setup(&setup_params).expect("setup failed");
+    const auto pub_params = ElectionPoStCompound<MerkleTreeType>::setup(&setup_params).expect("setup failed");
 
-    auto candidates = fallback::generate_candidates<MerkleTreeType>(&pub_params.vanilla_params, &sectors, &trees,
+    const auto candidates = fallback::generate_candidates<MerkleTreeType>(&pub_params.vanilla_params, &sectors, &trees,
                                                                    prover_id, randomness)
                          ;
 
-    auto candidate = &candidates[0];
-    auto tree = trees.remove(&candidate.sector_id);
-    auto comm_r_last = tree.root();
-    auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
+    const auto candidate = &candidates[0];
+    const auto tree = trees.remove(&candidate.sector_id);
+    const auto comm_r_last = tree.root();
+    const auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
 
     fallback::PublicInputs pub_inputs = {randomness, candidate.sector_id,      prover_id,
                                          comm_r,     candidate.partial_ticket, 0};
 
     fallback::PrivateInputs<MerkleTreeType> priv_inputs = {tree, comm_c, comm_r_last};
 
-    auto(circuit, inputs) = ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
+    const auto(circuit, inputs) = ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
 
-    auto mut cs = TestConstraintSystem::new ();
+    auto cs = TestConstraintSystem::new ();
 
-    circuit.synthesize(&mut cs).expect("failed to synthesize");
+    circuit.synthesize(cs).expect("failed to synthesize");
 
     if (!cs.is_satisfied()) {
         panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
@@ -91,30 +91,30 @@ void fallback_post_test_compound() {
     BOOST_CHECK(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
 
     // Use this to debug differences between blank and regular circuit generation.
-    auto(circuit1, _inputs) =
+    const auto(circuit1, _inputs) =
         ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
-    auto blank_circuit = ElectionPoStCompound::<Tree>::blank_circuit(&pub_params.vanilla_params);
+    const auto blank_circuit = ElectionPoStCompound::<Tree>::blank_circuit(&pub_params.vanilla_params);
 
-    auto mut cs_blank = MetricCS::new ();
-    blank_circuit.synthesize(&mut cs_blank).expect("failed to synthesize");
+    auto cs_blank = MetricCS::new ();
+    blank_circuit.synthesize(cs_blank).expect("failed to synthesize");
 
-    auto a = cs_blank.pretty_print_list();
+    const auto a = cs_blank.pretty_print_list();
 
-    auto mut cs1 = TestConstraintSystem::new ();
-    circuit1.synthesize(&mut cs1).expect("failed to synthesize");
-    auto b = cs1.pretty_print_list();
+    auto cs1 = TestConstraintSystem::new ();
+    circuit1.synthesize(cs1).expect("failed to synthesize");
+    const auto b = cs1.pretty_print_list();
 
     for ((i, (a, b)) : a.chunks(100).zip(b.chunks(100)).enumerate()) {
         BOOST_CHECK_EQUAL(a, b, "failed at chunk {}", i);
     }
 
-    auto blank_groth_params = ElectionPoStCompound<MerkleTreeType>::groth_params(Some(rng), &pub_params.vanilla_params)
+    const auto blank_groth_params = ElectionPoStCompound<MerkleTreeType>::groth_params(Some(rng), &pub_params.vanilla_params)
                                  .expect("failed to generate groth params");
 
-    auto proof = ElectionPoStCompound::prove(&pub_params, &pub_inputs, &priv_inputs, &blank_groth_params, )
+    const auto proof = ElectionPoStCompound::prove(&pub_params, &pub_inputs, &priv_inputs, &blank_groth_params, )
                     .expect("failed while proving");
 
-    auto verified = ElectionPoStCompound::verify(&pub_params, &pub_inputs, &proof, &NoRequirements)
+    const auto verified = ElectionPoStCompound::verify(&pub_params, &pub_inputs, &proof, &NoRequirements)
                        .expect("failed while verifying");
 
     BOOST_CHECK(verified);

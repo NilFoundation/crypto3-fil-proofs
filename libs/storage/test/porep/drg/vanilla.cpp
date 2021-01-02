@@ -29,23 +29,24 @@ BOOST_AUTO_TEST_SUITE(drg_vanilla_test_suite)
 
 template<typename MerkleTreeType>
 void test_extract_all() {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
-    auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    auto nodes = 4;
-    auto data = vec ![2u8; 32 * nodes];
+    const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = 
+        <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const std::size_t nodes = 4;
+    const auto data = vec ![2u8; 32 * nodes];
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    auto cache_dir = tempfile::tempdir();
-    auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    const auto cache_dir = tempfile::tempdir();
+    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
-    auto replica_path = cache_dir.path().join("replica-path");
-    auto mut mmapped_data = setup_replica(&data, &replica_path);
+    const auto replica_path = cache_dir.path().join("replica-path");
+    auto mmapped_data = setup_replica(&data, &replica_path);
 
-    auto sp = SetupParams {
+    const auto sp = SetupParams {
         drg : DrgParams {
             nodes,
             degree : BASE_DEGREE,
@@ -56,16 +57,16 @@ void test_extract_all() {
         challenges_count : 1,
     };
 
-    auto pp : PublicParams<typename MerkleTreeType::hash_type, BucketGraph<typename MerkleTreeType::hash_type>> = DrgPoRep::setup(&sp).expect("setup failed");
+    const auto pp : PublicParams<typename MerkleTreeType::hash_type, BucketGraph<typename MerkleTreeType::hash_type>> = DrgPoRep::setup(&sp).expect("setup failed");
 
     DrgPoRep::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(), replica_path.clone(), )
         .expect("replication failed");
 
-    auto mut copied = vec ![0; data.len()];
+    auto copied = vec ![0; data.len()];
     copied.copy_from_slice(&mmapped_data);
     assert_ne !(data, copied, "replication did not change data");
 
-    auto decoded_data =
+    const auto decoded_data =
         DrgPoRep::<typename MerkleTreeType::hash_type, _>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config.clone()), )
             .unwrap_or_else(| e | { panic !("Failed to extract data from `DrgPoRep`: {}", e); });
 
@@ -87,23 +88,23 @@ BOOST_AUTO_TEST_CASE(extract_all_blake2s) {
 }
 
 BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
-    auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
+    const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
-    auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    auto nodes = 4;
-    auto data = vec ![2u8; 32 * nodes];
+    const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const std::size_t nodes = 4;
+    const auto data = vec ![2u8; 32 * nodes];
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
-    auto cache_dir = tempfile::tempdir();
-    auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    const auto cache_dir = tempfile::tempdir();
+    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
-    auto replica_path = cache_dir.path().join("replica-path");
-    auto mut mmapped_data = setup_replica(&data, &replica_path);
+    const auto replica_path = cache_dir.path().join("replica-path");
+    auto mmapped_data = setup_replica(&data, &replica_path);
 
-    auto sp = SetupParams {
+    const auto sp = SetupParams {
         drg : DrgParams {
             nodes : data.len() / 32,
             degree : BASE_DEGREE,
@@ -114,20 +115,20 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
         challenges_count : 1,
     };
 
-    auto pp = DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<typename MerkleTreeType::hash_type>>::setup(&sp).expect("setup failed");
+    const auto pp = DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<typename MerkleTreeType::hash_type>>::setup(&sp).expect("setup failed");
 
     DrgPoRep::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(), replica_path.clone(), )
         .expect("replication failed");
 
-    auto mut copied = vec ![0; data.len()];
+    auto copied = vec ![0; data.len()];
     copied.copy_from_slice(&mmapped_data);
     assert_ne !(data, copied, "replication did not change data");
 
     for (i = 0; i < nodes; ++i) {
-        auto decoded_data = DrgPoRep::extract(&pp, &replica_id, &mmapped_data, i, Some(config.clone()))
+        const auto decoded_data = DrgPoRep::extract(&pp, &replica_id, &mmapped_data, i, Some(config.clone()))
                                .expect("failed to extract node data from PoRep");
 
-        auto original_data = data_at_node(&data, i);
+        const auto original_data = data_at_node(&data, i);
 
         assert_eq !(original_data, decoded_data.as_slice(), "failed to extract data");
     }
@@ -151,26 +152,26 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
 
     // The loop is here in case we need to retry because of an edge case in the test design.
     while (true) {
-        auto rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
-        auto degree = BASE_DEGREE;
-        auto expansion_degree = 0;
+        const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
+        const auto degree = BASE_DEGREE;
+        const auto expansion_degree = 0;
 
-        auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-        auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+        const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+        const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
         // MT for original data is always named tree-d, and it will be
         // referenced later in the process as such.
-        auto cache_dir = tempfile::tempdir();
-        auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+        const auto cache_dir = tempfile::tempdir();
+        const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
                                        default_rows_to_discard(nodes, BINARY_ARITY), );
 
         // Generate a replica path.
-        auto replica_path = cache_dir.path().join("replica-path");
-        auto mut mmapped_data = setup_replica(&data, &replica_path);
+        const auto replica_path = cache_dir.path().join("replica-path");
+        auto mmapped_data = setup_replica(&data, &replica_path);
 
-        auto challenge = i;
+        const auto challenge = i;
 
-        auto sp = SetupParams {
+        const auto sp = SetupParams {
             drg : DrgParams {
                 nodes,
                 degree,
@@ -181,50 +182,50 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
             challenges_count : 2,
         };
 
-        auto pp = DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<_>>::setup(&sp).expect("setup failed");
+        const auto pp = DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<_>>::setup(&sp).expect("setup failed");
 
-        auto(tau, aux) = DrgPoRep::<typename MerkleTreeType::hash_type, _>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None,
+        const auto(tau, aux) = DrgPoRep::<typename MerkleTreeType::hash_type, _>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None,
                                                                config, replica_path.clone(), )
                             .expect("replication failed");
 
-        auto mut copied = vec ![0; data.len()];
+        auto copied = vec ![0; data.len()];
         copied.copy_from_slice(&mmapped_data);
         assert_ne !(data, copied, "replication did not change data");
 
-        auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain > {
+        const auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain > {
             replica_id : Some(replica_id),
             challenges : vec ![ challenge, challenge ],
             tau : Some(tau.clone().into()),
         };
 
-        auto priv_inputs = PrivateInputs::<typename MerkleTreeType::hash_type> {
+        const auto priv_inputs = PrivateInputs::<typename MerkleTreeType::hash_type> {
             tree_d : &aux.tree_d,
             tree_r : &aux.tree_r,
             tree_r_config_rows_to_discard : default_rows_to_discard(nodes, BINARY_ARITY),
         };
 
-        auto real_proof = DrgPoRep::<typename MerkleTreeType::hash_type, _>::prove(&pp, &pub_inputs, &priv_inputs).expect("proving failed");
+        const auto real_proof = DrgPoRep::<typename MerkleTreeType::hash_type, _>::prove(&pp, &pub_inputs, &priv_inputs).expect("proving failed");
 
         if (use_wrong_parents) {
             // Only one 'wrong' option will be tested at a time.
             assert !(!use_wrong_challenge);
-            auto real_parents = real_proof.replica_parents;
+            const auto real_parents = real_proof.replica_parents;
 
             // Parent vector claiming the wrong parents.
-            auto fake_parents = vec ![real_parents[0]
+            const auto fake_parents = vec ![real_parents[0]
                                          .iter()
                                          // Incrementing each parent node will give us a different parent set.
                                          // It's fine to be out of range, since this only needs to fail.
                                          .map(| (i, data_proof) | (i + 1, data_proof.clone()))
                                          .collect::<Vec<_>>()];
 
-            auto proof = Proof::new (real_proof.replica_nodes.clone(), fake_parents, real_proof.nodes.clone().into(), );
+            const auto proof = Proof::new (real_proof.replica_nodes.clone(), fake_parents, real_proof.nodes.clone().into(), );
 
-            auto is_valid = DrgPoRep::verify(&pp, &pub_inputs, &proof).expect("verification failed");
+            const auto is_valid = DrgPoRep::verify(&pp, &pub_inputs, &proof).expect("verification failed");
 
             assert !(!is_valid, "verified in error -- with wrong parents");
 
-            auto mut all_same = true;
+            auto all_same = true;
             for ((p, _) in &real_parents[0]) {
                 if (*p != real_parents[0][0] .0) {
                     all_same = false;
@@ -241,19 +242,19 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
 
             // Parent vector claiming the right parents but providing valid proofs for different
             // parents.
-            auto fake_proof_parents = vec ![real_parents[0]
+            const auto fake_proof_parents = vec ![real_parents[0]
                                                .iter()
                                                .enumerate()
                                                .map(| (i, (p, _)) |
                                                     {
                                                         // Rotate the real parent proofs.
-                                                        auto x = (i + 1) % real_parents[0].len();
-                                                        auto j = real_parents[0][x] .0;
+                                                        const auto x = (i + 1) % real_parents[0].len();
+                                                        const auto j = real_parents[0][x] .0;
                                                         (*p, real_parents[0][j as usize] .1.clone())
                                                     })
                                                .collect::<Vec<_>>()];
 
-            auto proof2 = Proof::new (real_proof.replica_nodes, fake_proof_parents, real_proof.nodes.into(), );
+            const auto proof2 = Proof::new (real_proof.replica_nodes, fake_proof_parents, real_proof.nodes.into(), );
 
             assert !(!DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs, &proof2)
                           .unwrap_or_else(| e | { panic !("Verification failed: {}", e); }),
@@ -262,14 +263,14 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
             return ();
         }
 
-        auto proof = real_proof;
+        const auto proof = real_proof;
 
         if use_wrong_challenge {
-            auto pub_inputs_with_wrong_challenge_for_proof = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain > {
+            const auto pub_inputs_with_wrong_challenge_for_proof = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain > {
             replica_id:
                 Some(replica_id), challenges : vec ![if challenge == 1 { 2 } else {1}], tau : Some(tau.into()),
             };
-            auto verified =
+            const auto verified =
                 DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs_with_wrong_challenge_for_proof, &proof, )
                     .expect("Verification failed");
             assert !(!verified, "wrongly verified proof which does not match challenge in public input");

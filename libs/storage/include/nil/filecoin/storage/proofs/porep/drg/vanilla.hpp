@@ -181,7 +181,7 @@ namespace nil {
                             replica_nodes.emplace_back(tree_proof, data);
 
                             auto parents = vec ![0; pub_params.graph.degree()];
-                            pub_params.graph.parents(challenge, &mut parents) ? ;
+                            pub_params.graph.parents(challenge, parents) ? ;
                             auto replica_parentsi = Vec::with_capacity(parents.len());
 
                             for (p : parents) {
@@ -239,7 +239,7 @@ namespace nil {
                             }
 
                             auto expected_parents = vec ![0; pub_params.graph.degree()];
-                            pub_params.graph.parents(pub_inputs.challenges[i], &mut expected_parents);
+                            pub_params.graph.parents(pub_inputs.challenges[i], expected_parents);
                             if (proof.replica_parents[i].size() != expected_parents.size()) {
                                 println !(
                                     "proof parents were not the same length as in public parameters: "
@@ -326,7 +326,7 @@ namespace nil {
 
                         auto parents = vec ![0; graph.degree()];
                         for (int node = 0; node < graph.size(); node++) {
-                            graph.parents(node, &mut parents);
+                            graph.parents(node, parents);
                             auto key = graph.create_key(replica_id, node, &parents, data.as_ref(), None);
                             auto start = data_at_node_offset(node);
                             auto end = start + NODE_SIZE;
@@ -334,7 +334,7 @@ namespace nil {
                             auto node_data = <H>::Domain::try_from_bytes(&data.as_ref()[start..end]);
                             auto encoded = H::sloth_encode(key.as_ref(), &node_data);
 
-                            encoded.write_bytes(&mut data.as_mut()[start..end]);
+                            encoded.write_bytes(data[start..end]);
                         }
 
                         const auto replica_config = ReplicaConfig {
@@ -417,7 +417,7 @@ namespace nil {
                         scratch.fill(0);
 
                         for (std::uint32_t &parent : parents) {
-                            tree.read_into(*parent, &mut scratch);
+                            tree.read_into(*parent, scratch);
                             hasher.input(&scratch);
                         }
                     }

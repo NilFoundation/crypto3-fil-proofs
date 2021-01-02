@@ -94,14 +94,14 @@ namespace btree {
 
         // Access specified element with bounds checking.
         mapped_type &at(const key_type &key) {
-            auto it = this->find(key);
+            const auto it = this->find(key);
             if (it == this->end()) {
                 throw std::out_of_range("map::at:  key not found");
             }
             return it->second;
         }
         const mapped_type &at(const key_type &key) const {
-            auto it = this->find(key);
+            const auto it = this->find(key);
             if (it == this->end()) {
                 throw std::out_of_range("map::at:  key not found");
             }

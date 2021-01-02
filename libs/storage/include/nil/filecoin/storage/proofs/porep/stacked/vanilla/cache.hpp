@@ -104,10 +104,10 @@ namespace nil {
                                           const boost::filesystem::path &path) {
                         std::size_t min_cache_size = (offset + len) * DEGREE * NODE_BYTES;
 
-                        auto file = LockedFile::open_shared_read(path).with_context(
+                        const auto file = LockedFile::open_shared_read(path).with_context(
                             || format !("could not open path={}", path.display())) ?;
 
-                        auto actual_len = file.as_ref().metadata().len();
+                        const auto actual_len = file.as_ref().metadata().len();
                         if (actual_len < min_cache_size) {
                             bail !("corrupted cache: {}, expected at least {}, got {} bytes",
                                    path.display(),
@@ -115,7 +115,7 @@ namespace nil {
                                    actual_len);
                         }
 
-                        auto data = unsafe {memmap::MmapOptions::new ()
+                        const auto data = unsafe {memmap::MmapOptions::new ()
                                                .offset(std_uint_64(std::size_t(offset) * DEGREE * NODE_BYTES))
                                                .len(std::size_t(len) * DEGREE * NODE_BYTES)
                                                .map(file.as_ref())
@@ -164,7 +164,7 @@ namespace nil {
                             std::size_t cache_size = cache_entries * NODE_BYTES * DEGREE;
                             file.set_len(cache_size);
 
-                            auto mut data =
+                            auto data =
                                 unsafe {memmap::MmapOptions::new ()
                                             .map_mut(file.as_ref())
                                             .with_context(|| format !("could not mmap path={}", path.display())) ? };
@@ -172,9 +172,9 @@ namespace nil {
                             data.par_chunks_mut(DEGREE * NODE_BYTES)
                                 .enumerate()
                                 .try_for_each(| (node, entry) |->Result<()> {
-                                    auto mut parents = [0u32; DEGREE];
-                                    graph.base_graph().parents(node, &mut parents[..BASE_DEGREE]) ? ;
-                                    graph.generate_expanded_parents(node, &mut parents[BASE_DEGREE..]);
+                                    auto parents = [0u32; DEGREE];
+                                    graph.base_graph().parents(node, parents[..BASE_DEGREE]) ? ;
+                                    graph.generate_expanded_parents(node, parents[BASE_DEGREE..]);
 
                                     LittleEndian::write_u32_into(&parents, entry);
                                     Ok(())
@@ -231,7 +231,7 @@ namespace nil {
                     hash<FormatHash>(FormatHash::name, acc);
                     hash<FormatHash>(graph.identifier(), acc);
 
-                    for (auto key : graph.feistel_keys) {
+                    for (const auto key : graph.feistel_keys) {
                         hash<FormatHash>(key, acc);
                     }
 
