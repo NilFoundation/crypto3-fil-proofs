@@ -59,6 +59,7 @@ namespace nil {
                 return n == 0 ? 0 : std::ceil(std::log2(n));
             }
         }    // namespace detail
+
         struct PieceSpec {
             std::size_t height() {
                 return detail::height_for_length(number_of_leaves);

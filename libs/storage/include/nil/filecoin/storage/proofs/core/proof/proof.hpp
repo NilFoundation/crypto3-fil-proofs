@@ -27,6 +27,9 @@
 #define FILECOIN_STORAGE_PROOFS_CORE_PROOF_HPP
 
 #include <cstdint>
+#include <vector>
+
+#include <boost/optional.hpp>
 
 namespace nil {
     namespace filecoin {
@@ -47,19 +50,6 @@ namespace nil {
             virtual proof_type prove(const public_params_type &params, const public_inputs_type &inputs,
                                      const private_inputs_type &pinputs) = 0;
 
-            virtual std::vector<proof_type> prove_all_partitions(const public_params_type &pub_params,
-                                                                 const public_inputs_type &pub_in,
-                                                                 const private_inputs_type &priv_in,
-                                                                 std::size_t partition_count) {
-                std::vector<proof_type> result;
-
-                for (int k = 0; k < partition_count; k++) {
-                    result.push_back(prove(pub_params, with_partition(pub_in, k), priv_in));
-                }
-
-                return result;
-            }
-
             /// verify returns true if the supplied proof is valid for the given public parameter and public inputs.
             /// Note that verify does not have access to private inputs.
             /// Remember that proof is untrusted, and any data it provides MUST be validated as corresponding
@@ -69,15 +59,11 @@ namespace nil {
 
             // This method must be specialized by concrete ProofScheme implementations which use partitions.
             virtual public_inputs_type with_partition(const public_inputs_type &pub_in,
-                                                      boost::optional<std::size_t> k) {
-                return pub_in;
-            }
+                                                      boost::optional<std::size_t> k) = 0;
 
             virtual bool satisfies_requirements(const public_params_type &_pub_params,
                                                 const requirements_type &_requirements,
-                                                std::size_t _partitions) {
-                return true;
-            }
+                                                std::size_t _partitions) = 0;
         };
 
         struct no_requirements { };

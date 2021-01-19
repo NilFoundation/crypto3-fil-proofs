@@ -35,10 +35,9 @@
 namespace nil {
     namespace filecoin {
         class multi_proof {
-            using proof_system_type = crypto3::zk::snark::r1cs_gg_ppzksnark<typename algebra::curves::bls12<381>>;
+            typedef crypto3::zk::snark::r1cs_gg_ppzksnark<typename crypto3::algebra::curves::bls12<381>> proof_system_type;
+
         public:
-
-
             std::vector<typename proof_system_type::proof_type> circuit_proofs;
             typename proof_system_type::verification_key_type verifying_key;
 

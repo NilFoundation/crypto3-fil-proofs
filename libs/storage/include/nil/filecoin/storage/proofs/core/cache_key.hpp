@@ -54,6 +54,10 @@ namespace std {
             } break;
         }
     }
+
+    std::string label_layer(std::size_t layer) {
+        return "layer-" + std::to_string(layer);
+    }
 }    // namespace std
 
 #endif

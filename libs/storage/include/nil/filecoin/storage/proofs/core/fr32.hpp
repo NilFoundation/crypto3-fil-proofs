@@ -26,7 +26,9 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_FR32_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_FR32_HPP
 
+#include <array>
 #include <cstdint>
+#include <vector>
 
 namespace nil {
     namespace filecoin {

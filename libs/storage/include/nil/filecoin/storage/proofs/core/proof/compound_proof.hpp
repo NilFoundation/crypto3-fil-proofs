@@ -82,7 +82,7 @@ namespace nil {
                 return pp.partitions == -1 ? 1 : (!pp.partitions ? -1 : pp.partitions);
             }
 
-            virtual multi_proof<groth16::mapped_parameters<algebra::curves::bls12<381>>>
+            virtual multi_proof<crypto::zk::snark::groth16::mapped_parameters<algebra::curves::bls12<381>>>
                 prove(const public_params_type &pp, const public_inputs_type &pub_in,
                       const private_inputs_type &priv_in,
                       const groth16::mapped_parameters<algebra::curves::bls12<381>> &groth_parameters) {

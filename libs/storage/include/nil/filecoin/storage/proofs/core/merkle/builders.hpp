@@ -352,7 +352,7 @@ namespace nil {
                 data.extend(inner_data);
             }
 
-            (data, MerkleTreeWrapper::from_trees(trees))
+            return std::make_tuple(data, trees);
         }
 
         /// Only used for testing, but can't cfg-test it as that stops exports.
@@ -378,11 +378,11 @@ namespace nil {
                     sub_trees.push(tree);
                     data.extend(inner_data);
                 }
-                (data, MerkleTreeWrapper::from_sub_trees(sub_trees).unwrap())
+                return std::make_tuple(data, MerkleTreeWrapper::from_sub_trees(sub_trees));
             } else if (sub_tree_arity > 0) {
-                generate_sub_tree<UniformRandomGenerator, MerkleTreeType>(rng, nodes, temp_path)
+                return generate_sub_tree<UniformRandomGenerator, MerkleTreeType>(rng, nodes, temp_path);
             } else {
-                generate_base_tree<UniformRandomGenerator, MerkleTreeType>(rng, nodes, temp_path)
+                return generate_base_tree<UniformRandomGenerator, MerkleTreeType>(rng, nodes, temp_path);
             }
         }
     }    // namespace filecoin
