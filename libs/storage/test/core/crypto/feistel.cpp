@@ -17,6 +17,8 @@
 
 #define BOOST_TEST_MODULE crypto_feistel_test
 
+#include <cassert>
+
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
@@ -29,19 +31,19 @@ BOOST_AUTO_TEST_SUITE(feistel_test_suite)
 
 // Some sample n-values which are not powers of four and also don't coincidentally happen to
 // encode/decode correctly.
-const BAD_NS : &[Index] = &[ 5, 6, 8, 12, 17 ];    //
+constexpr static const std::array<index_type> BAD_NS = {5, 6, 8, 12, 17};    //
 //
-void encode_decode(n : Index, expect_success : bool) {
+void encode_decode(index_type n, bool expect_success) {
     auto failed = false;
     const auto precomputed = precompute(n);
     for (std::size_t i = 0; i < n; i++) {
-        const auto p = encode(i, &[ 1, 2, 3, 4 ], precomputed);
-        const auto v = decode(p, &[ 1, 2, 3, 4 ], precomputed);
+        const auto p = encode(i, {1, 2, 3, 4}, precomputed);
+        const auto v = decode(p, {1, 2, 3, 4}, precomputed);
         const auto equal = i == v;
         const auto in_range = p <= n;
         if (expect_success) {
-            BOOST_CHECK(equal, "failed to permute (n = {})", n);
-            BOOST_CHECK(in_range, "output number is too big (n = {})", n);
+            BOOST_CHECK(equal, "failed to permute n = " + std::to_string(n));
+            BOOST_CHECK(in_range, "output number is too big n = " + std::to_string(n));
         } else {
             if (!equal || !in_range) {
                 failed = true;
@@ -49,7 +51,7 @@ void encode_decode(n : Index, expect_success : bool) {
         }
     }
     if (!expect_success) {
-        assert(failed, "expected failure (n = {})", n);
+        assert(failed, "expected failure n = " + std::to_string(n));
     }
 }
 
@@ -73,8 +75,8 @@ BOOST_AUTO_TEST_CASE(test_feistel_power_of_4) {
 
 BOOST_AUTO_TEST_CASE(test_feistel_on_arbitrary_set) {
     for (n in BAD_NS.iter()) {
-            const auto precomputed = precompute(*n as Index);
-        for (i = 0; i < * n; ++i) {
+        const auto precomputed = precompute(*n as Index);
+        for (i = 0; i < *n; ++i) {
             const auto p = permute(*n, i, &[ 1, 2, 3, 4 ], precomputed);
             const auto v = invert_permute(*n, p, &[ 1, 2, 3, 4 ], precomputed);
             // Since every element in the set is reversibly mapped to another element also in the set,

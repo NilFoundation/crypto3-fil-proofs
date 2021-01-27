@@ -2,7 +2,7 @@
 //  MIT License
 //
 //  Copyright (c) 2020 Mikhail Komarov <nemo@nil.foundation>
-//
+//  Copyright (c) 2020 Wukong Moscow Algorithm Lab
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -136,7 +136,7 @@ namespace nil {
                     // references, the second node only references the first node.
                     // Use the degree of the current graph (`m`) as `parents.len()` might be bigger than
                     // that (that's the case for Stacked Graph).
-                    for (const auto parent = parents.begin(); parent < parents.begin() + m; ++parent) {
+                    for (auto parent = parents.begin(); parent < parents.begin() + m; ++parent) {
                         *parent = 0;
                     }
                 } else {

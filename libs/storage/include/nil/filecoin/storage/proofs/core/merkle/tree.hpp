@@ -31,24 +31,24 @@
 #include <algorithm>
 #include <cmath>
 
-#include <nil/crypto3/detail/static_digest.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
 
 namespace nil {
     namespace filecoin {
         template<typename Hash, std::size_t Arity = 2>
         typename Hash::digest_type hash_children_to_one(std::array<const typename Hash::digest_type, Arity> &children) {
-            
+
             constexpr static const std::size_t arity = Arity;
             constexpr static const std::size_t digest_size = Hash::digest_size;
 
-            typename static_digest<Hash::digest_bits * arity> new_input;
+            typename crypto3::static_digest<Hash::digest_bits * arity> new_input;
 
-            for (std::size_t i = 0; i < arity; ++i){
+            for (std::size_t i = 0; i < arity; ++i) {
                 assert(children[i].size() == digest_size);
-                std::copy (children[i].begin(), children[i].end(), new_input.begin() + i * digest_size);
+                std::copy(children[i].begin(), children[i].end(), new_input.begin() + i * digest_size);
             }
 
-            return hash<Hash>(new_input);
+            return crypto3::hash<Hash>(new_input);
         }
 
         /**
@@ -81,8 +81,7 @@ namespace nil {
             std::size_t value_size;
             std::size_t digest_size;
 
-            merkle_tree(const std::size_t depth, const std::size_t value_size) :
-                depth(depth), value_size(value_size) {
+            merkle_tree(const std::size_t depth, const std::size_t value_size) : depth(depth), value_size(value_size) {
                 assert(depth < sizeof(std::size_t) * 8);
 
                 digest_size = hash_type::digest_bits;
@@ -93,7 +92,7 @@ namespace nil {
                 hash_defaults.emplace_back(last);
                 for (std::size_t i = 0; i < depth; ++i) {
                     std::array<const typename hash_type::digest_type, Arity> childs_input;
-                    input.fil(last);
+                    childs_input.fill(last);
                     last = hash_children_to_one<hash_type, arity>(childs_input);
                     hash_defaults.emplace_back(last);
                 }
@@ -117,8 +116,7 @@ namespace nil {
 
                 for (int layer = depth; layer > 0; --layer) {
                     for (std::size_t idx = idx_begin; idx < idx_end; idx += 2) {
-                        digest_type l =
-                            hashes[idx];    // this is sound, because idx_begin is always a left child
+                        digest_type l = hashes[idx];    // this is sound, because idx_begin is always a left child
                         digest_type r = (idx + 1 < idx_end ? hashes[idx + 1] : hash_defaults[layer]);
 
                         digest_type h = hash_children_to_one<hash_type, arity>(l, r);
@@ -159,15 +157,18 @@ namespace nil {
                             if (idx % 2 == 0) {
                                 // this is the right child of its parent and by invariant we are missing the
                                 // left child
-                                hashes[(idx - 1) / 2] = hash_children_to_one<hash_type, arity>(hash_defaults[layer], hash);
+                                hashes[(idx - 1) / 2] =
+                                    hash_children_to_one<hash_type, arity>(hash_defaults[layer], hash);
                             } else {
                                 if (std::next(it) == last_it || std::next(it)->first != idx + 1) {
                                     // this is the left child of its parent and is missing its right child
-                                    hashes[(idx - 1) / 2] = hash_children_to_one<hash_type, arity>(hash, hash_defaults[layer]);
+                                    hashes[(idx - 1) / 2] =
+                                        hash_children_to_one<hash_type, arity>(hash, hash_defaults[layer]);
                                 } else {
                                     // typical case: this is the left child of the parent and adjacent to it
                                     // there is a right child
-                                    hashes[(idx - 1) / 2] = hash_children_to_one<hash_type, arity>(hash, std::next(it)->second);
+                                    hashes[(idx - 1) / 2] =
+                                        hash_children_to_one<hash_type, arity>(hash, std::next(it)->second);
                                     ++it;
                                 }
                             }
@@ -182,8 +183,7 @@ namespace nil {
                 assert(static_cast<std::size_t>(std::ceil(std::log2(address))) <= depth);
 
                 auto it = values.find(address);
-                std::vector<bool> padded_result =
-                    (it == values.end() ? std::vector<bool>(digest_size) : it->second);
+                std::vector<bool> padded_result = (it == values.end() ? std::vector<bool>(digest_size) : it->second);
                 padded_result.resize(value_size);
 
                 return padded_result;
@@ -215,12 +215,11 @@ namespace nil {
                 auto it = hashes.find(0);
                 return (it == hashes.end() ? hash_defaults[0] : it->second);
             }
-            
         };
 
-        template <typename MerkleTree>
-        std::vector<typename MerkleTree::merkle_authentication_node> make_merkle_tree_path(const MerkleTree mt, 
-            const std::size_t address) {
+        template<typename MerkleTree>
+        std::vector<typename MerkleTree::merkle_authentication_node> make_merkle_tree_path(const MerkleTree mt,
+                                                                                           const std::size_t address) {
 
             std::size_t depth = MerkleTree::depth;
             std::size_t arity = MerkleTree::arity;
@@ -230,18 +229,18 @@ namespace nil {
             std::size_t idx = address + pow(arity, depth) - 1;
 
             for (std::size_t layer = depth; layer > 0; --layer) {
-                for (std::size_t sibling_idx = idx % arity; sibling_idx < idx % arity + (arity - 1); ++sibling_idx){
-                    if (sibling_idx != idx){
-                        //std::size_t sibling_idx = ((idx + 1) ^ 1) - 1;
+                for (std::size_t sibling_idx = idx % arity; sibling_idx < idx % arity + (arity - 1); ++sibling_idx) {
+                    if (sibling_idx != idx) {
+                        // std::size_t sibling_idx = ((idx + 1) ^ 1) - 1;
 
                         auto it = mt.hashes.find(sibling_idx);
                         if (layer == depth) {
                             auto it2 = mt.values.find(sibling_idx - ((1ul << depth) - 1));
                             result[layer - 1] =
-                                (it2 == mt.values.end() ? std::vector<bool>(value_size, false) : it2->second);
-                            result[layer - 1].resize(digest_size);
+                                (it2 == mt.values.end() ? std::vector<bool>(mt.value_size, false) : it2->second);
+                            result[layer - 1].resize(mt.digest_size);
                         } else {
-                            result[layer - 1] = (it == mt.hashes.end() ? hash_defaults[layer] : it->second);
+                            result[layer - 1] = (it == mt.hashes.end() ? mt.hash_defaults[layer] : it->second);
                         }
                     }
                 }
@@ -252,12 +251,11 @@ namespace nil {
             return result;
         }
 
-        template <typename MerkleTree>
-        MerkleProof<typename MerkleTree::Hash, typename MerkleTree::Arity> generate_proof(const MerkleTree mt, 
-            const std::size_t i) {
-
+        template<typename MerkleTree>
+        MerkleProof<typename MerkleTree::Hash, typename MerkleTree::Arity> generate_proof(const MerkleTree mt,
+                                                                                          const std::size_t i) {
         }
-    }            // namespace filecoin
+    }    // namespace filecoin
 }    // namespace nil
 
 #endif    // FILECOIN_STORAGE_PROOFS_CORE_MERKLE_TREE_HPP
