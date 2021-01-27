@@ -88,7 +88,7 @@ namespace nil {
 
             typedef typename hash_type::digest_type digest_type;
 
-            typedef typename hash_type::merkle_authentication_path_type merkle_authentication_path_type;
+            typedef merkle_authentication_path merkle_authentication_path_type;
 
             std::vector<digest_type> hash_defaults;
             std::map<size_t, std::vector<bool>> values;
@@ -198,7 +198,7 @@ namespace nil {
                 return padded_result;
             }
 
-            void set_value(const size_t address, const libff::bit_vector &value) {
+            void set_value(const size_t address, const std::vector<bool> &value) {
                 assert(algebra::log2(address) <= depth);
                 size_t idx = address + (1ul << depth) - 1;
 
@@ -227,7 +227,7 @@ namespace nil {
             }
 
             merkle_authentication_path_type get_path(const size_t address) const {
-                typename hash_type::merkle_authentication_path_type result(depth);
+                merkle_authentication_path_type result(depth);
                 assert(algebra::log2(address) <= depth);
                 size_t idx = address + (1ul << depth) - 1;
 
@@ -248,7 +248,6 @@ namespace nil {
                 return result;
             }
         };
-
     }    // namespace filecoin
 }    // namespace nil
 
