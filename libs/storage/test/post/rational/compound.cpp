@@ -103,13 +103,13 @@ void rational_post_test_compound() {
     auto cs = TestConstraintSystem::new ();
 
     circuit.synthesize(cs).expect("failed to synthesize");
-    assert !(cs.is_satisfied());
-    assert !(cs.verify(&inputs));
+    BOOST_ASSERT (cs.is_satisfied());
+    BOOST_ASSERT (cs.verify(&inputs));
 
     const auto verified = RationalPoStCompound::<Tree>::verify(&pub_params, &pub_inputs, &proof, &NoRequirements)
                        .expect("failed while verifying");
 
-    assert !(verified);
+    BOOST_ASSERT (verified);
 }
 
 BOOST_AUTO_TEST_CASE(rational_post_test_compound_pedersen) {

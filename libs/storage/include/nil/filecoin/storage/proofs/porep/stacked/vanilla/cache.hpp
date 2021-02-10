@@ -180,11 +180,11 @@ namespace nil {
                                     Ok(())
                                 });
 
-                            info !("parent cache: generated");
+                            info ("parent cache: generated");
                             data.flush().context("failed to flush parent cache");
                             drop(data);
 
-                            info !("parent cache: written to disk");
+                            info ("parent cache: written to disk");
                         });
 
                         return {CacheData::open(0, len, &path), path, cache_entries};

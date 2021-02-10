@@ -73,12 +73,12 @@ BOOST_AUTO_TEST_CASE(test_hash_single_column_circuit) {
                 const auto out = hash_single_column(cs.namespace(|| "hash_single_column"), &vals_opt)
                               .expect("hash_single_column function failed");
 
-                assert !(cs.is_satisfied(), "constraints not satisfied");
-                assert_eq !(cs.num_constraints(), 598);
+                BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
+                BOOST_ASSERT(cs.num_constraints() == 598);
 
                 const auto expected : Fr = vanilla_hash_single_column(&vals);
 
-                assert_eq !(expected, out.get_value(), "circuit and non circuit do not match");
+                BOOST_ASSERT_MSG(expected == out.get_value(), "circuit and non circuit do not match");
             }
 }
 

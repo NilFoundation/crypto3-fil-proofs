@@ -116,7 +116,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     const auto expected_inputs = cs.get_inputs();
 
     for (((input, label), generated_input) : expected_inputs.iter().skip(1).zip(generated_inputs.iter())) {
-        assert_eq !(input, generated_input, "{}", label);
+        BOOST_ASSERT_MSG(input == generated_input, std::string(label));
     }
 
     BOOST_CHECK_EQUAL(generated_inputs.len(), expected_inputs.len() - 1, "inputs are not the same length");

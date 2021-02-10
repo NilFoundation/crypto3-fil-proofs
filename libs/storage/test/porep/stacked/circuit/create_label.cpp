@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     const auto proof_nc = drg::DrgPoRep::<PedersenHasher, _>::prove(&pp, &pub_inputs, &priv_inputs).expect("failed to prove");
 
-    assert !(drg::DrgPoRep::<PedersenHasher, _>::verify(&pp, &pub_inputs, &proof_nc).expect("failed to verify"),
+    BOOST_ASSERT_MSG(drg::DrgPoRep::<PedersenHasher, _>::verify(&pp, &pub_inputs, &proof_nc).expect("failed to verify"),
              "failed to verify (non circuit)");
 
     const auto replica_node : Option<Fr> = Some(proof_nc.replica_nodes[0].data.into());
@@ -102,8 +102,8 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     const auto data_root = Root::Val(Some(proof_nc.data_root.into()));
     const auto replica_id = Some(replica_id);
 
-    assert !(proof_nc.nodes[0].proof.validate(challenge), "failed to verify data commitment");
-    assert !(proof_nc.nodes[0].proof.validate_data(data_node.into()),
+    BOOST_ASSERT_MSG(proof_nc.nodes[0].proof.validate(challenge), "failed to verify data commitment");
+    BOOST_ASSERT_MSG(proof_nc.nodes[0].proof.validate_data(data_node.into()),
              "failed to verify data commitment with data");
 
     auto cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
             println !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
         }
 
-    assert !(cs.is_satisfied(), "constraints not satisfied");
+    BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
     BOOST_CHECK_EQUAL(cs.num_inputs(), 18, "wrong number of inputs");
     BOOST_CHECK_EQUAL(cs.num_constraints(), 149_580, "wrong number of constraints");
 

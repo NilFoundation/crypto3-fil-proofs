@@ -81,8 +81,8 @@ BOOST_AUTO_TEST_CASE(test_feistel_on_arbitrary_set) {
             const auto v = invert_permute(*n, p, &[ 1, 2, 3, 4 ], precomputed);
             // Since every element in the set is reversibly mapped to another element also in the set,
             // this is indeed a permutation.
-            assert_eq !(i, v, "failed to permute");
-            assert !(p <= *n, "output number is too big");
+            BOOST_ASSERT_MSG(i == v, "failed to permute");
+            BOOST_ASSERT_MSG(p <= *n, "output number is too big");
         }
     }
 }

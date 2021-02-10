@@ -31,9 +31,11 @@ namespace nil {
         template<typename FrInputIterator>
         Fr hash_single_column(FrInputIterator column_first, FrInputIterator column_last) {
             if (std::distance(column_first, column_last) == 2) {
+                //call to round constants generator for 2 and hash than
                 auto hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_2);
                 return hasher.hash();
             } else if (std::distance(column_first, column_last) == 11) {
+                //call to round constants generator for 11 and hash than
                 auto hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_11);
                 return hasher.hash();
             } else {

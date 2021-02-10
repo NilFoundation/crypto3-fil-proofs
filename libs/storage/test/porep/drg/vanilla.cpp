@@ -70,7 +70,7 @@ void test_extract_all() {
         DrgPoRep::<typename MerkleTreeType::hash_type, _>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config.clone()), )
             .unwrap_or_else(| e | { panic !("Failed to extract data from `DrgPoRep`: {}", e); });
 
-    assert_eq !(data, decoded_data.as_slice(), "failed to extract data");
+    BOOST_ASSERT_MSG(data == decoded_data.as_slice(), "failed to extract data");
 
     cache_dir.close().expect("Failed to remove cache dir");
 }
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
 
         const auto original_data = data_at_node(&data, i);
 
-        assert_eq !(original_data, decoded_data.as_slice(), "failed to extract data");
+        BOOST_ASSERT_MSG(original_data == decoded_data.as_slice(), "failed to extract data");
     }
 }
 
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(extract_blake2s) {
 
 template<typename MerkleTreeType>
 void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge, bool use_wrong_parents) {
-    assert !(i < nodes);
+    BOOST_ASSERT (i < nodes);
 
     // The loop is here in case we need to retry because of an edge case in the test design.
     while (true) {
@@ -208,7 +208,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
 
         if (use_wrong_parents) {
             // Only one 'wrong' option will be tested at a time.
-            assert !(!use_wrong_challenge);
+            BOOST_ASSERT (!use_wrong_challenge);
             const auto real_parents = real_proof.replica_parents;
 
             // Parent vector claiming the wrong parents.
@@ -223,7 +223,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
 
             const auto is_valid = DrgPoRep::verify(&pp, &pub_inputs, &proof).expect("verification failed");
 
-            assert !(!is_valid, "verified in error -- with wrong parents");
+            BOOST_ASSERT_MSG (!is_valid, "verified in error -- with wrong parents");
 
             auto all_same = true;
             for ((p, _) in &real_parents[0]) {
@@ -256,7 +256,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
 
             const auto proof2 = Proof::new (real_proof.replica_nodes, fake_proof_parents, real_proof.nodes.into(), );
 
-            assert !(!DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs, &proof2)
+            BOOST_ASSERT_MSG(!DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs, &proof2)
                           .unwrap_or_else(| e | { panic !("Verification failed: {}", e); }),
                      "verified in error -- with wrong parent proofs");
 
@@ -273,9 +273,9 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
             const auto verified =
                 DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs_with_wrong_challenge_for_proof, &proof, )
                     .expect("Verification failed");
-            assert !(!verified, "wrongly verified proof which does not match challenge in public input");
+            BOOST_ASSERT_MSG(!verified, "wrongly verified proof which does not match challenge in public input");
         } else {
-            assert !(DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs, &proof).expect("verification failed"),
+            BOOST_ASSERT_MSG(DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs, &proof).expect("verification failed"),
                      "failed to verify");
         }
 

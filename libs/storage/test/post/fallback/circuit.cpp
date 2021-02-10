@@ -115,8 +115,8 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
 
     BOOST_CHECK(cs.is_satisfied(), "constraints not satisfied");
 
-    BOOST_CHECK_EQUAL(cs.num_inputs(), 23, "wrong number of inputs");
-    BOOST_CHECK_EQUAL(cs.num_constraints(), expected_constraints, "wrong number of constraints");
+    BOOST_ASSERT_MSG(cs.num_inputs() == 23, "wrong number of inputs");
+    BOOST_ASSERT_MSG(cs.num_constraints() == expected_constraints, "wrong number of constraints");
     BOOST_CHECK_EQUAL(cs.get_input(0, "ONE"), Fr::one());
 
     const auto generated_inputs =
@@ -124,10 +124,10 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
     const auto expected_inputs = cs.get_inputs();
 
     for (((input, label), generated_input) : expected_inputs.iter().skip(1).zip(generated_inputs.iter())) {
-        assert_eq !(input, generated_input, "{}", label);
+        BOOST_ASSERT_MSG(input == generated_input, std::string(label));
     }
 
-    BOOST_CHECK_EQUAL(generated_inputs.len(), expected_inputs.len() - 1, "inputs are not the same length");
+    BOOST_ASSERT_MSG(generated_inputs.len() == expected_inputs.len() - 1, "inputs are not the same length");
 }
 
 BOOST_AUTO_TEST_CASE(test_fallback_post_circuit_pedersen) {

@@ -27,6 +27,7 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_PROOF_HPP
 
 #include <boost/filesystem/path.hpp>
+#include <boost/assert.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/column.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
@@ -106,12 +107,12 @@ namespace nil {
                         .enumerate()
                         .map(|(challenge_index, challenge)| {
                                 trace !(" challenge {} ({})", challenge, challenge_index);
-                                assert !(challenge < graph.size(), "Invalid challenge");
-                                assert !(challenge > 0, "Invalid challenge");
+                                BOOST_ASSERT_MSG(challenge < graph.size(), "Invalid challenge");
+                                BOOST_ASSERT_MSG(challenge > 0, "Invalid challenge");
 
                                 // Initial data layer openings (c_X in Comm_D)
                                 auto comm_d_proof = t_aux.tree_d.gen_proof(challenge) ? ;
-                                assert !(comm_d_proof.validate(challenge));
+                                BOOST_ASSERT(comm_d_proof.validate(challenge));
 
                                 // Stacked replica column openings
                                 auto rcp = {
@@ -154,7 +155,7 @@ namespace nil {
                                 Some(t_aux.tree_r_last_config_rows_to_discard),
                             )?;
 
-                            debug_assert!(comm_r_last_proof.validate(challenge));
+                            BOOST_ASSERT(comm_r_last_proof.validate(challenge));
 
                             // Labeling Proofs Layer 1..l
                             auto labeling_proofs = Vec::with_capacity(layers);
@@ -202,8 +203,8 @@ namespace nil {
                                 std::uint_64t(challenge), parents_data_full.clone());
 
                             const auto labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
-                            assert !(proof.verify(&pub_inputs.replica_id, &labeled_node),
-                                     format !("Invalid encoding proof generated at layer {}", layer));
+                            BOOST_ASSERT_MSG(proof.verify(&pub_inputs.replica_id, &labeled_node),
+                                     std::format("Invalid encoding proof generated at layer {}", layer));
                             trace !("Valid encoding proof generated at layer {}", layer);
 
                             labeling_proofs.push(proof);
@@ -257,7 +258,7 @@ namespace nil {
                                 const LayerChallenges &layer_challenges,
                                 const typename tree_hash_type::digest_type &replica_id, const StoreConfig &config) {
 
-                info !("generate labels");
+                info ("generate labels");
 
                 const auto layers = layer_challenges.layers();
                 // For now, we require it due to changes in encodings structure.
@@ -272,7 +273,7 @@ namespace nil {
                 auto cache = use_cache ? Some(graph.parent_cache()?) : None;
 
                 for (layer in 1.. = layers) {
-                    info !("generating layer: {}", layer);
+                    info ("generating layer: {}", layer);
                     if (const auto Some(ref mut cache) = cache) {
                         cache.reset() ? ;
                     }
@@ -290,27 +291,27 @@ namespace nil {
                         }
                     }
 
-                    info !("  setting exp parents");
+                    info ("  setting exp parents");
                     labels_buffer.copy_within(..layer_size, layer_size);
 
                     // Write the result to disk to avoid keeping it in memory all the time.
                     const auto layer_config =
                         StoreConfig::from_config(&config, cache_key::label_layer(layer), Some(graph.size()));
 
-                    info !("  storing labels on disk");
+                    info ("  storing labels on disk");
                     // Construct and persist the layer data.
                     DiskStore<typename tree_hash_type::digest_type> layer_store =
                         DiskStore::new_from_slice_with_config(graph.size(), MerkleTreeType::base_arity,
                                                               &labels_buffer[..layer_size],
                                                               layer_config.clone());
-                    info !("  generated layer {} store with id {}", layer, layer_config.id);
+                    info ("  generated layer {} store with id {}", layer, layer_config.id);
 
                     // Track the layer specific store and StoreConfig for later retrieval.
                     labels.push(layer_store);
                     label_configs.push(layer_config);
                 }
 
-                assert_eq !(labels.len(), layers, "Invalid amount of layers encoded expected");
+                BOOST_ASSERT_MSG(labels.len() == layers, "Invalid amount of layers encoded expected");
 
                 Ok((LabelsCache::<Tree> {labels}, Labels::<Tree> {
                     labels : label_configs,
@@ -354,11 +355,11 @@ namespace nil {
                      typename tree_type::TopTreeArity>
                 generate_tree_c_gpu(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                     const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
-                info !("generating tree c using the GPU");
+                info ("generating tree c using the GPU");
                 // Build the tree for CommC
                 measure_op(
                     GenerateTreeC, || {
-                        info !("Building column hashes");
+                        info ("Building column hashes");
 
                         // NOTE: The max number of columns we recommend sending to the GPU at once is
                         // 400000 for columns and 700000 for trees (conservative soft-limits discussed).
@@ -465,9 +466,9 @@ namespace nil {
                                         "failed to add final columns");
                                     trace !("base data len {}, tree data len {}", base_data.len(), tree_data.len());
                                     const auto tree_len = base_data.len() + tree_data.len();
-                                    info !("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len, );
-                                    assert_eq !(base_data.len(), nodes_count);
-                                    assert_eq !(tree_len, config.size);
+                                    info ("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len, );
+                                    BOOST_ASSERT (base_data.len() == nodes_count);
+                                    BOOST_ASSERT (tree_len == config.size);
 
                                     // Persist the base and tree data to disk based using the current store config.
                                     const auto tree_c_store =
@@ -533,10 +534,10 @@ namespace nil {
                      typename tree_type::TopTreeArity>
                 generate_tree_c_cpu(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                     const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
-                info !("generating tree c using the CPU");
+                info ("generating tree c using the CPU");
                 measure_op(
                     GenerateTreeC, || {
-                        info !("Building column hashes");
+                        info ("Building column hashes");
 
                         auto trees = Vec::with_capacity(tree_count);
                         for ((i, config) : configs.iter().enumerate()) {
@@ -559,7 +560,7 @@ namespace nil {
 
                                     s.spawn(move | _ | {
                                         for ((j, hash) : hashes_chunk.iter_mut().enumerate()) {
-                                            const auto data : Vec<_> =
+                                            const std::vector<> data =
                                                            (1.. = layers)
                                                                .map(| layer |
                                                                     {
@@ -574,13 +575,13 @@ namespace nil {
                                                                     })
                                                                .collect();
 
-                                            *hash = hash_single_column(&data).into();
+                                            *hash = hash_single_column(data.begin(), data.end());
                                         }
                                     });
                                 }
                             });
 
-                            info !("building base tree_c {}/{}", i + 1, tree_count);
+                            info ("building base tree_c {}/{}", i + 1, tree_count);
                             trees.push(DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::
                                            from_par_iter_with_config(hashes.into_par_iter(), config.clone()));
                         }
@@ -606,7 +607,7 @@ namespace nil {
                 const auto last_layer_labels = labels.labels_for_last_layer() ? ;
 
                 if (settings ::SETTINGS.lock().use_gpu_tree_builder) {
-                    info !("generating tree r last using the GPU");
+                    info ("generating tree r last using the GPU");
                     std::uint max_gpu_tree_batch_size = settings::SETTINGS.lock().max_gpu_tree_batch_size;
 
                     // This channel will receive batches of leaf nodes and add them to the TreeBuilder.
@@ -675,7 +676,7 @@ namespace nil {
                                     };
 
                                     // If we get here, this is a final leaf batch: build a sub-tree.
-                                    info !("building base tree_r_last with GPU {}/{}", i + 1, tree_count);
+                                    info ("building base tree_r_last with GPU {}/{}", i + 1, tree_count);
                                     const auto(_, tree_data) =
                                         tree_builder.add_final_leaves(&encoded).expect("failed to add final leaves");
                                     const auto tree_data_len = tree_data.len();
@@ -685,7 +686,7 @@ namespace nil {
                                                 .expect("failed to get merkle tree leaves"),
                                             MerkleTreeType::base_arity, config.rows_to_discard, )
                                             .expect("failed to get merkle tree cache size");
-                                    assert_eq !(tree_data_len, cache_size);
+                                    BOOST_ASSERT (tree_data_len == cache_size);
 
                                     const auto flat_tree_data
                                         : Vec<_> =
@@ -715,7 +716,7 @@ namespace nil {
                         }
                     });
                 } else {
-                    info !("generating tree r last using the CPU");
+                    info ("generating tree r last using the CPU");
                     const auto size = Store::len(last_layer_labels);
 
                     auto start = 0;
@@ -734,7 +735,7 @@ namespace nil {
                                 encoded_node
                             });
 
-                        info !("building base tree_r_last with CPU {}/{}", i + 1, tree_count);
+                        info ("building base tree_r_last with CPU {}/{}", i + 1, tree_count);
                         LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::from_par_iter_with_config(encoded_data, config.clone());
 
                         start = end;
@@ -835,7 +836,7 @@ namespace nil {
                     throw "Unsupported column arity";
                 }
 
-                info !("tree_c done");
+                info ("tree_c done");
 
                 // Build the MerkleTree over the original data (if needed).
                 BinaryMerkleTree<Hash> tree_d;
@@ -845,23 +846,23 @@ namespace nil {
                     measure_op(CommD, || {Self::build_binary_tree::<G>(data.as_ref(), tree_d_config.clone())});
                 } else {
                     trace !("using existing original data merkle tree");
-                    assert_eq !(t.len(), 2 * (data.len() / NODE_SIZE) - 1);
+                    BOOST_ASSERT (t.len() == 2 * (data.len() / NODE_SIZE) - 1);
                     tree_d = t;
 
                 }    // namespace stacked
                 tree_d_config.size = Some(tree_d.len());
-                assert_eq !(tree_d_config.size, tree_d.size());
+                BOOST_ASSERT (tree_d_config.size == tree_d.size());
                 auto tree_d_root = tree_d.root();
                 drop(tree_d);
 
                 // Encode original data into the last layer.
-                info !("building tree_r_last");
+                info ("building tree_r_last");
                 auto tree_r_last = measure_op(GenerateTreeRLast,
                                              || {Self::generate_tree_r_last::<MerkleTreeType::base_arity>(
                                                     data, nodes_count, tree_count, tree_r_last_config.clone(),
                                                     replica_path.clone(), &labels, )}) ?
                     ;
-                info !("tree_r_last done");
+                info ("tree_r_last done");
 
                 const auto tree_r_last_root = tree_r_last.root();
                 drop(tree_r_last);
@@ -893,7 +894,7 @@ namespace nil {
             Labels<tree_type> replicate_phase1(const PublicParams<tree_type> &pp,
                                                const typename tree_hash_type::digest_type &replica_id,
                                                const StoreConfig &config) {
-                info !("replicate_phase1");
+                info ("replicate_phase1");
 
                 auto(_, labels) =
                     measure_op(EncodeWindowTimeAll,
@@ -907,7 +908,7 @@ namespace nil {
                 ::ProverAux > replicate_phase2(const PublicParams<tree_type> &pp, const Labels<tree_type> &labels,
                                                const Data &data, const BinaryMerkleTree<hash_type> &data_tree,
                                                const StoreConfig &config, const boost::filesystem::path &replica_path) {
-                info !("replicate_phase2");
+                info ("replicate_phase2");
 
                 return transform_and_replicate_layers_inner(&pp.graph, &pp.layer_challenges, data, Some(data_tree),
                                                             config, replica_path, labels);

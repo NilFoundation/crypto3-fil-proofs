@@ -93,7 +93,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     const auto proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs)
                                .expect("failed while trying to verify partition proofs");
 
-    assert !(proofs_are_valid);
+    BOOST_ASSERT (proofs_are_valid);
 
     // Discard cached MTs that are no longer needed.
     TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig).expect("t_aux delete failed");
@@ -116,7 +116,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
         .synthesize(cs.namespace(|| "stacked drgporep"))
         .expect("failed to synthesize circuit");
 
-    assert !(cs.is_satisfied(), "constraints not satisfied");
+    BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
     BOOST_CHECK_EQUAL(cs.num_inputs(), expected_inputs, "wrong number of inputs");
     BOOST_CHECK_EQUAL(cs.num_constraints(), expected_constraints, "wrong number of constraints");
 
@@ -234,7 +234,7 @@ void stacked_test_compound() {
         !cs.is_satisfied() {
             panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
         }
-    assert !(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
+    BOOST_ASSERT_MSG(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
 
     // Use this to debug differences between blank and regular circuit generation.
     
@@ -273,7 +273,7 @@ void stacked_test_compound() {
                    }, )
                        .expect("failed while verifying");
 
-    assert !(verified);
+    BOOST_ASSERT(verified);
 
     cache_dir.close().expect("Failed to remove cache dir");
 }

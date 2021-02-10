@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(test_calculate_fixed_challenges) {
     const auto expected = 333;
 
     const auto calculated_count = layer_challenges.challenges_count_all();
-    assert_eq !(expected as usize, calculated_count);
+    BOOST_ASSERT(expected as usize, calculated_count);
 }
 
 BOOST_AUTO_TEST_CASE(extract_all_pedersen_8) {
@@ -139,7 +139,7 @@ void test_extract_all() {
         StackedDrg::<Tree, Blake2sHasher>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config), )
             .expect("failed to extract data");
 
-    assert_eq !(data, decoded_data);
+    BOOST_ASSERT(data, decoded_data);
 
     cache_dir.close().expect("Failed to remove cache dir");
 }
@@ -255,7 +255,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     // Discard cached MTs that are no longer needed.
     TemporaryAux::<Tree, Blake2sHasher>::clear_temp(t_aux_orig).expect("t_aux delete failed");
 
-    assert !(proofs_are_valid);
+    BOOST_ASSERT (proofs_are_valid);
 
     cache_dir.close().expect("Failed to remove cache dir");
 }

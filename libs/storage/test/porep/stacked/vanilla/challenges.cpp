@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(challenge_derivation) {
     // any duplicates for this assertion to succeed.
     //
     // This test could randomly fail (anything's possible), but if it happens regularly something is wrong.
-    assert !(layers_with_duplicates < 3);
+    BOOST_ASSERT (layers_with_duplicates < 3);
 }
 
 // This test shows that partitioning (k = 0..partitions) generates the same challenges as
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(challenge_partition_equivalence) {
                 .flat_map(| k | {LayerChallenges::new (layers, n).derive(leaves, &replica_id, &seed, k as u8)})
                 .collect::<Vec<_>>();
 
-        assert_eq !(one_partition_challenges, many_partition_challenges);
+        BOOST_ASSERT(one_partition_challenges == many_partition_challenges);
     }
 }
 

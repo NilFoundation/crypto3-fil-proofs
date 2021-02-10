@@ -97,7 +97,7 @@ void election_post_test_compound() {
     const auto b = cs1.pretty_print_list();
 
     for ((i, (a, b)) : a.chunks(100).zip(b.chunks(100)).enumerate()) {
-        assert_eq !(a, b, "failed at chunk {}", i);
+        BOOST_ASSERT_MSG(a == b, std::format("failed at chunk %d", i));
     }
 
     const auto blank_groth_params = ElectionPoStCompound<MerkleTreeType>::groth_params(Some(rng), &pub_params.vanilla_params)

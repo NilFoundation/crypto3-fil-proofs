@@ -56,7 +56,7 @@ void test_merklepor() {
 
     const auto is_valid = PoR::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
 
-    assert !(is_valid);
+    BOOST_ASSERT(is_valid);
 }
 
 type TestTree<H, U> = MerkleTreeWrapper<H, DiskStore << H>::Domain >, U, 0, 0> ;
@@ -132,14 +132,14 @@ void test_merklepor_validates<Tree : MerkleTreeTrait>() {
     const auto good_proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
     const auto verified = PoR::<Tree>::verify(&pub_params, &pub_inputs, &good_proof).expect("verification failed");
-    assert !(verified);
+    BOOST_ASSERT(verified);
 
     const auto bad_proof = make_bogus_proof::<MerkleTreeType::Proof>(rng, good_proof);
 
     const auto verified = PoR::<Tree>::verify(&pub_params, &pub_inputs, &bad_proof).expect("verification failed");
 
     // A bad proof should not be verified!
-    assert !(!verified);
+    BOOST_ASSERT(!verified);
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_sha256_binary) {
@@ -212,7 +212,7 @@ void test_merklepor_validates_challenge_identity() {
     const auto verified = PoR::<Tree>::verify(&pub_params, &different_pub_inputs, &proof).expect("verification failed");
 
     // A proof created with a the wrong challenge not be verified!
-    assert !(!verified);
+    BOOST_ASSERT(!verified);
 }
 
 BOOST_AUTO_TEST_CASE(merklepor_actually_validates_challenge_identity_sha256_binary) {

@@ -48,7 +48,7 @@ namespace nil {
                         return hash_single_column(rows.iter().copied().map(Into::into).collect::<Vec<_>>());
                     }
 
-                    typename Hash::digest_type get_node_at_layer(std::size_t layer) {
+                    typename hash_type::digest_type get_node_at_layer(std::size_t layer) {
                         assert(("layer must be greater than 0", layer > 0));
                         std::size_t row_index = layer - 1;
 

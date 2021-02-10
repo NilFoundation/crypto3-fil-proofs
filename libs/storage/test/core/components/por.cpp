@@ -73,15 +73,15 @@ void por_compound() {
 
     const auto verified = PoRCompound<MerkleTreeType>::verify(&public_params, &public_inputs, &proof, &NoRequirements)
                        .expect("failed while verifying");
-    assert !(verified);
+    BOOST_ASSERT(verified);
 
     const auto(circuit, inputs) = PoRCompound<MerkleTreeType>::circuit_for_test(&public_params, &public_inputs, &private_inputs);
 
     auto cs = TestConstraintSystem::new ();
 
     circuit.synthesize(cs).expect("failed to synthesize");
-    assert !(cs.is_satisfied());
-    assert !(cs.verify(&inputs));
+    BOOST_ASSERT(cs.is_satisfied());
+    BOOST_ASSERT(cs.verify(&inputs));
 }
 
 BOOST_AUTO_TEST_CASE(test_por_circuit_pedersen_base_2) {
@@ -195,7 +195,7 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
         const auto leaf_element = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(leaf);
         const auto priv_inputs = por::PrivateInputs::<ResTree<MerkleTreeType>>::new (leaf_element, &tree);
         const auto p = tree.gen_proof(i);
-        assert !(p.verify());
+        BOOST_ASSERT(p.verify());
 
         // create a non circuit proof
         const auto proof = por::PoR::<ResTree<MerkleTreeType>>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
@@ -203,7 +203,7 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
         // make sure it verifies
         const auto is_valid =
             por::PoR::<ResTree<MerkleTreeType>>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
-        assert !(is_valid, "failed to verify por proof");
+        BOOST_ASSERT_MSG(is_valid, "failed to verify por proof");
 
         // -- Circuit
 
@@ -217,10 +217,10 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
         };
 
         por.synthesize(cs).expect("circuit synthesis failed");
-        assert !(cs.is_satisfied(), "constraints not satisfied");
+        BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
 
-        assert_eq !(cs.num_inputs(), num_inputs, "wrong number of inputs");
-        assert_eq !(cs.num_constraints(), num_constraints, "wrong number of constraints");
+        BOOST_ASSERT_MSG(cs.num_inputs() == num_inputs, "wrong number of inputs");
+        BOOST_ASSERT_MSG(cs.num_constraints() == num_constraints, "wrong number of constraints");
 
         const auto generated_inputs =
             PoRCompound::<ResTree<MerkleTreeType>>::generate_public_inputs(&pub_inputs, &pub_params, None, );
@@ -230,12 +230,12 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
         for (((input, label), generated_input)
             in expected_inputs.iter().skip(1).zip(generated_inputs.iter())) {
             
-            assert_eq !(input, generated_input, "{}", label);
+            BOOST_ASSERT_MSG (input == generated_input, std::string(label));
         }
 
-        assert_eq !(generated_inputs.len(), expected_inputs.len() - 1, "inputs are not the same length");
+        BOOST_ASSERT_MSG(generated_inputs.len() == expected_inputs.len() - 1, "inputs are not the same length");
 
-        assert !(cs.verify(&generated_inputs), "failed to verify inputs");
+        BOOST_ASSERT_MSG(cs.verify(&generated_inputs), "failed to verify inputs");
     }
 }
 
@@ -326,7 +326,7 @@ void private_por_test_compound < Tree: static + MerkleTreeTrait>() {
         if (!cs.is_satisfied()) {
                 panic !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
             }
-        assert !(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
+        BOOST_ASSERT_MSG(cs.verify(&inputs), "verification failed with TestContraintSystem and generated inputs");
 
         // NOTE: This diagnostic code currently fails, even though the proof generated from the blank circuit verifies.
         // Use this to debug differences between blank and regular circuit generation.
@@ -344,7 +344,7 @@ void private_por_test_compound < Tree: static + MerkleTreeTrait>() {
         const auto b = cs1.pretty_print_list();
 
         for (i, (a, b)) in a.chunks(100).zip(b.chunks(100)).enumerate() {
-            assert_eq !(a, b, "failed at chunk {}", i);
+            BOOST_ASSERT_MSG(a == b, std::format("failed at chunk %d", i));
         }
 
         const auto blank_groth_params = PoRCompound::<ResTree<MerkleTreeType>>::groth_params(Some(rng), &public_params.vanilla_params, )
@@ -356,7 +356,7 @@ void private_por_test_compound < Tree: static + MerkleTreeTrait>() {
         const auto verified = PoRCompound::verify(&public_params, &public_inputs, &proof, &NoRequirements)
                            .expect("failed while verifying");
 
-        assert !(verified);
+        BOOST_ASSERT(verified);
     }
 }
 
@@ -411,7 +411,7 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
 
         // make sure it verifies
         const auto is_valid = por::PoR<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
-        assert !(is_valid, "failed to verify por proof");
+        BOOST_ASSERT_MSG(is_valid, "failed to verify por proof");
 
         // -- Circuit
 
@@ -426,10 +426,10 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
         };
 
         por.synthesize(cs).expect("circuit synthesis failed");
-        assert !(cs.is_satisfied(), "constraints not satisfied");
+        BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
 
-        assert_eq !(cs.num_inputs(), 2, "wrong number of inputs");
-        assert_eq !(cs.num_constraints(), num_constraints, "wrong number of constraints");
+        BOOST_ASSERT_MSG(cs.num_inputs() == 2, "wrong number of inputs");
+        BOOST_ASSERT_MSG(cs.num_constraints() == num_constraints, "wrong number of constraints");
 
         const auto auth_path_bits = challenge_into_auth_path_bits(pub_inputs.challenge, pub_params.leaves);
         const auto packed_auth_path = multipack::compute_multipacking::<algebra::curves::bls12<381>>(&auth_path_bits);
@@ -437,12 +437,12 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
         auto expected_inputs = Vec::new ();
         expected_inputs.extend(packed_auth_path);
 
-        assert_eq !(cs.get_input(0, "ONE"), Fr::one(), "wrong input 0");
+        BOOST_ASSERT_MSG(cs.get_input(0, "ONE") == Fr::one(), "wrong input 0");
 
-        assert_eq !(cs.get_input(1, "path/input 0"), expected_inputs[0], "wrong packed_auth_path");
+        BOOST_ASSERT_MSG(cs.get_input(1, "path/input 0") == expected_inputs[0], "wrong packed_auth_path");
 
-        assert !(cs.is_satisfied(), "constraints are not all satisfied");
-        assert !(cs.verify(&expected_inputs), "failed to verify inputs");
+        BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints are not all satisfied");
+        BOOST_ASSERT_MSG(cs.verify(&expected_inputs), "failed to verify inputs");
     }
 }
 

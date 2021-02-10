@@ -124,7 +124,7 @@ void drgporep_test_compound() {
     const auto b = cs.pretty_print_list();
 
     for (i, (a, b)) in a.chunks(100).zip(b.chunks(100)).enumerate() {
-        assert_eq !(a, b, "failed at chunk {}", i);
+        BOOST_ASSERT_MSG(a == b, std::format("failed at chunk %d", i));
     }
 
 

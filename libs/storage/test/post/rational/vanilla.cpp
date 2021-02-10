@@ -69,7 +69,7 @@ void test_rational_post() {
     const auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
 
     // the only valid sector to challenge is 891
-    assert !(challenges.iter().all(| c | c.sector == 891.into()), "invalid challenge generated");
+    BOOST_ASSERT_MSG(challenges.iter().all(| c | c.sector == 891.into()), "invalid challenge generated");
 
     const auto comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
@@ -98,7 +98,7 @@ void test_rational_post() {
 
     const auto is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
 
-    assert !(is_valid);
+    BOOST_ASSERT (is_valid);
 }
 
 BOOST_AUTO_TEST_CASE(rational_post_pedersen) {
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(test_derive_challenges_fails_on_all_faulty) {
 
     const auto seed = vec ![0u8];
 
-    assert !(derive_challenges(10, 1024, &sectors, &seed, &faults).is_err());
+    BOOST_ASSERT (derive_challenges(10, 1024, &sectors, &seed, &faults).is_err());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
