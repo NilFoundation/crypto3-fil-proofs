@@ -29,6 +29,7 @@
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 
 #include <boost/filesystem/path.hpp>
+#include <boost/log/trivial.hpp>
 
 #include <nil/crypto3/detail/pack.hpp>
 
@@ -180,11 +181,11 @@ namespace nil {
                                     Ok(())
                                 });
 
-                            info ("parent cache: generated");
+                            BOOST_LOG_TRIVIAL(info) << "parent cache: generated";
                             data.flush().context("failed to flush parent cache");
                             drop(data);
 
-                            info ("parent cache: written to disk");
+                            BOOST_LOG_TRIVIAL(info) << "parent cache: written to disk";
                         });
 
                         return {CacheData::open(0, len, &path), path, cache_entries};

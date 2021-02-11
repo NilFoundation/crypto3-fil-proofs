@@ -84,7 +84,7 @@ namespace nil {
                 template<typename Hash, template<typename> class Graph>
                 struct PublicParams : public parameter_set_metadata {
                     virtual std::string identifier() const override {
-                        return "drgporep::PublicParams{{graph: {}}}" + graph.identifier();
+                        return std::format("drgporep::PublicParams{{graph: %d}}", graph.identifier());
                     }
                     virtual size_t sector_size() const override {
                         return graph.sector_size();
@@ -170,7 +170,7 @@ namespace nil {
 
                         for (int i = 0; i < len; i++) {
                             std::size_t challenge = inputs.challenges[i] % params.graph.size();
-                            assert(("cannot prove the first node", challenge != 0));
+                            BOOST_ASSERT_MSG(challenge != 0, "cannot prove the first node");
 
                             const auto tree_d = &priv_inputs.tree_d;
                             const auto tree_r = &priv_inputs.tree_r;

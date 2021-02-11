@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POST_ELECTION_VANILLA_HPP
 #define FILECOIN_STORAGE_PROOFS_POST_ELECTION_VANILLA_HPP
 
+#include <boost/log/trivial.hpp>
+
 #include <nil/crypto3/hash/sha2.hpp>
 
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
@@ -140,7 +142,7 @@ namespace nil {
                         const auto tree = pinputs.tree;
                         std::size_t tree_leafs = tree.leafs();
 
-                        trace !("Generating proof for tree of len {} with leafs {}", tree.len(), tree_leafs, );
+                        BOOST_LOG_TRIVIAL(trace) << std::format("Generating proof for tree of len {} with leafs {}", tree.len(), tree_leafs);
 
                         const auto inclusion_proofs = measure_op(
                             Operation::PostInclusionProofs,

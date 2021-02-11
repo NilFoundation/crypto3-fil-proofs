@@ -30,6 +30,7 @@
 #include <string>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/log/trivial.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -213,7 +214,7 @@ namespace nil {
                                 tree_d_store, get_merkle_tree_leafs(tree_d_size, BINARY_ARITY));
 
                             tree_d.erase(t_aux.tree_d_config);
-                            trace !("tree d deleted");
+                            BOOST_LOG_TRIVIAL(trace) << "tree d deleted";
                         }
 
                         std::size_t tree_count = get_base_tree_count<MerkleTreeType>();
@@ -232,14 +233,14 @@ namespace nil {
                                 remove_file(tree_c_path);
                             }
                         }
-                        trace !("tree c deleted");
+                        BOOST_LOG_TRIVIAL(trace) << "tree c deleted";
 
                         for (int i = 0; i < t_aux.labels.labels.size(); i++) {
                             StoreConfig cur_config = t_aux.labels.labels[i].clone();
                             if (cached(cur_config)) {
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::delete (cur_config)
                                     .with_context(|| format !("labels {}", i));
-                                trace !("layer {} deleted", i);
+                                BOOST_LOG_TRIVIAL(trace) << std::format("layer %d deleted", i);
                             }
                         }
                     }
@@ -356,7 +357,7 @@ namespace nil {
                         // tree_d_size stored in the config is the base tree size
                         std::size_t tree_d_size = t_aux.tree_d_config.size();
                         std::size_t tree_d_leafs = get_merkle_tree_leafs(tree_d_size, BINARY_ARITY);
-                        trace !("Instantiating tree d with size {} and leafs {}", tree_d_size, tree_d_leafs);
+                        BOOST_LOG_TRIVIAL(trace) << std::format("Instantiating tree d with size {} and leafs {}", tree_d_size, tree_d_leafs);
                         DiskStore<typename Hash::digest_type> tree_d_store =
                             DiskStore::new_from_disk(tree_d_size, BINARY_ARITY, &t_aux.tree_d_config)
                                 .context("tree_d_store");
@@ -368,7 +369,7 @@ namespace nil {
 
                         // tree_c_size stored in the config is the base tree size
                         std::size_t tree_c_size = t_aux.tree_c_config.size;
-                        trace !("Instantiating tree c [count {}] with size {} and arity {}", tree_count, tree_c_size,
+                        BOOST_LOG_TRIVIAL(trace) << std::format("Instantiating tree c [count {}] with size {} and arity {}", tree_count, tree_c_size,
                                 MerkleTreeType::base_arity);
                         DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
                                  MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
@@ -386,7 +387,7 @@ namespace nil {
                             get_merkle_tree_leafs(tree_r_last_size, MerkleTreeType::base_arity),
                             tree_count);
 
-                        trace !("Instantiating tree r last [count {}] with size {} and arity {}, {}, {}", tree_count,
+                        BOOST_LOG_TRIVIAL(trace) << std::format("Instantiating tree r last [count {}] with size {} and arity {}, {}, {}", tree_count,
                                 tree_r_last_size, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
                                 MerkleTreeType::top_tree_arity);
                         LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
@@ -463,7 +464,7 @@ namespace nil {
                         bool result = challenge < graph.size() && pub_inputs.tau.is_some();
 
                         // Verify initial data layer
-                        trace !("verify initial data layer");
+                        BOOST_LOG_TRIVIAL(trace) << "verify initial data layer";
 
                         result |= comm_d_proofs.proves_challenge(challenge);
 
@@ -474,14 +475,14 @@ namespace nil {
                         }
 
                         // Verify replica column openings
-                        trace !("verify replica column openings");
+                        BOOST_LOG_TRIVIAL(trace) << "verify replica column openings";
                         std::vector<std::uint32_t> parents(graph.degree());
                         graph.parents(challenge, parents);    // FIXME: error handling
                         assert(replica_column_proofs.verify(challenge, parents));
                         assert(verify_final_replica_layer(challenge));
                         assert(verify_labels(replica_id, pub_params.layer_challenges));
 
-                        trace !("verify encoding");
+                        BOOST_LOG_TRIVIAL(trace) << "verify encoding";
 
                         assert(encoding_proof.template verify<Hash>(replica_id, comm_r_last_proof.leaf(),
                                                                     comm_d_proofs.leaf()));
@@ -494,7 +495,7 @@ namespace nil {
                                        const LayerChallenges &layer_challenges) {
                         // Verify Labels Layer 1..layers
                         for (std::size_t layer = 1; layer < layer_challenges.layers; layer++) {
-                            trace !("verify labeling (layer: {})", layer);
+                            BOOST_LOG_TRIVIAL(trace) << std::format("verify labeling (layer: %d)", layer);
 
                             assert(labeling_proofs.get(layer - 1).is_some());
                             LabellingProof<typename MerkleTreeType::hash_type> labeling_proof =
@@ -508,7 +509,7 @@ namespace nil {
 
                     /// Verify final replica layer openings
                     bool verify_final_replica_layer(std::size_t challenge) {
-                        trace !("verify final replica layer openings");
+                        BOOST_LOG_TRIVIAL(trace) << "verify final replica layer openings";
                         assert(comm_r_last_proof.proves_challenge(challenge));
 
                         return true;
@@ -527,15 +528,15 @@ namespace nil {
                         verify(std::size_t challenge, const InputParentsRange &parents) {
                         typename MerkleProofType::tree_type::hash_type::digest_type expected_comm_c = c_x.root();
 
-                        trace !("  verify c_x");
+                        BOOST_LOG_TRIVIAL(trace) << "  verify c_x";
                         assert((c_x.verify(challenge, &expected_comm_c)));
 
-                        trace !("  verify drg_parents");
+                        BOOST_LOG_TRIVIAL(trace) << "  verify drg_parents";
                         for ((proof, parent) : drg_parents.iter().zip(parents.iter())) {
                             assert((proof.verify(parent, expected_comm_c)));
                         }
 
-                        trace !("  verify exp_parents");
+                        BOOST_LOG_TRIVIAL(trace) << "  verify exp_parents";
                         for ((proof, parent) : exp_parents.iter().zip(parents.iter().skip(drg_parents.size()))) {
                             assert((proof.verify(parent, expected_comm_c)));
                         }

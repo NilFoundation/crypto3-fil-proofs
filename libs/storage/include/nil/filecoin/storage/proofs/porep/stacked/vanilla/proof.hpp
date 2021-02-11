@@ -28,6 +28,7 @@
 
 #include <boost/filesystem/path.hpp>
 #include <boost/assert.hpp>
+#include <boost/log/trivial.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/column.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
@@ -96,7 +97,7 @@ namespace nil {
 
                     (0..partition_count)
                         .map(|k| {
-                            trace !("proving partition {}/{}", k + 1, partition_count);
+                            BOOST_LOG_TRIVIAL(trace) << std::format("proving partition {}/{}", k + 1, partition_count);
 
                             // Derive the set of challenges we are proving over.
                             auto challenges = pub_inputs.challenges(layer_challenges, graph_size, Some(k));
@@ -106,7 +107,7 @@ namespace nil {
                         .into_par_iter()
                         .enumerate()
                         .map(|(challenge_index, challenge)| {
-                                trace !(" challenge {} ({})", challenge, challenge_index);
+                                BOOST_LOG_TRIVIAL(trace) << std::format(" challenge {} ({})", challenge, challenge_index);
                                 BOOST_ASSERT_MSG(challenge < graph.size(), "Invalid challenge");
                                 BOOST_ASSERT_MSG(challenge > 0, "Invalid challenge");
 
@@ -121,11 +122,11 @@ namespace nil {
                                 auto tree_c = &t_aux.tree_c;
 
                                 // All labels in C_X
-                                trace !("  c_x");
+                                BOOST_LOG_TRIVIAL(trace) << "  c_x";
                                 auto c_x = t_aux.column(std::uint_32t(challenge)) ?.into_proof(tree_c) ? ;
 
                                 // All labels in the DRG parents.
-                                trace !("  drg_parents");
+                                BOOST_LOG_TRIVIAL(trace) << "  drg_parents";
                                 auto drg_parents =
                                     get_drg_parents_columns(challenge) ?.into_iter()
                                                                             .map(| column | column.into_proof(tree_c))
@@ -133,7 +134,7 @@ namespace nil {
                                     ;
 
                                 // Labels for the expander parents
-                                trace !("  exp_parents");
+                                BOOST_LOG_TRIVIAL(trace) << "  exp_parents";
                                 auto exp_parents =
                                     get_exp_parents_columns(challenge) ?.into_iter()
                                                                             .map(| column | column.into_proof(tree_c))
@@ -149,7 +150,7 @@ namespace nil {
                             };
 
                             // Final replica layer openings
-                            trace!("final replica layer openings");
+                            BOOST_LOG_TRIVIAL(trace) << "final replica layer openings";
                             auto comm_r_last_proof = t_aux.tree_r_last.gen_cached_proof(
                                 challenge,
                                 Some(t_aux.tree_r_last_config_rows_to_discard),
@@ -162,57 +163,57 @@ namespace nil {
                             auto encoding_proof = None;
 
                             for (int layer = 1; layer != layers; layer++) {
-                            trace !("  encoding proof layer {}", layer);
-                            std::vector<typename tree_hash_type::digest_type> parents_data;
-                            if (layer == 1) {
-                                auto parents = vec ![0; graph.base_graph().degree()];
-                                graph.base_parents(challenge, parents) ? ;
+                                BOOST_LOG_TRIVIAL(trace) << std::format("  encoding proof layer %d", layer);
+                                std::vector<typename tree_hash_type::digest_type> parents_data;
+                                if (layer == 1) {
+                                    auto parents = vec ![0; graph.base_graph().degree()];
+                                    graph.base_parents(challenge, parents) ? ;
 
-                                parents_data = parents.into_iter()
-                                                   .map(| parent | t_aux.domain_node_at_layer(layer, parent))
-                                                   .collect::<Result<_>>();
-                            } else {
-                                auto parents = vec ![0; graph.degree()];
-                                graph.parents(challenge, parents) ? ;
-                                auto base_parents_count = graph.base_graph().degree();
+                                    parents_data = parents.into_iter()
+                                                       .map(| parent | t_aux.domain_node_at_layer(layer, parent))
+                                                       .collect::<Result<_>>();
+                                } else {
+                                    auto parents = vec ![0; graph.degree()];
+                                    graph.parents(challenge, parents) ? ;
+                                    auto base_parents_count = graph.base_graph().degree();
 
-                                parents_data = parents.into_iter()
-                                                   .enumerate()
-                                                   .map(| (i, parent) |
-                                                        {
-                                                            if (i < base_parents_count) {
-                                                                // parents data for base parents is from the current
-                                                                // layer
-                                                                t_aux.domain_node_at_layer(layer, parent)
-                                                            } else {
-                                                                // parents data for exp parents is from the previous
-                                                                // layer
-                                                                t_aux.domain_node_at_layer(layer - 1, parent)
-                                                            }
-                                                        })
-                                                   .collect::<Result<_>>();
-                            };
+                                    parents_data = parents.into_iter()
+                                                       .enumerate()
+                                                       .map(| (i, parent) |
+                                                            {
+                                                                if (i < base_parents_count) {
+                                                                    // parents data for base parents is from the current
+                                                                    // layer
+                                                                    t_aux.domain_node_at_layer(layer, parent)
+                                                                } else {
+                                                                    // parents data for exp parents is from the previous
+                                                                    // layer
+                                                                    t_aux.domain_node_at_layer(layer - 1, parent)
+                                                                }
+                                                            })
+                                                       .collect::<Result<_>>();
+                                };
 
-                            // repeat parents
-                            auto parents_data_full = vec ![Default::default(); TOTAL_PARENTS];
-                            for (chunk : parents_data_full.chunks_mut(parents_data.size())) {
-                                chunk.copy_from_slice(&parents_data[..chunk.size()]);
-                            }
+                                // repeat parents
+                                auto parents_data_full = vec ![Default::default(); TOTAL_PARENTS];
+                                for (chunk : parents_data_full.chunks_mut(parents_data.size())) {
+                                    chunk.copy_from_slice(&parents_data[..chunk.size()]);
+                                }
 
-                            const auto proof = LabelingProof::<typename MerkleTreeType::hash_type>::new (std::uint_32t(layer), 
-                                std::uint_64t(challenge), parents_data_full.clone());
+                                const auto proof = LabelingProof::<typename MerkleTreeType::hash_type>::new (std::uint_32t(layer), 
+                                    std::uint_64t(challenge), parents_data_full.clone());
 
-                            const auto labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
-                            BOOST_ASSERT_MSG(proof.verify(&pub_inputs.replica_id, &labeled_node),
-                                     std::format("Invalid encoding proof generated at layer {}", layer));
-                            trace !("Valid encoding proof generated at layer {}", layer);
+                                const auto labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
+                                BOOST_ASSERT_MSG(proof.verify(&pub_inputs.replica_id, &labeled_node),
+                                         std::format("Invalid encoding proof generated at layer {}", layer));
+                                BOOST_LOG_TRIVIAL(trace) << std::format("Valid encoding proof generated at layer %d", layer);
 
-                            labeling_proofs.push(proof);
+                                labeling_proofs.push(proof);
 
-                            if (layer == layers) {
-                                encoding_proof =
-                                    Some(EncodingProof::new (std::uint_32t(layer), std::uint_64t(challenge), parents_data_full, ));
-                            }
+                                if (layer == layers) {
+                                    encoding_proof =
+                                        Some(EncodingProof::new (std::uint_32t(layer), std::uint_64t(challenge), parents_data_full, ));
+                                }
                             }
 
                             Ok(Proof {
@@ -232,7 +233,7 @@ namespace nil {
                                                      const LayerChallenges &layer_challenges,
                                                      const typename tree_hash_type::digest_type &replica_id,
                                                      const std::vector<std::uint8_t> &data, const StoreConfig &config) {
-                trace !("extract_and_invert_transform_layers");
+                BOOST_LOG_TRIVIAL(trace) << "extract_and_invert_transform_layers";
 
                 const auto layers = layer_challenges.layers();
                 assert(layers > 0);
@@ -258,7 +259,7 @@ namespace nil {
                                 const LayerChallenges &layer_challenges,
                                 const typename tree_hash_type::digest_type &replica_id, const StoreConfig &config) {
 
-                info ("generate labels");
+                BOOST_LOG_TRIVIAL(info) << "generate labels";
 
                 const auto layers = layer_challenges.layers();
                 // For now, we require it due to changes in encodings structure.
@@ -273,7 +274,7 @@ namespace nil {
                 auto cache = use_cache ? Some(graph.parent_cache()?) : None;
 
                 for (layer in 1.. = layers) {
-                    info ("generating layer: {}", layer);
+                    BOOST_LOG_TRIVIAL(info) << std::format("generating layer: %d", layer);
                     if (const auto Some(ref mut cache) = cache) {
                         cache.reset() ? ;
                     }
@@ -291,20 +292,20 @@ namespace nil {
                         }
                     }
 
-                    info ("  setting exp parents");
+                    BOOST_LOG_TRIVIAL(info) << "  setting exp parents";
                     labels_buffer.copy_within(..layer_size, layer_size);
 
                     // Write the result to disk to avoid keeping it in memory all the time.
                     const auto layer_config =
                         StoreConfig::from_config(&config, cache_key::label_layer(layer), Some(graph.size()));
 
-                    info ("  storing labels on disk");
+                    BOOST_LOG_TRIVIAL(info) << "  storing labels on disk";
                     // Construct and persist the layer data.
                     DiskStore<typename tree_hash_type::digest_type> layer_store =
                         DiskStore::new_from_slice_with_config(graph.size(), MerkleTreeType::base_arity,
                                                               &labels_buffer[..layer_size],
                                                               layer_config.clone());
-                    info ("  generated layer {} store with id {}", layer, layer_config.id);
+                    BOOST_LOG_TRIVIAL(info) << std::format("  generated layer {} store with id {}", layer, layer_config.id);
 
                     // Track the layer specific store and StoreConfig for later retrieval.
                     labels.push(layer_store);
@@ -322,7 +323,7 @@ namespace nil {
             template<typename TreeHash>
             BinaryMerkleTree<TreeHash> build_binary_tree(const std::vector<std::uint8_t> &tree_data,
                                                          const StoreConfig &config) {
-                trace !("building tree (size: {})", tree_data.len());
+                BOOST_LOG_TRIVIAL(trace) << std::format("building tree (size: %d)", tree_data.len());
 
                 std::size_t leafs = tree_data.size() / NODE_SIZE;
                 assert(tree_data.size() % NODE_SIZE == 0);
@@ -355,11 +356,11 @@ namespace nil {
                      typename tree_type::TopTreeArity>
                 generate_tree_c_gpu(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                     const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
-                info ("generating tree c using the GPU");
+                BOOST_LOG_TRIVIAL(info) << "generating tree c using the GPU";
                 // Build the tree for CommC
                 measure_op(
                     GenerateTreeC, || {
-                        info ("Building column hashes");
+                        BOOST_LOG_TRIVIAL(info) << "Building column hashes";
 
                         // NOTE: The max number of columns we recommend sending to the GPU at once is
                         // 400000 for columns and 700000 for trees (conservative soft-limits discussed).
@@ -391,7 +392,7 @@ namespace nil {
                                     while (node_index != nodes_count) {
                                         const auto chunked_nodes_count =
                                             std::cmp::min(nodes_count - node_index, max_gpu_column_batch_size);
-                                        trace !("processing config {}/{} with column nodes {}", i + 1, tree_count,
+                                        BOOST_LOG_TRIVIAL(trace) << std::format("processing config {}/{} with column nodes {}", i + 1, tree_count,
                                                 chunked_nodes_count, );
                                         auto columns
                                             : Vec<GenericArray<Fr, ColumnArity>> =
@@ -432,7 +433,7 @@ namespace nil {
                                         drop(layer_data);
 
                                         node_index += chunked_nodes_count;
-                                        trace !("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
+                                        BOOST_LOG_TRIVIAL(trace) << std::format("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
 
                                         const auto is_final = node_index == nodes_count;
                                         builder_tx.send((columns, is_final)).expect("failed to send columns");
@@ -464,9 +465,9 @@ namespace nil {
                                     // If we get here, this is a final column: build a sub-tree.
                                     const auto(base_data, tree_data) = column_tree_builder.add_final_columns(&columns).expect(
                                         "failed to add final columns");
-                                    trace !("base data len {}, tree data len {}", base_data.len(), tree_data.len());
+                                    BOOST_LOG_TRIVIAL(trace) << std::format("base data len {}, tree data len {}", base_data.len(), tree_data.len());
                                     const auto tree_len = base_data.len() + tree_data.len();
-                                    info ("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len, );
+                                    BOOST_LOG_TRIVIAL(info) << std::format("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len);
                                     BOOST_ASSERT (base_data.len() == nodes_count);
                                     BOOST_ASSERT (tree_len == config.size);
 
@@ -493,25 +494,25 @@ namespace nil {
                                                               .copy_from_slice(&buf[..], offset + (batch_size * index))
                                                       })};
 
-                                    trace !("flattening tree_c base data of {} nodes using batch size {}",
+                                    BOOST_LOG_TRIVIAL(trace) << std::format("flattening tree_c base data of {} nodes using batch size {}",
                                             base_data.len(),
                                             batch_size);
                                     flatten_and_write_store(&base_data, 0).expect("failed to flatten and write store");
-                                    trace !("done flattening tree_c base data");
+                                    BOOST_LOG_TRIVIAL(trace) << "done flattening tree_c base data";
 
                                     const auto base_offset = base_data.len();
-                                    trace !(
+                                    BOOST_LOG_TRIVIAL(trace) << std::format(
                                         "flattening tree_c tree data of {} nodes using batch size {} and base "
                                         "offset "
                                         "{}",
                                         tree_data.len(), batch_size, base_offset);
                                     flatten_and_write_store(&tree_data, base_offset)
                                         .expect("failed to flatten and write store");
-                                    trace !("done flattening tree_c tree data");
+                                    BOOST_LOG_TRIVIAL(trace) << "done flattening tree_c tree data";
 
-                                    trace !("writing tree_c store data");
+                                    BOOST_LOG_TRIVIAL(trace) << "writing tree_c store data";
                                     store.write().expect("failed to access store for sync").sync();
-                                    trace !("done writing tree_c store data");
+                                    BOOST_LOG_TRIVIAL(trace) << "done writing tree_c store data";
 
                                     // Move on to the next config.
                                     i += 1;
@@ -534,10 +535,10 @@ namespace nil {
                      typename tree_type::TopTreeArity>
                 generate_tree_c_cpu(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                     const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
-                info ("generating tree c using the CPU");
+                BOOST_LOG_TRIVIAL(info) << "generating tree c using the CPU";
                 measure_op(
                     GenerateTreeC, || {
-                        info ("Building column hashes");
+                        BOOST_LOG_TRIVIAL(info) << "Building column hashes";
 
                         auto trees = Vec::with_capacity(tree_count);
                         for ((i, config) : configs.iter().enumerate()) {
@@ -581,7 +582,7 @@ namespace nil {
                                 }
                             });
 
-                            info ("building base tree_c {}/{}", i + 1, tree_count);
+                            BOOST_LOG_TRIVIAL(info) << std::format("building base tree_c {}/{}", i + 1, tree_count);
                             trees.push(DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::
                                            from_par_iter_with_config(hashes.into_par_iter(), config.clone()));
                         }
@@ -607,7 +608,7 @@ namespace nil {
                 const auto last_layer_labels = labels.labels_for_last_layer() ? ;
 
                 if (settings ::SETTINGS.lock().use_gpu_tree_builder) {
-                    info ("generating tree r last using the GPU");
+                    BOOST_LOG_TRIVIAL(info) << "generating tree r last using the GPU";
                     std::uint max_gpu_tree_batch_size = settings::SETTINGS.lock().max_gpu_tree_batch_size;
 
                     // This channel will receive batches of leaf nodes and add them to the TreeBuilder.
@@ -623,7 +624,7 @@ namespace nil {
                                         std::cmp::min(nodes_count - node_index, max_gpu_tree_batch_size);
                                     const auto start = (i * nodes_count) + node_index;
                                     const auto end = start + chunked_nodes_count;
-                                    trace !("processing config {}/{} with leaf nodes {} [{}, {}, {}-{}]", i + 1,
+                                    BOOST_LOG_TRIVIAL(trace) << std::format("processing config {}/{} with leaf nodes {} [{}, {}, {}-{}]", i + 1,
                                             tree_count, chunked_nodes_count, node_index, nodes_count, start, end, );
 
                                     const auto encoded_data =
@@ -644,7 +645,7 @@ namespace nil {
                                             });
 
                                     node_index += chunked_nodes_count;
-                                    trace !("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
+                                    BOOST_LOG_TRIVIAL(trace) << std::format("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
 
                                     const auto encoded : Vec<_> = encoded_data.into_par_iter().map(| x | x.into()).collect();
 
@@ -676,7 +677,7 @@ namespace nil {
                                     };
 
                                     // If we get here, this is a final leaf batch: build a sub-tree.
-                                    info ("building base tree_r_last with GPU {}/{}", i + 1, tree_count);
+                                    BOOST_LOG_TRIVIAL(info) << std::format("building base tree_r_last with GPU {}/{}", i + 1, tree_count);
                                     const auto(_, tree_data) =
                                         tree_builder.add_final_leaves(&encoded).expect("failed to add final leaves");
                                     const auto tree_data_len = tree_data.len();
@@ -694,7 +695,7 @@ namespace nil {
 
                                     // Persist the data to the store based on the current config.
                                     const auto tree_r_last_path = StoreConfig::data_path(&config.path, &config.id);
-                                    trace !("persisting tree r of len {} with {} rows to discard at path {:?}",
+                                    BOOST_LOG_TRIVIAL(trace) << std::format("persisting tree r of len {} with {} rows to discard at path {:?}",
                                             tree_data_len,
                                             config.rows_to_discard,
                                             tree_r_last_path);
@@ -716,7 +717,7 @@ namespace nil {
                         }
                     });
                 } else {
-                    info ("generating tree r last using the CPU");
+                    BOOST_LOG_TRIVIAL(info) << "generating tree r last using the CPU";
                     const auto size = Store::len(last_layer_labels);
 
                     auto start = 0;
@@ -735,7 +736,7 @@ namespace nil {
                                 encoded_node
                             });
 
-                        info ("building base tree_r_last with CPU {}/{}", i + 1, tree_count);
+                        BOOST_LOG_TRIVIAL(info) << std::formta("building base tree_r_last with CPU {}/{}", i + 1, tree_count);
                         LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::from_par_iter_with_config(encoded_data, config.clone());
 
                         start = end;
@@ -768,11 +769,11 @@ namespace nil {
                 const typename hash_type::digest_type &replica_id, const Data &data,
                 const BinaryMerkleTree<G> &data_tree, const StoreConfig &config,
                 const boost::filesystem::path &replica_path, const Labels<tree_type> &label_configs) {
-                trace !("transform_and_replicate_layers");
+                BOOST_LOG_TRIVIAL(trace) << "transform_and_replicate_layers";
                 std::size_t nodes_count = graph.size();
 
                 assert(data.len() == nodes_count * NODE_SIZE);
-                trace !("nodes count {}, data len {}", nodes_count, data.len());
+                BOOST_LOG_TRIVIAL(trace) << std::format("nodes count {}, data len {}", nodes_count, data.len());
 
                 std::size_t tree_count = get_base_tree_count::<Tree>();
                 std::size_t nodes_count = graph.size() / tree_count;
@@ -780,8 +781,8 @@ namespace nil {
                 // Ensure that the node count will work for binary and oct arities.
                 bool binary_arity_valid = is_merkle_tree_size_valid(nodes_count, BINARY_ARITY);
                 bool other_arity_valid = is_merkle_tree_size_valid(nodes_count, MerkleTreeType::base_arity);
-                trace !("is_merkle_tree_size_valid({}, BINARY_ARITY) = {}", nodes_count, binary_arity_valid);
-                trace !("is_merkle_tree_size_valid({}, {}) = {}", nodes_count, MerkleTreeType::base_arity,
+                BOOST_LOG_TRIVIAL(trace) << std::format("is_merkle_tree_size_valid({}, BINARY_ARITY) = {}", nodes_count, binary_arity_valid);
+                BOOST_LOG_TRIVIAL(trace) << std::format("is_merkle_tree_size_valid({}, {}) = {}", nodes_count, MerkleTreeType::base_arity,
                         other_arity_valid);
                 assert(binary_arity_valid);
                 assert(other_arity_valid);
@@ -804,7 +805,7 @@ namespace nil {
                 // value via the environment setting (FIL_PROOFS_ROWS_TO_DISCARD).  If this value is specified, no
                 // checking is done on it and it may result in a broken configuration.  Use with caution.
                 tree_r_last_config.rows_to_discard = default_rows_to_discard(nodes_count, MerkleTreeType::base_arity);
-                trace !("tree_r_last using rows_to_discard={}", tree_r_last_config.rows_to_discard);
+                BOOST_LOG_TRIVIAL(trace) << std::format("tree_r_last using rows_to_discard={}", tree_r_last_config.rows_to_discard);
 
                 StoreConfig tree_c_config = StoreConfig::from_config(
                         &config,
@@ -836,16 +837,16 @@ namespace nil {
                     throw "Unsupported column arity";
                 }
 
-                info ("tree_c done");
+                BOOST_LOG_TRIVIAL(info) << "tree_c done";
 
                 // Build the MerkleTree over the original data (if needed).
                 BinaryMerkleTree<Hash> tree_d;
                 if (data_tree.empty()) {
-                    trace !("building merkle tree for the original data");
+                    BOOST_LOG_TRIVIAL(trace) << "building merkle tree for the original data";
                     data.ensure_data() ? ;
                     measure_op(CommD, || {Self::build_binary_tree::<G>(data.as_ref(), tree_d_config.clone())});
                 } else {
-                    trace !("using existing original data merkle tree");
+                    BOOST_LOG_TRIVIAL(trace) << "using existing original data merkle tree";
                     BOOST_ASSERT (t.len() == 2 * (data.len() / NODE_SIZE) - 1);
                     tree_d = t;
 
@@ -856,13 +857,13 @@ namespace nil {
                 drop(tree_d);
 
                 // Encode original data into the last layer.
-                info ("building tree_r_last");
+                BOOST_LOG_TRIVIAL(info) << "building tree_r_last";
                 auto tree_r_last = measure_op(GenerateTreeRLast,
                                              || {Self::generate_tree_r_last::<MerkleTreeType::base_arity>(
                                                     data, nodes_count, tree_count, tree_r_last_config.clone(),
                                                     replica_path.clone(), &labels, )}) ?
                     ;
-                info ("tree_r_last done");
+                BOOST_LOG_TRIVIAL(info) << "tree_r_last done";
 
                 const auto tree_r_last_root = tree_r_last.root();
                 drop(tree_r_last);
@@ -894,7 +895,7 @@ namespace nil {
             Labels<tree_type> replicate_phase1(const PublicParams<tree_type> &pp,
                                                const typename tree_hash_type::digest_type &replica_id,
                                                const StoreConfig &config) {
-                info ("replicate_phase1");
+                BOOST_LOG_TRIVIAL(info) << "replicate_phase1";
 
                 auto(_, labels) =
                     measure_op(EncodeWindowTimeAll,
@@ -908,7 +909,7 @@ namespace nil {
                 ::ProverAux > replicate_phase2(const PublicParams<tree_type> &pp, const Labels<tree_type> &labels,
                                                const Data &data, const BinaryMerkleTree<hash_type> &data_tree,
                                                const StoreConfig &config, const boost::filesystem::path &replica_path) {
-                info ("replicate_phase2");
+                BOOST_LOG_TRIVIAL(info) << "replicate_phase2";
 
                 return transform_and_replicate_layers_inner(&pp.graph, &pp.layer_challenges, data, Some(data_tree),
                                                             config, replica_path, labels);

@@ -26,6 +26,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POST_FALLBACK_VANILLA_HPP
 #define FILECOIN_STORAGE_PROOFS_POST_FALLBACK_VANILLA_HPP
 
+#include <boost/log/trivial.hpp>
+
 #include <nil/crypto3/hash/sha2.hpp>
 
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
@@ -176,7 +178,7 @@ namespace nil {
                              pub_inputs.sectors.chunks(num_sectors_per_chunk)
                                  .zip(priv_inputs.sectors.chunks(num_sectors_per_chunk))
                                  .enumerate()) {
-                            trace !("proving partition {}", j);
+                            BOOST_LOG_TRIVIAL(trace) << std::format("proving partition {}", j);
 
                             std::vector<proof_type> proofs(num_sectors_per_chunk);
 
@@ -186,8 +188,8 @@ namespace nil {
                                 const auto sector_id = pub_sector.id;
                                 const auto tree_leafs = tree.leafs();
 
-                                trace !("Generating proof for tree leafs {} and arity {}", tree_leafs,
-                                        MerkleTreeType::base_arity, );
+                                BOOST_LOG_TRIVIAL(trace) << std::format("Generating proof for tree leafs {} and arity {}", tree_leafs,
+                                        MerkleTreeType::base_arity);
 
                                 const auto inclusion_proofs =
                                     (0..pub_params.challenge_count)

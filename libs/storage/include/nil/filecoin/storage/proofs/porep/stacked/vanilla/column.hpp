@@ -49,10 +49,9 @@ namespace nil {
                     }
 
                     typename hash_type::digest_type get_node_at_layer(std::size_t layer) {
-                        assert(("layer must be greater than 0", layer > 0));
-                        std::size_t row_index = layer - 1;
+                        BOOST_ASSERT_MSG(layer > 0, "layer must be greater than 0");
 
-                        return rows[row_index];
+                        return rows[layer - 1];
                     }
 
                     std::uint32_t index;
