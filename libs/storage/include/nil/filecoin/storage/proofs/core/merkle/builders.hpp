@@ -213,7 +213,7 @@ namespace nil {
 
             std::vector<StoreConfig> configs(count);
             for (int i = 0; i < count; i++) {
-                configs.push_back(StoreConfig::from_config(&config, format !("{}-{}", config.id, i), None));
+                configs.push_back(StoreConfig::from_config(&config, std::format("{}-{}", config.id, i), None));
                 configs[i].rows_to_discard = config.rows_to_discard;
             }
 
@@ -234,7 +234,7 @@ namespace nil {
             if (config) {
                 std::vector<boost::optional<StoreConfig>> configs(count);
                 for (int i = 0; i < count; i++) {
-                    configs.push_back(Some(StoreConfig::from_config(&c, format !("{}-{}", c.id, i), None, )));
+                    configs.push_back(Some(StoreConfig::from_config(&c, std::format("{}-{}", c.id, i), None, )));
                 }
                 return configs;
             } else {
@@ -260,7 +260,7 @@ namespace nil {
             std::vector<std::size_t> replica_offsets(count);
 
             for (int i = 0; i < count; i++) {
-                configs.push_back(StoreConfig::from_config(&config, format !("{}-{}", config.id, i), None));
+                configs.push_back(StoreConfig::from_config(&config, std::format("{}-{}", config.id, i), None));
                 configs[i].rows_to_discard = config.rows_to_discard;
 
                 replica_offsets.push_back(i * sub_tree_width * NODE_SIZE);
@@ -303,8 +303,8 @@ namespace nil {
 
             if (temp_path) {
                 std::uint64_t id = rng.gen();
-                boost::filesystem::path replica_path = temp_path.join(format !("replica-path-{}", id));
-                StoreConfig config(*temp_path, format !("test-lc-tree-{}", id),
+                boost::filesystem::path replica_path = temp_path.join(std::format("replica-path-{}", id));
+                StoreConfig config(*temp_path, std::format("test-lc-tree-{}", id),
                                    default_rows_to_discard(nodes, MerkleTreeType::base_arity));
 
                 auto tree =

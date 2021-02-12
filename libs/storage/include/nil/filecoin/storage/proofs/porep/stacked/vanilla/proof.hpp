@@ -358,176 +358,174 @@ namespace nil {
                                     const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
                 BOOST_LOG_TRIVIAL(info) << "generating tree c using the GPU";
                 // Build the tree for CommC
-                measure_op(
-                    GenerateTreeC, || {
-                        BOOST_LOG_TRIVIAL(info) << "Building column hashes";
+                
+                BOOST_LOG_TRIVIAL(info) << "Building column hashes";
 
-                        // NOTE: The max number of columns we recommend sending to the GPU at once is
-                        // 400000 for columns and 700000 for trees (conservative soft-limits discussed).
-                        //
-                        // 'column_write_batch_size' is how many nodes to chunk the base layer of data
-                        // into when persisting to disk.
-                        //
-                        // Override these values with care using environment variables:
-                        // FIL_PROOFS_MAX_GPU_COLUMN_BATCH_SIZE, FIL_PROOFS_MAX_GPU_TREE_BATCH_SIZE, and
-                        // FIL_PROOFS_COLUMN_WRITE_BATCH_SIZE respectively.
-                        const auto max_gpu_column_batch_size =
-                            settings::SETTINGS.lock().max_gpu_column_batch_size;
-                        const auto max_gpu_tree_batch_size =
-                            settings::SETTINGS.lock().max_gpu_tree_batch_size;
-                        const auto column_write_batch_size =
-                            settings::SETTINGS.lock().column_write_batch_size;
+                // NOTE: The max number of columns we recommend sending to the GPU at once is
+                // 400000 for columns and 700000 for trees (conservative soft-limits discussed).
+                //
+                // 'column_write_batch_size' is how many nodes to chunk the base layer of data
+                // into when persisting to disk.
+                //
+                // Override these values with care using environment variables:
+                // FIL_PROOFS_MAX_GPU_COLUMN_BATCH_SIZE, FIL_PROOFS_MAX_GPU_TREE_BATCH_SIZE, and
+                // FIL_PROOFS_COLUMN_WRITE_BATCH_SIZE respectively.
+                const auto max_gpu_column_batch_size =
+                    settings::SETTINGS.lock().max_gpu_column_batch_size;
+                const auto max_gpu_tree_batch_size =
+                    settings::SETTINGS.lock().max_gpu_tree_batch_size;
+                const auto column_write_batch_size =
+                    settings::SETTINGS.lock().column_write_batch_size;
 
-                        // This channel will receive batches of columns and add them to the ColumnTreeBuilder.
-                        const auto(builder_tx, builder_rx) = mpsc::sync_channel(0);
-                        mpsc::sync_channel::<(Vec<GenericArray<Fr, ColumnArity>>, bool)>(
-                            max_gpu_column_batch_size * ColumnArity::to_usize() * 32, );
+                // This channel will receive batches of columns and add them to the ColumnTreeBuilder.
+                const auto(builder_tx, builder_rx) = mpsc::sync_channel(0);
+                mpsc::sync_channel::<(Vec<GenericArray<Fr, ColumnArity>>, bool)>(
+                    max_gpu_column_batch_size * ColumnArity::to_usize() * 32, );
 
-                        const auto config_count = configs.len();    // Don't move config into closure below.
-                        rayon::scope(| s | {
-                            s.spawn(move | _ | {
-                                for (int i = 0; i < config_count; ++i) {
-                                    auto node_index = 0;
-                                    const auto builder_tx = builder_tx.clone();
-                                    while (node_index != nodes_count) {
-                                        const auto chunked_nodes_count =
-                                            std::cmp::min(nodes_count - node_index, max_gpu_column_batch_size);
-                                        BOOST_LOG_TRIVIAL(trace) << std::format("processing config {}/{} with column nodes {}", i + 1, tree_count,
-                                                chunked_nodes_count, );
-                                        auto columns
-                                            : Vec<GenericArray<Fr, ColumnArity>> =
-                                                  vec ![GenericArray::<Fr, ColumnArity>::generate(| _i
-                                                                                                  : usize | Fr::zero());
-                                                      chunked_nodes_count];
+                const auto config_count = configs.len();    // Don't move config into closure below.
+                rayon::scope(| s | {
+                    s.spawn(move | _ | {
+                        for (int i = 0; i < config_count; ++i) {
+                            auto node_index = 0;
+                            const auto builder_tx = builder_tx.clone();
+                            while (node_index != nodes_count) {
+                                const auto chunked_nodes_count =
+                                    std::cmp::min(nodes_count - node_index, max_gpu_column_batch_size);
+                                BOOST_LOG_TRIVIAL(trace) << std::format("processing config {}/{} with column nodes {}", i + 1, tree_count,
+                                        chunked_nodes_count, );
+                                auto columns
+                                    : Vec<GenericArray<Fr, ColumnArity>> =
+                                          vec ![GenericArray::<Fr, ColumnArity>::generate(| _i
+                                                                                          : usize | Fr::zero());
+                                              chunked_nodes_count];
 
-                                        // Allocate layer data array and insert a placeholder for each layer.
-                                        auto layer_data : Vec<Vec<Fr>> =
-                                                                 vec ![Vec::with_capacity(chunked_nodes_count); layers];
+                                // Allocate layer data array and insert a placeholder for each layer.
+                                auto layer_data : Vec<Vec<Fr>> =
+                                                         vec ![Vec::with_capacity(chunked_nodes_count); layers];
 
-                                        rayon::scope(| s | {
-                                            // capture a shadowed version of layer_data.
-                                            const auto layer_data : &mut Vec<_> = layer_data;
+                                rayon::scope(| s | {
+                                    // capture a shadowed version of layer_data.
+                                    const auto layer_data : &mut Vec<_> = layer_data;
 
-                                            // gather all layer data in parallel.
-                                            s.spawn(move | _ | {
-                                                for ((layer_index, layer_elements) :
-                                                     layer_data.iter_mut().enumerate()) {
-                                                    const auto store = labels.labels_for_layer(layer_index + 1);
-                                                    const auto start = (i * nodes_count) + node_index;
-                                                    const auto end = start + chunked_nodes_count;
-                                                    const auto elements : Vec << typename MerkleTreeType::hash_type> ::Domain >
-                                                        = store.read_range(std::ops::Range {start, end})
-                                                              .expect("failed to read store range");
-                                                    layer_elements.extend(elements.into_iter().map(Into::into));
-                                                }
-                                            });
-                                        });
-
-                                        // Copy out all layer data arranged into columns.
-                                        for (int layer_index = 0; layer_index < layer; layer_index++) {
-                                            for (int index = 0; index < chunked_nodes_count) {
-                                                columns[index][layer_index] = layer_data[layer_index][index];
-                                            }
+                                    // gather all layer data in parallel.
+                                    s.spawn(move | _ | {
+                                        for ((layer_index, layer_elements) :
+                                             layer_data.iter_mut().enumerate()) {
+                                            const auto store = labels.labels_for_layer(layer_index + 1);
+                                            const auto start = (i * nodes_count) + node_index;
+                                            const auto end = start + chunked_nodes_count;
+                                            const auto elements : Vec << typename MerkleTreeType::hash_type> ::Domain >
+                                                = store.read_range(std::ops::Range {start, end})
+                                                      .expect("failed to read store range");
+                                            layer_elements.extend(elements.into_iter().map(Into::into));
                                         }
+                                    });
+                                });
 
-                                        drop(layer_data);
-
-                                        node_index += chunked_nodes_count;
-                                        BOOST_LOG_TRIVIAL(trace) << std::format("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
-
-                                        const auto is_final = node_index == nodes_count;
-                                        builder_tx.send((columns, is_final)).expect("failed to send columns");
+                                // Copy out all layer data arranged into columns.
+                                for (int layer_index = 0; layer_index < layer; layer_index++) {
+                                    for (int index = 0; index < chunked_nodes_count) {
+                                        columns[index][layer_index] = layer_data[layer_index][index];
                                     }
                                 }
-                            });
-                            const auto configs = &configs;
-                            s.spawn(move | _ | {
-                                auto column_tree_builder = ColumnTreeBuilder::<ColumnArity, TreeArity, >::new (
-                                                                  Some(BatcherType::GPU), nodes_count,
-                                                                  max_gpu_column_batch_size, max_gpu_tree_batch_size, )
-                                                                  .expect("failed to create ColumnTreeBuilder");
 
-                                auto i = 0;
-                                auto config = &configs[i];
+                                drop(layer_data);
 
-                                // Loop until all trees for all configs have been built.
-                                while (i < configs.size()) {
-                                    const auto(columns, is_final) :
-                                        (Vec<GenericArray<Fr, ColumnArity>>, bool) =
-                                            builder_rx.recv().expect("failed to recv columns");
+                                node_index += chunked_nodes_count;
+                                BOOST_LOG_TRIVIAL(trace) << std::format("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
 
-                                    // Just add non-final column batches.
-                                    if (!is_final) {
-                                        column_tree_builder.add_columns(&columns).expect("failed to add columns");
-                                        continue;
-                                    };
+                                const auto is_final = node_index == nodes_count;
+                                builder_tx.send((columns, is_final)).expect("failed to send columns");
+                            }
+                        }
+                    });
+                    const auto configs = &configs;
+                    s.spawn(move | _ | {
+                        auto column_tree_builder = ColumnTreeBuilder::<ColumnArity, TreeArity, >::new (
+                                                          Some(BatcherType::GPU), nodes_count,
+                                                          max_gpu_column_batch_size, max_gpu_tree_batch_size, )
+                                                          .expect("failed to create ColumnTreeBuilder");
 
-                                    // If we get here, this is a final column: build a sub-tree.
-                                    const auto(base_data, tree_data) = column_tree_builder.add_final_columns(&columns).expect(
-                                        "failed to add final columns");
-                                    BOOST_LOG_TRIVIAL(trace) << std::format("base data len {}, tree data len {}", base_data.len(), tree_data.len());
-                                    const auto tree_len = base_data.len() + tree_data.len();
-                                    BOOST_LOG_TRIVIAL(info) << std::format("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len);
-                                    BOOST_ASSERT (base_data.len() == nodes_count);
-                                    BOOST_ASSERT (tree_len == config.size);
+                        auto i = 0;
+                        auto config = &configs[i];
 
-                                    // Persist the base and tree data to disk based using the current store config.
-                                    const auto tree_c_store =
-                                        DiskStore:: << typename MerkleTreeType::hash_type> ::Domain >
-                                        ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone(), )
-                                            .expect("failed to create DiskStore for base tree data");
+                        // Loop until all trees for all configs have been built.
+                        while (i < configs.size()) {
+                            const auto(columns, is_final) :
+                                (Vec<GenericArray<Fr, ColumnArity>>, bool) =
+                                    builder_rx.recv().expect("failed to recv columns");
 
-                                    const auto store = Arc::new (RwLock::new (tree_c_store));
-                                    const auto batch_size = std::cmp::min(base_data.len(), column_write_batch_size);
-                                    const auto flatten_and_write_store = | data : &Vec<Fr>,
-                                        offset | {data.into_par_iter()
-                                                      .chunks(column_write_batch_size)
-                                                      .enumerate()
-                                                      .try_for_each(| (index, fr_elements) | {
-                                                          auto buf = Vec::with_capacity(batch_size * NODE_SIZE);
+                            // Just add non-final column batches.
+                            if (!is_final) {
+                                column_tree_builder.add_columns(&columns).expect("failed to add columns");
+                                continue;
+                            };
 
-                                                          for (fr : fr_elements) {
-                                                              buf.extend(fr_into_bytes(&fr));
-                                                          }
-                                                          store.write()
-                                                              .expect("failed to access store for write")
-                                                              .copy_from_slice(&buf[..], offset + (batch_size * index))
-                                                      })};
+                            // If we get here, this is a final column: build a sub-tree.
+                            const auto(base_data, tree_data) = column_tree_builder.add_final_columns(&columns).expect(
+                                "failed to add final columns");
+                            BOOST_LOG_TRIVIAL(trace) << std::format("base data len {}, tree data len {}", base_data.len(), tree_data.len());
+                            const auto tree_len = base_data.len() + tree_data.len();
+                            BOOST_LOG_TRIVIAL(info) << std::format("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len);
+                            BOOST_ASSERT (base_data.len() == nodes_count);
+                            BOOST_ASSERT (tree_len == config.size);
 
-                                    BOOST_LOG_TRIVIAL(trace) << std::format("flattening tree_c base data of {} nodes using batch size {}",
-                                            base_data.len(),
-                                            batch_size);
-                                    flatten_and_write_store(&base_data, 0).expect("failed to flatten and write store");
-                                    BOOST_LOG_TRIVIAL(trace) << "done flattening tree_c base data";
+                            // Persist the base and tree data to disk based using the current store config.
+                            const auto tree_c_store =
+                                DiskStore:: << typename MerkleTreeType::hash_type> ::Domain >
+                                ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone(), )
+                                    .expect("failed to create DiskStore for base tree data");
 
-                                    const auto base_offset = base_data.len();
-                                    BOOST_LOG_TRIVIAL(trace) << std::format(
-                                        "flattening tree_c tree data of {} nodes using batch size {} and base "
-                                        "offset "
-                                        "{}",
-                                        tree_data.len(), batch_size, base_offset);
-                                    flatten_and_write_store(&tree_data, base_offset)
-                                        .expect("failed to flatten and write store");
-                                    BOOST_LOG_TRIVIAL(trace) << "done flattening tree_c tree data";
+                            const auto store = Arc::new (RwLock::new (tree_c_store));
+                            const auto batch_size = std::cmp::min(base_data.len(), column_write_batch_size);
+                            const auto flatten_and_write_store = | data : &Vec<Fr>,
+                                offset | {data.into_par_iter()
+                                              .chunks(column_write_batch_size)
+                                              .enumerate()
+                                              .try_for_each(| (index, fr_elements) | {
+                                                  auto buf = Vec::with_capacity(batch_size * NODE_SIZE);
 
-                                    BOOST_LOG_TRIVIAL(trace) << "writing tree_c store data";
-                                    store.write().expect("failed to access store for sync").sync();
-                                    BOOST_LOG_TRIVIAL(trace) << "done writing tree_c store data";
+                                                  for (fr : fr_elements) {
+                                                      buf.extend(fr_into_bytes(&fr));
+                                                  }
+                                                  store.write()
+                                                      .expect("failed to access store for write")
+                                                      .copy_from_slice(&buf[..], offset + (batch_size * index))
+                                              })};
 
-                                    // Move on to the next config.
-                                    i += 1;
-                                    if (i == configs.size()) {
-                                        break;
-                                    }
-                                    config = &configs[i];
-                                }
-                            });
-                        });
+                            BOOST_LOG_TRIVIAL(trace) << std::format("flattening tree_c base data of {} nodes using batch size {}",
+                                    base_data.len(),
+                                    batch_size);
+                            flatten_and_write_store(&base_data, 0).expect("failed to flatten and write store");
+                            BOOST_LOG_TRIVIAL(trace) << "done flattening tree_c base data";
 
-                        create_disk_tree::<
-                            DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>, >(
-                            configs[0].size, &configs)
-                    })
+                            const auto base_offset = base_data.len();
+                            BOOST_LOG_TRIVIAL(trace) << std::format(
+                                "flattening tree_c tree data of {} nodes using batch size {} and base "
+                                "offset "
+                                "{}",
+                                tree_data.len(), batch_size, base_offset);
+                            flatten_and_write_store(&tree_data, base_offset)
+                                .expect("failed to flatten and write store");
+                            BOOST_LOG_TRIVIAL(trace) << "done flattening tree_c tree data";
+
+                            BOOST_LOG_TRIVIAL(trace) << "writing tree_c store data";
+                            store.write().expect("failed to access store for sync").sync();
+                            BOOST_LOG_TRIVIAL(trace) << "done writing tree_c store data";
+
+                            // Move on to the next config.
+                            i += 1;
+                            if (i == configs.size()) {
+                                break;
+                            }
+                            config = &configs[i];
+                        }
+                    });
+                });
+
+                create_disk_tree::<
+                    DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>, >(
+                    configs[0].size, &configs)
             }    // namespace stacked
 
             template<typename ColumnArity = PoseidonArity, typename TreeArity = PoseidonArity>
@@ -536,62 +534,60 @@ namespace nil {
                 generate_tree_c_cpu(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                     const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
                 BOOST_LOG_TRIVIAL(info) << "generating tree c using the CPU";
-                measure_op(
-                    GenerateTreeC, || {
-                        BOOST_LOG_TRIVIAL(info) << "Building column hashes";
+                
+                BOOST_LOG_TRIVIAL(info) << "Building column hashes";
 
-                        auto trees = Vec::with_capacity(tree_count);
-                        for ((i, config) : configs.iter().enumerate()) {
-                            auto hashes : Vec << typename MerkleTreeType::hash_type > ::Domain >
-                                = vec ![<typename MerkleTreeType::hash_type>::Domain::default(); nodes_count];
+                auto trees = Vec::with_capacity(tree_count);
+                for ((i, config) : configs.iter().enumerate()) {
+                    auto hashes : Vec << typename MerkleTreeType::hash_type > ::Domain >
+                        = vec ![<typename MerkleTreeType::hash_type>::Domain::default(); nodes_count];
 
-                            rayon::scope(| s | {
-                                const auto n = num_cpus::get();
+                    rayon::scope(| s | {
+                        const auto n = num_cpus::get();
 
-                                // only split if we have at least two elements per thread
-                                std::size_t num_chunks = n > nodes_count * 2 ? 1 : n;
+                        // only split if we have at least two elements per thread
+                        std::size_t num_chunks = n > nodes_count * 2 ? 1 : n;
 
-                                // chunk into n chunks
-                                std::size_t chunk_size =
-                                    std::ceil(static_cast<double>(nodes_count) / static_cast<double>(num_chunks));
+                        // chunk into n chunks
+                        std::size_t chunk_size =
+                            std::ceil(static_cast<double>(nodes_count) / static_cast<double>(num_chunks));
 
-                                // calculate all n chunks in parallel
-                                for ((chunk, hashes_chunk) : hashes.chunks_mut(chunk_size).enumerate()) {
-                                    const auto labels = &labels;
+                        // calculate all n chunks in parallel
+                        for ((chunk, hashes_chunk) : hashes.chunks_mut(chunk_size).enumerate()) {
+                            const auto labels = &labels;
 
-                                    s.spawn(move | _ | {
-                                        for ((j, hash) : hashes_chunk.iter_mut().enumerate()) {
-                                            const std::vector<> data =
-                                                           (1.. = layers)
-                                                               .map(| layer |
-                                                                    {
-                                                                        const auto store = labels.labels_for_layer(layer);
-                                                                        const auto el
-                                                                            : <typename MerkleTreeType::hash_type>::Domain =
-                                                                                  store
-                                                                                      .read_at((i * nodes_count) + j +
-                                                                                               chunk * chunk_size)
-                                                                                      ;
-                                                                        el.into()
-                                                                    })
-                                                               .collect();
+                            s.spawn(move | _ | {
+                                for ((j, hash) : hashes_chunk.iter_mut().enumerate()) {
+                                    const std::vector<> data =
+                                                   (1.. = layers)
+                                                       .map(| layer |
+                                                            {
+                                                                const auto store = labels.labels_for_layer(layer);
+                                                                const auto el
+                                                                    : <typename MerkleTreeType::hash_type>::Domain =
+                                                                          store
+                                                                              .read_at((i * nodes_count) + j +
+                                                                                       chunk * chunk_size)
+                                                                              ;
+                                                                el.into()
+                                                            })
+                                                       .collect();
 
-                                            *hash = hash_single_column(data.begin(), data.end());
-                                        }
-                                    });
+                                    *hash = hash_single_column(data.begin(), data.end());
                                 }
                             });
-
-                            BOOST_LOG_TRIVIAL(info) << std::format("building base tree_c {}/{}", i + 1, tree_count);
-                            trees.push(DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::
-                                           from_par_iter_with_config(hashes.into_par_iter(), config.clone()));
                         }
+                    });
 
-                        assert(tree_count == trees.len());
-                        create_disk_tree::<
-                            DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>, >(
-                            configs[0].size, &configs)
-                    })
+                    BOOST_LOG_TRIVIAL(info) << std::format("building base tree_c {}/{}", i + 1, tree_count);
+                    trees.push(DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::
+                                   from_par_iter_with_config(hashes.into_par_iter(), config.clone()));
+                }
+
+                assert(tree_count == trees.len());
+                create_disk_tree::<
+                    DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>, >(
+                    configs[0].size, &configs)
             }
 
             template<typename TreeArity = PoseidonArity>
@@ -756,9 +752,7 @@ namespace nil {
                                                const boost::filesystem::path &replica_path) {
                 // Generate key layers.
                 const auto(_, labels) =
-                    measure_op(EncodeWindowTimeAll,
-                               || {Self::generate_labels(graph, layer_challenges, replica_id, config.clone())}) ?
-                    ;
+                               Self::generate_labels(graph, layer_challenges, replica_id, config.clone());
 
                 return transform_and_replicate_layers_inner(graph, layer_challenges, data, data_tree, config,
                                                             replica_path, labels);
@@ -820,18 +814,15 @@ namespace nil {
                 typename tree_hash_type::digest_type tree_c_root;
                 if (layers == 2) {
                     const auto tree_c =
-                        Self::generate_tree_c::<U2, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
-                        ;
+                        Self::generate_tree_c::<U2, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, );
                     tree_c_root = tree_c.root();
                 } else if (layers == 8) {
                     const auto tree_c =
-                        Self::generate_tree_c::<U8, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
-                        ;
+                        Self::generate_tree_c::<U8, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, );
                     tree_c_root = tree_c.root();
                 } else if (layers == 11) {
                     const auto tree_c =
-                        Self::generate_tree_c::<U11, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, ) ?
-                        ;
+                        Self::generate_tree_c::<U11, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, );
                     tree_c_root = tree_c.root();
                 } else {
                     throw "Unsupported column arity";
@@ -844,7 +835,7 @@ namespace nil {
                 if (data_tree.empty()) {
                     BOOST_LOG_TRIVIAL(trace) << "building merkle tree for the original data";
                     data.ensure_data() ? ;
-                    measure_op(CommD, || {Self::build_binary_tree::<G>(data.as_ref(), tree_d_config.clone())});
+                    Self::build_binary_tree::<G>(data.as_ref(), tree_d_config.clone());
                 } else {
                     BOOST_LOG_TRIVIAL(trace) << "using existing original data merkle tree";
                     BOOST_ASSERT (t.len() == 2 * (data.len() / NODE_SIZE) - 1);
@@ -858,10 +849,9 @@ namespace nil {
 
                 // Encode original data into the last layer.
                 BOOST_LOG_TRIVIAL(info) << "building tree_r_last";
-                auto tree_r_last = measure_op(GenerateTreeRLast,
-                                             || {Self::generate_tree_r_last::<MerkleTreeType::base_arity>(
+                auto tree_r_last = Self::generate_tree_r_last::<MerkleTreeType::base_arity>(
                                                     data, nodes_count, tree_count, tree_r_last_config.clone(),
-                                                    replica_path.clone(), &labels, )}) ?
+                                                    replica_path.clone(), &labels, );
                     ;
                 BOOST_LOG_TRIVIAL(info) << "tree_r_last done";
 
@@ -897,10 +887,7 @@ namespace nil {
                                                const StoreConfig &config) {
                 BOOST_LOG_TRIVIAL(info) << "replicate_phase1";
 
-                auto(_, labels) =
-                    measure_op(EncodeWindowTimeAll,
-                               || {Self::generate_labels(&pp.graph, &pp.layer_challenges, replica_id, config)}) ?
-                    ;
+                auto(_, labels) = Self::generate_labels(&pp.graph, &pp.layer_challenges, replica_id, config);
 
                 return labels;
             }

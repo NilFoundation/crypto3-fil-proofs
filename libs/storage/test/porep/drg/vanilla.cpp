@@ -233,7 +233,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
             }
 
             if (all_same) {
-                println !("invalid test data can't scramble proofs with all same parents.");
+                std::cout << "invalid test data can't scramble proofs with all same parents." << std::endl;
 
                 // If for some reason, we hit this condition because of the data passed in,
                 // try again.

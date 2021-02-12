@@ -144,9 +144,7 @@ namespace nil {
 
                         BOOST_LOG_TRIVIAL(trace) << std::format("Generating proof for tree of len {} with leafs {}", tree.len(), tree_leafs);
 
-                        const auto inclusion_proofs = measure_op(
-                            Operation::PostInclusionProofs,
-                            || {(0..pub_params.challenge_count)
+                        const auto inclusion_proofs = (0..pub_params.challenge_count)
                                     .into_par_iter()
                                     .flat_map(
                                         | n |
@@ -161,11 +159,10 @@ namespace nil {
                                                 .map(move | i |
                                                      {tree.gen_cached_proof(std::uint(challenged_leaf_start) + i, None)})
                                         })
-                                    .collect::<Result<Vec<_>>>()});
+                                    .collect::<Result<Vec<_>>>();
 
                         // 2. correct generation of the ticket from the partial_ticket (add this to the candidate)
-                        const auto ticket =
-                            measure_op(Operation::PostFinalizeTicket, || {finalize_ticket(&pub_inputs.partial_ticket)});
+                        const auto ticket = finalize_ticket(&pub_inputs.partial_ticket);
 
                         return {inclusion_proofs, ticket, pinputs.comm_c};
                     }
@@ -258,8 +255,7 @@ namespace nil {
                     for (int n = 0; n < pub_params.challenge_count; n++) {
                         const auto challenge = generate_leaf_challenge(pub_params, randomness, sector_challenge_index, n);
 
-                        Fr val = measure_op(Operation::PostReadChallengedRange, || {tree.read_at(challenge as usize)})
-                                     .into();
+                        Fr val = tree.read_at(challenge as usize).into();
                         data.push_back(val.into());
                     }
 
@@ -269,8 +265,7 @@ namespace nil {
                         data.push(PoseidonDomain::default());
                     }
 
-                    Fr partial_ticket =
-                        measure_op(Operation::PostPartialTicketHash, || {PoseidonFunction::hash_md(&data)}).into();
+                    Fr partial_ticket = PoseidonFunction::hash_md(&data).into();
 
                     // ticket = sha256(partial_ticket)
                     std::array<std::uint8_t, 32> ticket = finalize_ticket(&partial_ticket);

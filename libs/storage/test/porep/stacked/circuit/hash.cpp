@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(test_hash_single_column_circuit) {
                     vals.iter()
                         .enumerate()
                         .map(| (i, v) |
-                             {num::AllocatedNumber::alloc(cs.namespace(|| format !("num_{}", i)), || Ok(*v))})
+                             {num::AllocatedNumber::alloc(cs.namespace(|| std::format("num_{}", i)), || Ok(*v))})
                         .collect::<Vec<_>>();
 
                 const auto out = hash_single_column(cs.namespace(|| "hash_single_column"), &vals_opt)

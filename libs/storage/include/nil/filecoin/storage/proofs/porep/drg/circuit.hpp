@@ -115,7 +115,7 @@ namespace nil {
                         const auto data_root_var = Root::Var(data_root.allocated(cs.namespace(|| "data_root")));
 
                         for (int i = 0; i < data_nodes.size(); i++) {
-                            auto cs = cs.namespace(|| format !("challenge_{}", i));
+                            auto cs = cs.namespace(|| std::format("challenge_{}", i));
                             // ensure that all inputs are well formed
                             std::vector<std::pair<Fr, std::size_t>> replica_node_path = this->replica_nodes_paths[i];
                             std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> replica_parents_paths =
@@ -140,7 +140,7 @@ namespace nil {
                             // validate each replica_parents merkle proof
                             for (int i = 0; i < replica_parents.size(); i++) {
                                 PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
-                                    cs.namespace(|| format !("parents_inclusion_{}", j)),
+                                    cs.namespace(|| std::format("parents_inclusion_{}", j)),
                                     Root::Val(replica_parents[j]), replica_parents_paths[j].clone().into(),
                                     replica_root_var.clone(), self.priv);
                             }
@@ -157,12 +157,12 @@ namespace nil {
 
                             for (int i = 0; i < replica_parents.size(); i++) {
                                 const auto num = num::AllocatedNumber::alloc(
-                                    cs.namespace(|| format !("parents_{}_num", i)),
+                                    cs.namespace(|| std::format("parents_{}_num", i)),
                                     || {replica_parents[i]
                                             .map(Into::into)
                                             .ok_or_else(|| SynthesisError::AssignmentMissing)});
                                 parents_bits.push_back(reverse_bit_numbering(
-                                    num.to_bits_le(cs.namespace(|| format !("parents_{}_bits", i)))))
+                                    num.to_bits_le(cs.namespace(|| std::format("parents_{}_bits", i)))))
                             }
 
                             // generate the encryption key

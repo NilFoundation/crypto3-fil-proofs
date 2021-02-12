@@ -117,13 +117,13 @@ namespace nil {
 
                             for ((i, parent) : drg_parents_proofs.into_iter().enumerate()) {
                                 const auto(parent_col, inclusion_path) =
-                                    parent.alloc(cs.namespace(|| format !("drg_parent_{}_num", i))) ?;
+                                    parent.alloc(cs.namespace(|| std::format("drg_parent_{}_num", i))) ?;
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
-                                const auto val = parent_col.hash(cs.namespace(|| format !("drg_parent_{}_constraint", i))) ? ;
+                                const auto val = parent_col.hash(cs.namespace(|| std::format("drg_parent_{}_constraint", i))) ? ;
                                 // enforce inclusion of the column hash in the tree C
-                                enforce_inclusion(cs.namespace(|| format !("drg_parent_{}_inclusion", i)),
+                                enforce_inclusion(cs.namespace(|| std::format("drg_parent_{}_inclusion", i)),
                                                   inclusion_path, comm_c, &val, ) ?;
                                 drg_parents.push(parent_col);
                             }
@@ -133,14 +133,14 @@ namespace nil {
 
                             for ((i, parent) : exp_parents_proofs.into_iter().enumerate()) {
                                 const auto(parent_col, inclusion_path) =
-                                    parent.alloc(cs.namespace(|| format !("exp_parent_{}_num", i))) ?
+                                    parent.alloc(cs.namespace(|| std::format("exp_parent_{}_num", i))) ?
                                     ;
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
-                                const auto val = parent_col.hash(cs.namespace(|| format !("exp_parent_{}_constraint", i))) ? ;
+                                const auto val = parent_col.hash(cs.namespace(|| std::format("exp_parent_{}_constraint", i))) ? ;
                                 // enforce inclusion of the column hash in the tree C
-                                enforce_inclusion(cs.namespace(|| format !("exp_parent_{}_inclusion", i)),
+                                enforce_inclusion(cs.namespace(|| std::format("exp_parent_{}_inclusion", i)),
                                                   inclusion_path, comm_c, &val, ) ?;
                                 exp_parents.push_back(parent_col);
                             }
@@ -157,7 +157,7 @@ namespace nil {
                             for (uint32_t layer = 1; layer != layers; layer++) {
                                 const auto layer_num = uint32::UInt32::constant(layer as u32);
 
-                                auto cs = cs.namespace(|| format !("labeling_{}", layer));
+                                auto cs = cs.namespace(|| std::format("labeling_{}", layer));
 
                                 // Collect the parents
                                 auto parents = Vec::new ();
@@ -167,7 +167,7 @@ namespace nil {
                                     const auto parent_val_num = parent_col.get_value(layer);
                                     const auto parent_val_bits =
                                         reverse_bit_numbering(parent_val_num.to_bits_le(
-                                    cs.namespace(|| format!("drg_parent_{}_bits", parents.len())),
+                                    cs.namespace(|| std::format("drg_parent_{}_bits", parents.len())),
                                     )?);
                                     parents.push(parent_val_bits);
                                 }
@@ -179,7 +179,7 @@ namespace nil {
                                         // as they do not store a value for the first layer
                                         const auto parent_val_num = parent_col.get_value(layer - 1);
                                         const auto parent_val_bits = reverse_bit_numbering(parent_val_num.to_bits_le(
-                                        cs.namespace(|| format!("exp_parent_{}_bits", parents.len())),
+                                        cs.namespace(|| std::format("exp_parent_{}_bits", parents.len())),
                                         )?);
                                         parents.push(parent_val_bits);
                                     }

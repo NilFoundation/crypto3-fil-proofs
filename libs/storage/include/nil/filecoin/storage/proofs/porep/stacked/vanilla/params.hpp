@@ -239,7 +239,7 @@ namespace nil {
                             StoreConfig cur_config = t_aux.labels.labels[i].clone();
                             if (cached(cur_config)) {
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::delete (cur_config)
-                                    .with_context(|| format !("labels {}", i));
+                                    .with_context(|| std::format("labels {}", i));
                                 BOOST_LOG_TRIVIAL(trace) << std::format("layer %d deleted", i);
                             }
                         }

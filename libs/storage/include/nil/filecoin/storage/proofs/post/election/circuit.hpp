@@ -74,7 +74,7 @@ namespace nil {
                         // 2. Verify Inclusion Paths
                         for ((i, (leaf, path)) : leafs.iter().zip(paths.iter()).enumerate()) {
                             PoRCircuit::<Tree>::synthesize(
-                                cs.namespace(|| format !("challenge_inclusion{}", i)), Root::Val(*leaf),
+                                cs.namespace(|| std::format("challenge_inclusion{}", i)), Root::Val(*leaf),
                                 path.clone().into(), Root::from_allocated::<CS>(comm_r_last_num.clone()), true, ) ?;
                         }
 
@@ -98,7 +98,7 @@ namespace nil {
                         const auto partial_ticket_nums = vec ![ randomness_num, prover_id_num, sector_id_num ];
                         for ((i, leaf) in leafs.iter().enumerate()) {
                             const auto leaf_num = num::AllocatedNumber::alloc(
-                                cs.namespace(|| format !("leaf_{}", i)),
+                                cs.namespace(|| std::format("leaf_{}", i)),
                                 || {leaf.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
                             partial_ticket_nums.push(leaf_num);
                         }
@@ -107,7 +107,7 @@ namespace nil {
                         const auto arity = PoseidonMDArity::to_usize();
                         while (partial_ticket_nums.size() % arity) {
                             partial_ticket_nums.push(num::AllocatedNumber::alloc(
-                                cs.namespace(|| format!("padding_{}", partial_ticket_nums.len())),
+                                cs.namespace(|| std::format("padding_{}", partial_ticket_nums.len())),
                             || Ok(Fr::zero()),)?);
                         }
 

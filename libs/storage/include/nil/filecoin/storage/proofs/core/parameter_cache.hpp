@@ -154,7 +154,7 @@ namespace nil {
                 using namespace nil::crypto3;
 
                 std::string circuit_hash = hash<hashes::sha2<256>>(pub_params.identifier());
-                format !("{}-{:02x}", cache_prefix(), circuit_hash.iter().format(""))
+                std::format("{}-{:02x}", cache_prefix(), circuit_hash.iter().format(""))
             }
 
             cache_entry_metadata get_param_metadata(const C &circuit, const P &pub_params) {

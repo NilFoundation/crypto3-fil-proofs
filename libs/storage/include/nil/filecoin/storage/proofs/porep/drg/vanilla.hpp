@@ -241,11 +241,11 @@ namespace nil {
                             auto expected_parents = vec ![0; pub_params.graph.degree()];
                             pub_params.graph.parents(pub_inputs.challenges[i], expected_parents);
                             if (proof.replica_parents[i].size() != expected_parents.size()) {
-                                println !(
+                                std::cout << std::format(
                                     "proof parents were not the same length as in public parameters: "
                                     "{} != {}",
                                     proof.replica_parents[i].size(),
-                                    expected_parents.size());
+                                    expected_parents.size()) << std::endl;
                                 return false;
                             }
 
@@ -255,7 +255,7 @@ namespace nil {
                                                           .all(| (actual, expected) | actual .0 == *expected);
 
                             if (!parents_as_expected) {
-                                println !("proof parents were not those provided in public parameters");
+                                std::cout << std::format("proof parents were not those provided in public parameters") << std::endl;
                                 return false;
                             }
                         }
@@ -290,7 +290,7 @@ namespace nil {
                         }
 
                         if (!proof.nodes[i].proof.validate_data(unsealed)) {
-                            println !("invalid data for merkle path {:?}", unsealed);
+                            std::cout << std::format("invalid data for merkle path {:?}", unsealed) << std::endl;
                             return false;
                         }
 

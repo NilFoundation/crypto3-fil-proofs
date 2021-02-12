@@ -106,7 +106,7 @@ namespace nil {
                         std::size_t min_cache_size = (offset + len) * DEGREE * NODE_BYTES;
 
                         const auto file = LockedFile::open_shared_read(path).with_context(
-                            || format !("could not open path={}", path.display())) ?;
+                            || std::format("could not open path={}", path.display())) ?;
 
                         const auto actual_len = file.as_ref().metadata().len();
                         if (actual_len < min_cache_size) {
@@ -120,7 +120,7 @@ namespace nil {
                                                .offset(std_uint_64(std::size_t(offset) * DEGREE * NODE_BYTES))
                                                .len(std::size_t(len) * DEGREE * NODE_BYTES)
                                                .map(file.as_ref())
-                                               .with_context(|| format !("could not mmap path={}", path.display())) ? };
+                                               .with_context(|| std::format("could not mmap path={}", path.display())) ? };
 
                         return {data, file, len, offset};
                     }
@@ -168,7 +168,7 @@ namespace nil {
                             auto data =
                                 unsafe {memmap::MmapOptions::new ()
                                             .map_mut(file.as_ref())
-                                            .with_context(|| format !("could not mmap path={}", path.display())) ? };
+                                            .with_context(|| std::format("could not mmap path={}", path.display())) ? };
 
                             data.par_chunks_mut(DEGREE * NODE_BYTES)
                                 .enumerate()

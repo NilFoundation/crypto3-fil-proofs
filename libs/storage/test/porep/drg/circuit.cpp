@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     if
         !cs.is_satisfied() {
-            println !("failed to satisfy: {:?}", cs.which_is_unsatisfied());
+            std::cout << std::format("failed to satisfy: {:?}", cs.which_is_unsatisfied()) << std::endl;
         }
 
     BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");

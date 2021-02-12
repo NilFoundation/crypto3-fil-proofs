@@ -92,12 +92,12 @@ namespace nil {
                     std::size_t optional_index =
                         path[i].index;    // Optional because of Bellman blank-circuit construction mechanics.
 
-                    auto cs = cs.namespace(|| format !("merkle tree hash {}", i));
+                    auto cs = cs.namespace(|| std::format("merkle tree hash {}", i));
 
                     std::vector<bool> index_bits(index_bit_count);
 
                     for (int i = 0; i < index_bit_count; i++) {
-                        const auto bit = AllocatedBit::alloc(cs.namespace(|| format !("index bit {}", i)),
+                        const auto bit = AllocatedBit::alloc(cs.namespace(|| std::format("index bit {}", i)),
                                                       {optional_index.map(| index | ((index >> i) & 1) == 1)});
 
                         index_bits.push_back(bit);
@@ -110,7 +110,7 @@ namespace nil {
                                              .enumerate()
                                              .map(| (i, elt) |
                                                   {num::AllocatedNumber::alloc(
-                                                      cs.namespace(|| format !("path element {}", i)),
+                                                      cs.namespace(|| std::format("path element {}", i)),
                                                       || {elt.ok_or_else(|| SynthesisError::AssignmentMissing)})})
                                              .collect::<Result<Vec<_>, _>>();
 
