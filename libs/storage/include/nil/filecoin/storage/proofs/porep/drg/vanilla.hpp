@@ -222,7 +222,7 @@ namespace nil {
                     virtual bool verify(const public_params_type &pub_params,
                                         const public_inputs_type &pub_inputs,
                                         const proof_type &pr) override {
-                        auto hasher = Sha256::new ();
+                        auto hasher = Sha256 ();
 
                         for (int i = 0; i < pub_inputs.challenges.size(); i++) {
                             // This was verify_proof_meta.

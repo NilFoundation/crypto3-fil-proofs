@@ -39,7 +39,7 @@ void test_extract_all() {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     const auto cache_dir = tempfile::tempdir();
-    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     const auto cache_dir = tempfile::tempdir();
-    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -162,7 +162,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         // MT for original data is always named tree-d, and it will be
         // referenced later in the process as such.
         const auto cache_dir = tempfile::tempdir();
-        const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+        const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
                                        default_rows_to_discard(nodes, BINARY_ARITY), );
 
         // Generate a replica path.
@@ -219,7 +219,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
                                          .map(| (i, data_proof) | (i + 1, data_proof.clone()))
                                          .collect::<Vec<_>>()];
 
-            const auto proof = Proof::new (real_proof.replica_nodes.clone(), fake_parents, real_proof.nodes.clone().into(), );
+            const auto proof = Proof(real_proof.replica_nodes.clone(), fake_parents, real_proof.nodes.clone().into(), );
 
             const auto is_valid = DrgPoRep::verify(&pp, &pub_inputs, &proof).expect("verification failed");
 
@@ -254,7 +254,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
                                                     })
                                                .collect::<Vec<_>>()];
 
-            const auto proof2 = Proof::new (real_proof.replica_nodes, fake_proof_parents, real_proof.nodes.into(), );
+            const auto proof2 = Proof(real_proof.replica_nodes, fake_proof_parents, real_proof.nodes.into(), );
 
             BOOST_ASSERT_MSG(!DrgPoRep::<typename MerkleTreeType::hash_type, _>::verify(&pp, &pub_inputs, &proof2)
                           .unwrap_or_else(| e | { panic !("Verification failed: {}", e); }),

@@ -47,8 +47,8 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
     const auto(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
     const auto(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
 
-    const auto faults = OrderedSectorSet::new ();
-    auto sectors = OrderedSectorSet::new ();
+    const auto faults = OrderedSectorSet();
+    auto sectors = OrderedSectorSet();
     sectors.insert(0.into());
     sectors.insert(1.into());
 
@@ -72,7 +72,7 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
         comm_rs : &comm_rs,
     };
 
-    auto trees = BTreeMap::new ();
+    auto trees = BTreeMap();
     trees.insert(0.into(), &tree1);
     trees.insert(1.into(), &tree2);
 
@@ -82,14 +82,22 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
         comm_r_lasts : &comm_r_lasts,
     };
 
-    const auto proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
+    try {
+        const auto proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs);
+    } catch ("proving failed"){
 
-    const auto is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof).expect("verification failed");
-    BOOST_ASSERT (is_valid);
+    }
+
+    try {
+        const auto is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof);
+        BOOST_ASSERT (is_valid);
+    } catch("verification failed"){
+
+    }
 
     // actual circuit test
 
-    const auto paths : Vec<_> =
+    const Vec<_> paths =
                     proof.paths()
                         .iter()
                         .map(| p |
@@ -97,9 +105,9 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
                                   .map(| v | {(v .0.iter().copied().map(Into::into).map(Some).collect(), Some(v .1), )})
                                   .collect::<Vec<_>>()})
                         .collect();
-    const auto leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
+    const Vec<_> leafs = proof.leafs().iter().map(| l | Some((*l).into())).collect();
 
-    auto cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
+    auto cs = TestConstraintSystem<algebra::curves::bls12<381>>();
 
     const auto instance = RationalPoStCircuit::<Tree> {
         leafs,
@@ -110,7 +118,11 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
         _t : PhantomData,
     };
 
-    instance.synthesize(cs).expect("failed to synthesize circuit");
+    try{
+        instance.synthesize(cs);
+    } catch("failed to synthesize circuit"){
+
+    }
 
     BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
 

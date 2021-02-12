@@ -60,7 +60,7 @@ void por_compound() {
     const auto public_params = PoRCompound<MerkleTreeType>::setup(&setup_params).expect("setup failed");
 
     const auto private_inputs =
-        por::PrivateInputs<MerkleTreeType>::new (bytes_into_fr(data_at_node(data.as_slice(), public_inputs.challenge))
+        por::PrivateInputs<MerkleTreeType>(bytes_into_fr(data_at_node(data.as_slice(), public_inputs.challenge))
                                              .expect("failed to create Fr from node data")
                                              .into(),
                                          &tree, );
@@ -77,7 +77,7 @@ void por_compound() {
 
     const auto(circuit, inputs) = PoRCompound<MerkleTreeType>::circuit_for_test(&public_params, &public_inputs, &private_inputs);
 
-    auto cs = TestConstraintSystem::new ();
+    auto cs = TestConstraintSystem();
 
     circuit.synthesize(cs).expect("failed to synthesize");
     BOOST_ASSERT(cs.is_satisfied());
@@ -193,7 +193,7 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
         };
         const auto leaf = data_at_node(data.as_slice(), pub_inputs.challenge);
         const auto leaf_element = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(leaf);
-        const auto priv_inputs = por::PrivateInputs::<ResTree<MerkleTreeType>>::new (leaf_element, &tree);
+        const auto priv_inputs = por::PrivateInputs::<ResTree<MerkleTreeType>>(leaf_element, &tree);
         const auto p = tree.gen_proof(i);
         BOOST_ASSERT(p.verify());
 
@@ -207,7 +207,7 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
 
         // -- Circuit
 
-        auto cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
+        auto cs = TestConstraintSystem<algebra::curves::bls12<381>>();
         const auto por = PoRCircuit::<ResTree<MerkleTreeType>> {
             value : Root::Val(Some(proof.data.into())),
             auth_path : proof.proof.as_options().into(),
@@ -310,7 +310,7 @@ void private_por_test_compound < Tree: static + MerkleTreeTrait>() {
         };
         const auto public_params = PoRCompound::<ResTree<MerkleTreeType>>::setup(&setup_params).expect("setup failed");
 
-        const auto private_inputs = por::PrivateInputs::<ResTree<MerkleTreeType>>::new (
+        const auto private_inputs = por::PrivateInputs::<ResTree<MerkleTreeType>>(
             bytes_into_fr(data_at_node(data.as_slice(), public_inputs.challenge))
                 .expect("failed to create Fr from node data")
                 .into(),
@@ -319,7 +319,7 @@ void private_por_test_compound < Tree: static + MerkleTreeTrait>() {
         const auto(circuit, inputs) =
             PoRCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
 
-        auto cs = TestConstraintSystem::new ();
+        auto cs = TestConstraintSystem();
 
         circuit.synthesize(cs).expect("failed to synthesize");
 
@@ -334,12 +334,12 @@ void private_por_test_compound < Tree: static + MerkleTreeTrait>() {
             PoRCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
         const auto blank_circuit = PoRCompound::<ResTree<MerkleTreeType>>::blank_circuit(&public_params.vanilla_params);
 
-        auto cs_blank = MetricCS::new ();
+        auto cs_blank = MetricCS();
         blank_circuit.synthesize(cs_blank).expect("failed to synthesize");
 
         const auto a = cs_blank.pretty_print_list();
 
-        auto cs1 = TestConstraintSystem::new ();
+        auto cs1 = TestConstraintSystem();
         circuit1.synthesize(cs1).expect("failed to synthesize");
         const auto b = cs1.pretty_print_list();
 
@@ -403,7 +403,7 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
             commitment : None,
         };
 
-        const auto priv_inputs = por::PrivateInputs<MerkleTreeType>::new (
+        const auto priv_inputs = por::PrivateInputs<MerkleTreeType>(
             bytes_into_fr(data_at_node(data.as_slice(), pub_inputs.challenge)).into(), &tree, );
 
         // create a non circuit proof
@@ -415,7 +415,7 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
 
         // -- Circuit
 
-        auto cs = TestConstraintSystem::<algebra::curves::bls12<381>>::new ();
+        auto cs = TestConstraintSystem::<algebra::curves::bls12<381>>();
 
         const auto por = PoRCircuit<MerkleTreeType> {
             value : Root::Val(Some(proof.data.into())),
@@ -434,7 +434,7 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
         const auto auth_path_bits = challenge_into_auth_path_bits(pub_inputs.challenge, pub_params.leaves);
         const auto packed_auth_path = multipack::compute_multipacking::<algebra::curves::bls12<381>>(&auth_path_bits);
 
-        auto expected_inputs = Vec::new ();
+        auto expected_inputs = Vec();
         expected_inputs.extend(packed_auth_path);
 
         BOOST_ASSERT_MSG(cs.get_input(0, "ONE") == Fr::one(), "wrong input 0");

@@ -36,7 +36,7 @@ using namespace nil::filecoin;
 BOOST_AUTO_TEST_SUITE(vanilla_proof_test_suite)
 
 BOOST_AUTO_TEST_CASE(test_calculate_fixed_challenges) {
-    const auto layer_challenges = LayerChallenges::new (10, 333);
+    const auto layer_challenges = LayerChallenges(10, 333);
     const auto expected = 333;
 
     const auto calculated_count = layer_challenges.challenges_count_all();
@@ -93,9 +93,6 @@ BOOST_AUTO_TEST_CASE(extract_all_poseidon_8_8_2) {
 
 template<typename MerkleTreeType>
 void test_extract_all() {
-    // femme::pretty::Logger::new()
-    //     .start(log::LevelFilter::Trace)
-    //     .ok();
 
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
     const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
@@ -113,14 +110,14 @@ void test_extract_all() {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     const auto cache_dir = tempfile::tempdir();
-    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
     const auto replica_path = cache_dir.path().join("replica-path");
     auto mmapped_data = setup_replica(&data, &replica_path);
 
-    const auto layer_challenges = LayerChallenges::new (DEFAULT_STACKED_LAYERS, 5);
+    const auto layer_challenges = LayerChallenges (DEFAULT_STACKED_LAYERS, 5);
 
     const auto sp = SetupParams {
         nodes, degree : BASE_DEGREE, expansion_degree : EXP_DEGREE, porep_id : [32; 32], layer_challenges,
@@ -141,11 +138,15 @@ void test_extract_all() {
 
     BOOST_ASSERT(data, decoded_data);
 
-    cache_dir.close().expect("Failed to remove cache dir");
+    try {
+        cache_dir.close();
+    } catch ("Failed to remove cache dir"){
+
+    }
 }
 
 void prove_verify_fixed(std::size_t n) {
-    const auto challenges = LayerChallenges::new (DEFAULT_STACKED_LAYERS, 5);
+    const auto challenges = LayerChallenges(DEFAULT_STACKED_LAYERS, 5);
 
     test_prove_verify<DiskTree<PedersenHasher, 4, 0, 0>>(n, challenges);
     test_prove_verify<DiskTree<PedersenHasher, 4, 2, 0>>(n, challenges);
@@ -183,9 +184,6 @@ void prove_verify_fixed(std::size_t n) {
 template<typename MerkleTreeType>
 void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     // This will be called multiple times, only the first one succeeds, and that is ok.
-    // femme::pretty::Logger::new()
-    //     .start(log::LevelFilter::Trace)
-    //     .ok();
 
     const std::size_t nodes = n * get_base_tree_count::<Tree>();
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
@@ -198,7 +196,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     const auto cache_dir = tempfile::tempdir();
-    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -237,27 +235,44 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     // Store a copy of the t_aux for later resource deletion.
     const auto t_aux_orig = t_aux.clone();
 
-    // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
-    // elements based on the configs stored in TemporaryAux.
-    const auto t_aux = TemporaryAuxCache::<Tree, Blake2sHasher>::new (&t_aux, replica_path)
-                    .expect("failed to restore contents of t_aux");
+    try {
+        // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
+        // elements based on the configs stored in TemporaryAux.
+        const auto t_aux = TemporaryAuxCache::<Tree, Blake2sHasher>(&t_aux, replica_path);
+    } catch("failed to restore contents of t_aux"){
+
+    }
 
     const auto priv_inputs = PrivateInputs {p_aux, t_aux};
 
-    const auto all_partition_proofs =
-        &StackedDrg::<Tree, Blake2sHasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, partitions, )
-             .expect("failed to generate partition proofs");
+    try {
+        const auto all_partition_proofs =
+            &StackedDrg::<Tree, Blake2sHasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, partitions);
+    } catch("failed to generate partition proofs"){
 
-    const auto proofs_are_valid =
-        StackedDrg::<Tree, Blake2sHasher>::verify_all_partitions(&pp, &pub_inputs, all_partition_proofs, )
-            .expect("failed to verify partition proofs");
+    }
 
-    // Discard cached MTs that are no longer needed.
-    TemporaryAux::<Tree, Blake2sHasher>::clear_temp(t_aux_orig).expect("t_aux delete failed");
+    try {
+        const auto proofs_are_valid =
+            StackedDrg::<Tree, Blake2sHasher>::verify_all_partitions(&pp, &pub_inputs, all_partition_proofs);
+    } catch("failed to verify partition proofs"){
+
+    }
+
+    try {
+        // Discard cached MTs that are no longer needed.
+        TemporaryAux::<Tree, Blake2sHasher>::clear_temp(t_aux_orig);
+    } catch("t_aux delete failed"){
+
+    }
 
     BOOST_ASSERT (proofs_are_valid);
 
-    cache_dir.close().expect("Failed to remove cache dir");
+    try {
+        cache_dir.close();
+    } catch("Failed to remove cache dir"){
+
+    }
 }
 
 // We are seeing a bug, in which setup never terminates for some sector sizes.

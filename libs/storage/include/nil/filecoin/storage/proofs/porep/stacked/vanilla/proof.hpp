@@ -200,7 +200,7 @@ namespace nil {
                                             chunk.copy_from_slice(&parents_data[..chunk.size()]);
                                         }
 
-                                        const auto proof = LabelingProof::<typename MerkleTreeType::hash_type>::new (std::uint_32t(layer), 
+                                        const auto proof = LabelingProof::<typename MerkleTreeType::hash_type> (std::uint_32t(layer), 
                                             std::uint_64t(challenge), parents_data_full.clone());
 
                                         const auto labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
@@ -212,7 +212,7 @@ namespace nil {
 
                                         if (layer == layers) {
                                             encoding_proof =
-                                                Some(EncodingProof::new (std::uint_32t(layer), std::uint_64t(challenge), parents_data_full, ));
+                                                Some(EncodingProof (std::uint_32t(layer), std::uint_64t(challenge), parents_data_full, ));
                                         }
                                     }
 
@@ -439,10 +439,15 @@ namespace nil {
                             });
                             const auto configs = &configs;
                             s.spawn(move | _ | {
-                                auto column_tree_builder = ColumnTreeBuilder::<ColumnArity, TreeArity, >::new (
+
+                                try{
+                                    auto column_tree_builder = ColumnTreeBuilder::<ColumnArity, TreeArity>(
                                                                   Some(BatcherType::GPU), nodes_count,
-                                                                  max_gpu_column_batch_size, max_gpu_tree_batch_size, )
-                                                                  .expect("failed to create ColumnTreeBuilder");
+                                                                  max_gpu_column_batch_size, max_gpu_tree_batch_size);
+                                }
+                                catch ("failed to create ColumnTreeBuilder"){
+
+                                }
 
                                 auto i = 0;
                                 auto config = &configs[i];
@@ -474,7 +479,7 @@ namespace nil {
                                         ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone(), )
                                             .expect("failed to create DiskStore for base tree data");
 
-                                    const auto store = Arc::new (RwLock::new (tree_c_store));
+                                    const auto store = Arc (RwLock(tree_c_store));
                                     const auto batch_size = std::cmp::min(base_data.len(), column_write_batch_size);
                                     const auto flatten_and_write_store = | data : &Vec<Fr>,
                                         offset | {data.into_par_iter()
@@ -653,10 +658,13 @@ namespace nil {
 
                                 const auto tree_r_last_config = &tree_r_last_config;
                                 s.spawn(move | _ | {
-                                    auto tree_builder = TreeBuilder::<MerkleTreeType::base_arity>::new (
-                                                               Some(BatcherType::GPU), nodes_count, max_gpu_tree_batch_size,
-                                                               tree_r_last_config.rows_to_discard)
-                                                               .expect("failed to create TreeBuilder");
+                                    try{
+                                        auto tree_builder = TreeBuilder::<MerkleTreeType::base_arity>(
+                                                                   Some(BatcherType::GPU), nodes_count, max_gpu_tree_batch_size,
+                                                                   tree_r_last_config.rows_to_discard);
+                                    }catch("failed to create TreeBuilder"){
+
+                                    }
 
                                     auto i = 0;
                                     auto config = &configs[i];
@@ -695,12 +703,14 @@ namespace nil {
                                                 tree_data_len,
                                                 config.rows_to_discard,
                                                 tree_r_last_path);
+                                        try{
+                                            auto f = OpenOptions ()
+                                                            .create(true)
+                                                            .write(true)
+                                                            .open(&tree_r_last_path);
+                                        } catch ("failed to open file for tree_r_last"){
 
-                                        auto f = OpenOptions::new ()
-                                                        .create(true)
-                                                        .write(true)
-                                                        .open(&tree_r_last_path)
-                                                        .expect("failed to open file for tree_r_last");
+                                        }
                                         f.write_all(&flat_tree_data).expect("failed to wrote tree_r_last data");
 
                                         // Move on to the next config.

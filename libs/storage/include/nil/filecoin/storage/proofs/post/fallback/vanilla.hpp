@@ -342,7 +342,7 @@ namespace nil {
                 template<typename Domain, typename ChallengeHash = crypto3::hashes::sha2<256>>
                 std::uint64_t generate_sector_challenge(Domain randomness, std::size_t n, std::uint64_t sector_set_len,
                                                         Domain prover_id) {
-                    auto hasher = Sha256::new ();
+                    auto hasher = Sha256();
                     hasher.input(AsRef::<[u8]>::as_ref(&prover_id));
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));
                     hasher.input(&n.to_le_bytes()[..]);
@@ -359,7 +359,7 @@ namespace nil {
                 template<typename Domain, typename ChallengeHash = crypto3::hashes::sha2<256>>
                 std::uint64_t generate_leaf_challenge(const PublicParams &pub_params, const Domain &randomness,
                                                       std::uint64_t sector_id, std::uint64_t leaf_challenge_index) {
-                    auto hasher = Sha256::new ();
+                    auto hasher = Sha256();
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));
                     hasher.input(&sector_id.to_le_bytes()[..]);
                     hasher.input(&leaf_challenge_index.to_le_bytes()[..]);

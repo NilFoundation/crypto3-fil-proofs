@@ -50,18 +50,18 @@ void test_rational_post() {
     const auto(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
 
     const auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    auto faults = OrderedSectorSet::new ();
+    auto faults = OrderedSectorSet();
     faults.insert(139.into());
     faults.insert(1.into());
     faults.insert(32.into());
 
-    auto sectors = OrderedSectorSet::new ();
+    auto sectors = OrderedSectorSet();
     sectors.insert(891.into());
     sectors.insert(139.into());
     sectors.insert(32.into());
     sectors.insert(1.into());
 
-    auto trees = BTreeMap::new ();
+    auto trees = BTreeMap();
     trees.insert(139.into(), &tree1);    // faulty with tree
     trees.insert(891.into(), &tree2);
     // other two faults don't have a tree available
@@ -144,22 +144,22 @@ void test_rational_post_validates_challenge_identity() {
 
     const auto(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
     const auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
-    auto faults = OrderedSectorSet::new ();
+    auto faults = OrderedSectorSet();
     faults.insert(1.into());
-    auto sectors = OrderedSectorSet::new ();
+    auto sectors = OrderedSectorSet();
     sectors.insert(0.into());
     sectors.insert(1.into());
 
-    auto trees = BTreeMap::new ();
+    auto trees = BTreeMap();
     trees.insert(0.into(), &tree);
 
     const auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
     const auto comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
-    const auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_cs
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    const auto comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_rs
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
               .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
@@ -183,10 +183,10 @@ void test_rational_post_validates_challenge_identity() {
     const auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
     const auto comm_r_lasts = challenges.iter().map(| _c | tree.root()).collect::<Vec<_>>();
 
-    const auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_cs
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    const auto comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_rs
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
               .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
@@ -198,8 +198,12 @@ void test_rational_post_validates_challenge_identity() {
         comm_rs : &comm_rs,
     };
 
-    const auto verified =
-        RationalPoSt::<Tree>::verify(&pub_params, &different_pub_inputs, &proof).expect("verification failed");
+    try {
+        const auto verified =
+            RationalPoSt::<Tree>::verify(&pub_params, &different_pub_inputs, &proof);
+    } catch ("verification failed"){
+
+    }
 
     // A proof created with a the wrong challenge not be verified!
     BOOST_CHECK(!verified);
@@ -232,11 +236,11 @@ BOOST_AUTO_TEST_CASE(rational_post_actually_validates_challenge_identity_poseido
 BOOST_AUTO_TEST_CASE(test_derive_challenges_fails_on_all_faulty) {
     use std::collections::BTreeSet;
 
-    auto sectors = BTreeSet::new ();
+    auto sectors = BTreeSet();
     sectors.insert(SectorId::from(1));
     sectors.insert(SectorId::from(2));
 
-    auto faults = BTreeSet::new ();
+    auto faults = BTreeSet();
     faults.insert(SectorId::from(1));
     faults.insert(SectorId::from(2));
 

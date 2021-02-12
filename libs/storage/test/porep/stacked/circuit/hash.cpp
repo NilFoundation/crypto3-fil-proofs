@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(test_hash2_circuit) {
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     for (std::size_t i=0; i < 10; ++i) {
-        auto cs = TestConstraintSystem::<Bls12>::new ();
+        auto cs = TestConstraintSystem::<Bls12>();
 
         const auto a = Fr::random(rng);
         const auto b = Fr::random(rng);
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(test_hash_single_column_circuit) {
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
         for (std::size_t i=0; i < 1; ++i) {
-                auto cs = TestConstraintSystem::<Bls12>::new ();
+                auto cs = TestConstraintSystem::<Bls12>();
 
                 const auto vals = vec ![Fr::random(rng); 11];
                 const auto vals_opt =

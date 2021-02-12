@@ -230,7 +230,7 @@ namespace nil {
                         .map(| n |
                              {
                                  auto attempt = 0;
-                                 auto attempted_sectors = HashSet::new ();
+                                 auto attempted_sectors = HashSet();
                                  while (true) {
                                      const auto c = derive_challenge(seed, std::uint64_t(n), attempt, sector_size, sectors);
 

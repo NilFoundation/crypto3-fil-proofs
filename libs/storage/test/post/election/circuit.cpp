@@ -40,7 +40,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     election::PublicParams pub_params = {sector_size, 20, 1};
 
     std::vector<sector_id_type> sectors;
-    auto trees = BTreeMap::new ();
+    auto trees = BTreeMap();
 
     // Construct and store an MT using a named store.
     const auto temp_dir = tempfile::tempdir();
@@ -88,7 +88,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
                     .collect();
     const auto leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
 
-    auto cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
+    auto cs = TestConstraintSystem<algebra::curves::bls12<381>>();
 
     const auto instance = ElectionPoStCircuit<MerkleTreeType> {
         leafs,

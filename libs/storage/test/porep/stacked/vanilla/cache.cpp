@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(test_read_full_range) {
     const std::uint32_t nodes = 24;
     const auto graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], );
 
-    auto cache = ParentCache::new (nodes, nodes, &graph);
+    auto cache = ParentCache(nodes, nodes, &graph);
 
     for (node = 0; node < nodes; ++node) {
             auto expected_parents = [0; DEGREE];
@@ -54,8 +54,8 @@ BOOST_AUTO_TEST_CASE(test_read_partial_range) {
     const std::uint32_t nodes = 48;
     const auto graph = StackedBucketGraph::<PoseidonHasher>::new_stacked(std::uint(nodes), BASE_DEGREE, EXP_DEGREE, [0u8; 32], );
 
-    auto half_cache = ParentCache::new (nodes / 2, nodes, &graph);
-    auto quarter_cache = ParentCache::new (nodes / 4, nodes, &graph);
+    auto half_cache = ParentCache(nodes / 2, nodes, &graph);
+    auto quarter_cache = ParentCache(nodes / 4, nodes, &graph);
 
     for (node = 0; node < nodes; ++node) {
         auto expected_parents = [0; DEGREE];

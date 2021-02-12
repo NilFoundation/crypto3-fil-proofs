@@ -39,10 +39,10 @@ BOOST_AUTO_TEST_CASE(challenge_derivation) {
     const std::size_t n = 200;
     const std::size_t layers = 100;
 
-    const auto challenges = LayerChallenges::new (layers, n);
+    const auto challenges = LayerChallenges(layers, n);
     const std::size_t leaves = 1 << 30;
     const auto rng = thread_rng();
-    const auto replica_id : PedersenDomain = PedersenDomain::random(rng);
+    const PedersenDomain replica_id = PedersenDomain::random(rng);
     const auto seed : [u8; 32] = rng.gen();
     const std::size_t partitions = 5;
     const std::size_t total_challenges = partitions * n;
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(challenge_derivation) {
     auto layers_with_duplicates = 0;
 
     for (_layer in 1.. = layers) {
-        auto histogram = HashMap::new ();
+        auto histogram = HashMap();
         for (std::size_t k = 0; k < partitions; ++k) {
             const auto challenges = challenges.derive(leaves, &replica_id, &seed, k as u8);
 
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(challenge_partition_equivalence) {
     const std::size_t n = 40;
     const std::size_t leaves = 1 << 30;
     const auto rng = thread_rng();
-    const auto replica_id : PedersenDomain = PedersenDomain::random(rng);
+    const PedersenDomain replica_id  = PedersenDomain::random(rng);
     const auto seed : [u8; 32] = rng.gen();
     const std::size_t partitions = 5;
     const std::size_t layers = 100;
@@ -88,10 +88,10 @@ BOOST_AUTO_TEST_CASE(challenge_partition_equivalence) {
 
     for (_layer in 1.. = layers) {
         const auto one_partition_challenges =
-            LayerChallenges::new (layers, total_challenges).derive(leaves, &replica_id, &seed, 0, );
+            LayerChallenges(layers, total_challenges).derive(leaves, &replica_id, &seed, 0, );
         const auto many_partition_challenges =
             (0..partitions)
-                .flat_map(| k | {LayerChallenges::new (layers, n).derive(leaves, &replica_id, &seed, k as u8)})
+                .flat_map(| k | {LayerChallenges(layers, n).derive(leaves, &replica_id, &seed, k as u8)})
                 .collect::<Vec<_>>();
 
         BOOST_ASSERT(one_partition_challenges == many_partition_challenges);

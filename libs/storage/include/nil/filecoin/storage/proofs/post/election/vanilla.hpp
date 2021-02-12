@@ -300,7 +300,7 @@ namespace nil {
                 template<typename Domain, typename FinalizationHash = crypto3::hashes::sha2<256>>
                 sector_id_type generate_sector_challenge(const Domain &randomness, std::size_t n,
                                                          const ordered_sector_set &sectors) {
-                    auto hasher = Sha256::new ();
+                    auto hasher = Sha256();
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));
                     hasher.input(&n.to_le_bytes()[..]);
                     const auto hash = hasher.result();
@@ -334,7 +334,7 @@ namespace nil {
                                                       std::uint64_t leaf_challenge_index) {
                     BOOST_ASSERT_MSG(pub_params.sector_size > pub_params.challenged_nodes * NODE_SIZE, "sector size is too small");
 
-                    auto hasher = Sha256::new ();
+                    auto hasher = Sha256();
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));
                     hasher.input(&sector_challenge_index.to_le_bytes()[..]);
                     hasher.input(&leaf_challenge_index.to_le_bytes()[..]);

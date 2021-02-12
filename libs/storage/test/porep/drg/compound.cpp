@@ -27,9 +27,6 @@ using namespace nil::filecoin;
 
 template<typename MerkleTreeType>
 void drgporep_test_compound() {
-    // femme::pretty::Logger::new()
-    //     .start(log::LevelFilter::Trace)
-    //     .ok();
 
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
@@ -43,7 +40,7 @@ void drgporep_test_compound() {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     const auto cache_dir = tempfile::tempdir();
-    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -108,7 +105,7 @@ void drgporep_test_compound() {
         drg_porep_compound<typename MerkleTreeType::hash_type, _>::circuit_for_test(&public_params, &public_inputs, &private_inputs, )
             ;
 
-    auto cs = TestConstraintSystem::new ();
+    auto cs = TestConstraintSystem();
 
     circuit.synthesize(cs).expect("failed to synthesize test circuit");
     assert(cs.is_satisfied());
@@ -117,7 +114,7 @@ void drgporep_test_compound() {
     const auto blank_circuit =
         <drg_porep_compound<_, _> as CompoundProof<_, _>>::blank_circuit(&public_params.vanilla_params, );
 
-    auto cs_blank = MetricCS::new ();
+    auto cs_blank = MetricCS();
     blank_circuit.synthesize(cs_blank).expect("failed to synthesize blank circuit");
 
     const auto a = cs_blank.pretty_print_list();

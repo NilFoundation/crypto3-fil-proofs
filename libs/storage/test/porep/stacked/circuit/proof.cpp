@@ -33,7 +33,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     const auto degree = BASE_DEGREE;
     const auto expansion_degree = EXP_DEGREE;
     const auto num_layers = 2;
-    const auto layer_challenges = LayerChallenges::new (num_layers, 1);
+    const auto layer_challenges = LayerChallenges(num_layers, 1);
 
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
@@ -43,8 +43,8 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     const auto cache_dir = tempfile::tempdir();
-    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
-                                   default_rows_to_discard(nodes, BINARY_ARITY), );
+    const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
+                                   default_rows_to_discard(nodes, BINARY_ARITY));
 
     // Generate a replica path.
     const auto replica_path = cache_dir.path().join("replica-path");
@@ -80,26 +80,39 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     // Store copy of original t_aux for later resource deletion.
     const auto t_aux_orig = t_aux.clone();
 
-    // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
-    // elements based on the configs stored in TemporaryAux.
-    const auto t_aux = TemporaryAuxCache::<Tree, Sha256Hasher>::new (&t_aux, replica_path)
-                    .expect("failed to restore contents of t_aux");
+    try{
+        // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
+        // elements based on the configs stored in TemporaryAux.
+        const auto t_aux = TemporaryAuxCache::<Tree, Sha256Hasher>(&t_aux, replica_path);
+    } catch("failed to restore contents of t_aux"){
+
+    }
 
     const auto priv_inputs = PrivateInputs::<Tree, Sha256Hasher> {p_aux, t_aux};
 
-    const auto proofs = StackedDrg::<Tree, Sha256Hasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, 1, )
-                     .expect("failed to generate partition proofs");
+    try{
+        const auto proofs = StackedDrg::<Tree, Sha256Hasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, 1);
+    } catch ("failed to generate partition proofs"){
 
-    const auto proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs)
-                               .expect("failed while trying to verify partition proofs");
+    }
+
+    try {
+        const auto proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs);
+    } catch ("failed while trying to verify partition proofs"){
+
+    }
 
     BOOST_ASSERT (proofs_are_valid);
 
-    // Discard cached MTs that are no longer needed.
-    TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig).expect("t_aux delete failed");
+    try{
+        // Discard cached MTs that are no longer needed.
+        TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig);
+    } catch("t_aux delete failed"){
+
+    }
 
     // Verify that MetricCS returns the same metrics as TestConstraintSystem.
-    auto cs = MetricCS::<Bls12>::new ();
+    auto cs = MetricCS::<Bls12>();
 
     StackedCompound::<Tree, Sha256Hasher>::circuit(&pub_inputs, (), &proofs[0], &pp, None)
         .expect("circuit failed")
@@ -109,7 +122,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     BOOST_CHECK_EQUAL(cs.num_inputs(), expected_inputs, "wrong number of inputs");
     BOOST_CHECK_EQUAL(cs.num_constraints(), expected_constraints, "wrong number of constraints");
     
-    auto cs = TestConstraintSystem::<Bls12>::new ();
+    auto cs = TestConstraintSystem::<Bls12>();
 
     StackedCompound::<Tree, Sha256Hasher>::circuit(&pub_inputs, (), &proofs[0], &pp, None)
         .expect("circuit failed")
@@ -164,7 +177,7 @@ void stacked_test_compound() {
     const auto degree = BASE_DEGREE;
     const auto expansion_degree = EXP_DEGREE;
     const auto num_layers = 2;
-    const auto layer_challenges = LayerChallenges::new (num_layers, 1);
+    const auto layer_challenges = LayerChallenges(num_layers, 1);
     const auto partition_count = 1;
 
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
@@ -188,7 +201,7 @@ void stacked_test_compound() {
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     const auto cache_dir = tempfile::tempdir();
-    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
+    const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
                                    default_rows_to_discard(nodes, BINARY_ARITY), );
 
     // Generate a replica path.
@@ -218,7 +231,7 @@ void stacked_test_compound() {
 
     // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
     // elements based on the configs stored in TemporaryAux.
-    const auto t_aux = TemporaryAuxCache::<Tree, _>::new (&t_aux, replica_path).expect("failed to restore contents of t_aux");
+    const auto t_aux = TemporaryAuxCache::<Tree, _>(&t_aux, replica_path).expect("failed to restore contents of t_aux");
 
     const auto private_inputs = PrivateInputs::<Tree, Sha256Hasher> {p_aux, t_aux};
 
@@ -226,7 +239,7 @@ void stacked_test_compound() {
     const auto(circuit, inputs) =
         StackedCompound::circuit_for_test(&public_params, &public_inputs, &private_inputs);
 
-    auto cs = TestConstraintSystem::new ();
+    auto cs = TestConstraintSystem();
 
     circuit.synthesize(cs).expect("failed to synthesize");
 
@@ -244,12 +257,12 @@ void stacked_test_compound() {
         <StackedCompound<Tree, Sha256Hasher> as CompoundProof<StackedDrg<Tree, Sha256Hasher>, _, >>::blank_circuit(
             &public_params.vanilla_params);
 
-    auto cs_blank = MetricCS::new ();
+    auto cs_blank = MetricCS();
     blank_circuit.synthesize(cs_blank).expect("failed to synthesize");
 
     const auto a = cs_blank.pretty_print_list();
 
-    auto cs1 = TestConstraintSystem::new ();
+    auto cs1 = TestConstraintSystem();
     circuit1.synthesize(cs1).expect("failed to synthesize");
     const auto b = cs1.pretty_print_list();
 

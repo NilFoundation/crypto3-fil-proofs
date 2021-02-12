@@ -55,8 +55,8 @@ void rational_post_test_compound() {
     const auto(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
     const auto(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
 
-    const auto faults = OrderedSectorSet::new ();
-    auto sectors = OrderedSectorSet::new ();
+    const auto faults = OrderedSectorSet();
+    auto sectors = OrderedSectorSet();
     sectors.insert(0.into());
     sectors.insert(1.into());
 
@@ -64,13 +64,12 @@ void rational_post_test_compound() {
     const auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
 
     const auto comm_r_lasts_raw = vec ![ tree1.root(), tree2.root() ];
-    const auto comm_r_lasts : Vec<_> = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
+    const Vec<_> comm_r_lasts = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
 
-    const auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_cs
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    const auto comm_rs
-        : Vec<_> = comm_cs.iter()
+    const Vec<_> comm_rs = comm_cs.iter()
                        .zip(comm_r_lasts.iter())
                        .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
                        .collect();
@@ -81,7 +80,7 @@ void rational_post_test_compound() {
         comm_rs : &comm_rs,
     };
 
-    auto trees = BTreeMap::new ();
+    auto trees = BTreeMap();
     trees.insert(0.into(), &tree1);
     trees.insert(1.into(), &tree2);
 
@@ -91,25 +90,40 @@ void rational_post_test_compound() {
         comm_cs : &comm_cs,
     };
 
-    const auto gparams = RationalPoStCompound::<Tree>::groth_params(Some(rng), &pub_params.vanilla_params)
-                      .expect("failed to create groth params");
+    try {
+        const auto gparams = RationalPoStCompound::<Tree>::groth_params(Some(rng), &pub_params.vanilla_params);
+    } catch("failed to create groth params"){
 
-    const auto proof =
-        RationalPoStCompound::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs, &gparams).expect("proving failed");
+    }
+
+    try {
+        const auto proof =
+            RationalPoStCompound::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs, &gparams);
+    } catch ("proving failed"){
+
+    }
 
     const auto(circuit, inputs) =
         RationalPoStCompound::<Tree>::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
 
-    auto cs = TestConstraintSystem::new ();
+    auto cs = TestConstraintSystem();
 
-    circuit.synthesize(cs).expect("failed to synthesize");
+    try {
+        circuit.synthesize(cs);
+    } catch("failed to synthesize"){
+
+    }
+
     BOOST_ASSERT (cs.is_satisfied());
     BOOST_ASSERT (cs.verify(&inputs));
 
-    const auto verified = RationalPoStCompound::<Tree>::verify(&pub_params, &pub_inputs, &proof, &NoRequirements)
-                       .expect("failed while verifying");
+    try {
+        const auto verified = RationalPoStCompound::<Tree>::verify(&pub_params, &pub_inputs, &proof, &NoRequirements);
 
-    BOOST_ASSERT (verified);
+        BOOST_ASSERT (verified);
+    } catch ("failed while verifying"){
+
+    }
 }
 
 BOOST_AUTO_TEST_CASE(rational_post_test_compound_pedersen) {

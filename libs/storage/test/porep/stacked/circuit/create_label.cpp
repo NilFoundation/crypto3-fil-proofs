@@ -36,22 +36,23 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     const auto replica_id : Fr = Fr::random(rng);
 
-    const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    const std::vector<std::uint8_t> data  = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
     const auto cache_dir = tempfile::tempdir();
-    const auto config = StoreConfig::new (cache_dir.path(), cache_key::CommDTree.to_string(),
-                                   default_rows_to_discard(nodes, BINARY_ARITY), );
+    const auto config = StoreConfig(cache_dir.path(), cache_key::CommDTree.to_string(),
+                                   default_rows_to_discard(nodes, BINARY_ARITY));
 
     // Generate a replica path.
     const auto replica_path = cache_dir.path().join("replica-path");
     auto mmapped_data = setup_replica(&data, &replica_path);
 
-    const auto data_node
-        : Option<Fr> =
-              Some(bytes_into_fr(data_at_node(&mmapped_data, challenge).expect("failed to read original data"), )
-                       , );
+    try {
+    const Option<Fr> data_node = Some(bytes_into_fr(data_at_node(&mmapped_data, challenge)));
+    } catch ("failed to read original data"){
+
+    }
 
     const auto sp = drg::SetupParams {
         drg : drg::DrgParams {
@@ -106,7 +107,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     BOOST_ASSERT_MSG(proof_nc.nodes[0].proof.validate_data(data_node.into()),
              "failed to verify data commitment with data");
 
-    auto cs = TestConstraintSystem<algebra::curves::bls12<381>>::new ();
+    auto cs = TestConstraintSystem<algebra::curves::bls12<381>>();
     DrgPoRepCircuit::<PedersenHasher>::synthesize(
         cs.namespace(|| "drgporep"), vec ![replica_node], vec ![replica_node_path], replica_root, replica_parents,
         replica_parents_paths, vec ![data_node], vec ![data_node_path], data_root, replica_id, false, )
@@ -148,7 +149,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_num_constraints) {
     const auto m = BASE_DEGREE;
     const auto tree_depth = graph_height<2>(n);
 
-    auto cs = TestConstraintSystem::<algebra::curves::bls12<381>>::new ();
+    auto cs = TestConstraintSystem::<algebra::curves::bls12<381>>();
     DrgPoRepCircuit<PedersenHasher>::synthesize(
         cs.namespace(|| "drgporep"), vec ![Some(Fr::random(rng)); 1],
         vec ![vec ![(vec ![Some(Fr::random(rng))], Some(0)); tree_depth]; 1], Root::Val(Some(Fr::random(rng))),

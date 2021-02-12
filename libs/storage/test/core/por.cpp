@@ -38,7 +38,7 @@ void test_merklepor() {
 
     const auto data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
     const auto porep_id = [3; 32];
-    const auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
+    const auto graph = BucketGraph<typename MerkleTreeType::hash_type> (leaves, BASE_DEGREE, 0, porep_id);
     const auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     const auto pub_inputs = PublicInputs {
@@ -50,7 +50,7 @@ void test_merklepor() {
         <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
-    const auto priv_inputs = PrivateInputs::new (leaf, &tree);
+    const auto priv_inputs = PrivateInputs(leaf, &tree);
 
     const auto proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
@@ -115,7 +115,7 @@ void test_merklepor_validates<Tree : MerkleTreeTrait>() {
 
     const auto porep_id = [99; 32];
 
-    const auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
+    const auto graph = BucketGraph<typename MerkleTreeType::hash_type> (leaves, BASE_DEGREE, 0, porep_id);
     const auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     const auto pub_inputs = PublicInputs {
@@ -127,7 +127,7 @@ void test_merklepor_validates<Tree : MerkleTreeTrait>() {
         <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
-    const auto priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
+    const auto priv_inputs = PrivateInputs::<Tree> (leaf, &tree);
 
     const auto good_proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 
@@ -188,7 +188,7 @@ void test_merklepor_validates_challenge_identity() {
     std::vector<std::uint8_t> data = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     const auto porep_id = [32; 32];
-    const auto graph = BucketGraph<typename MerkleTreeType::hash_type>::new (leaves, BASE_DEGREE, 0, porep_id);
+    const auto graph = BucketGraph<typename MerkleTreeType::hash_type> (leaves, BASE_DEGREE, 0, porep_id);
     const auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
 
     const auto pub_inputs = PublicInputs {
@@ -200,7 +200,7 @@ void test_merklepor_validates_challenge_identity() {
         <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
-    const auto priv_inputs = PrivateInputs::<Tree>::new (leaf, &tree);
+    const auto priv_inputs = PrivateInputs::<Tree> (leaf, &tree);
 
     const auto proof = PoR::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs).expect("proving failed");
 

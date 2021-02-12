@@ -66,7 +66,7 @@ namespace nil {
                         std::size_t offset = new_offset * DEGREE * NODE_BYTES;
                         std::size_t len = len * DEGREE * NODE_BYTES;
 
-                        data = unsafe {memmap::MmapOptions::new ()
+                        data = unsafe {memmap::MmapOptions ()
                                            .offset(std::size_t(offset))
                                            .len(len)
                                            .map(self.file.as_ref())
@@ -116,7 +116,7 @@ namespace nil {
                                    actual_len);
                         }
 
-                        const auto data = unsafe {memmap::MmapOptions::new ()
+                        const auto data = unsafe {memmap::MmapOptions()
                                                .offset(std_uint_64(std::size_t(offset) * DEGREE * NODE_BYTES))
                                                .len(std::size_t(len) * DEGREE * NODE_BYTES)
                                                .map(file.as_ref())
@@ -166,7 +166,7 @@ namespace nil {
                             file.set_len(cache_size);
 
                             auto data =
-                                unsafe {memmap::MmapOptions::new ()
+                                unsafe {memmap::MmapOptions()
                                             .map_mut(file.as_ref())
                                             .with_context(|| std::format("could not mmap path={}", path.display())) ? };
 

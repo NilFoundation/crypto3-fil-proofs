@@ -49,7 +49,7 @@ void fallback_post_test_compound() {
     };
 
     std::vector<sector_id_type> sectors;
-    auto trees = BTreeMap::new ();
+    auto trees = BTreeMap ();
 
     // Construct and store an MT using a named store.
     const auto temp_dir = tempfile::tempdir();
@@ -80,7 +80,7 @@ void fallback_post_test_compound() {
 
     const auto(circuit, inputs) = ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
 
-    auto cs = TestConstraintSystem::new ();
+    auto cs = TestConstraintSystem ();
 
     circuit.synthesize(cs).expect("failed to synthesize");
 
@@ -95,12 +95,12 @@ void fallback_post_test_compound() {
         ElectionPoStCompound::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
     const auto blank_circuit = ElectionPoStCompound::<Tree>::blank_circuit(&pub_params.vanilla_params);
 
-    auto cs_blank = MetricCS::new ();
+    auto cs_blank = MetricCS ();
     blank_circuit.synthesize(cs_blank).expect("failed to synthesize");
 
     const auto a = cs_blank.pretty_print_list();
 
-    auto cs1 = TestConstraintSystem::new ();
+    auto cs1 = TestConstraintSystem();
     circuit1.synthesize(cs1).expect("failed to synthesize");
     const auto b = cs1.pretty_print_list();
 

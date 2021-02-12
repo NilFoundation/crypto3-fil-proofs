@@ -42,7 +42,7 @@ void test_fallback_post() {
     const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
 
     std::vector<sector_id_type> sectors;
-    auto trees = BTreeMap::new ();
+    auto trees = BTreeMap();
 
     // Construct and store an MT using a named store.
     const auto temp_dir = tempfile::tempdir();
