@@ -57,15 +57,15 @@ namespace nil {
             std::size_t base_tree_leafs = get_merkle_tree_leafs(base_tree_len, MerkleTreeType::base_arity);
 
             if (MerkleTreeType::top_tree_arity > 0) {
-                assert(("Invalid top arity specified without sub arity", MerkleTreeType::sub_tree_arity > 0));
+                BOOST_ASSERT_MSG(MerkleTreeType::sub_tree_arity > 0, "Invalid top arity specified without sub arity");
 
                 return DiskTree::from_sub_tree_store_configs(base_tree_leafs, configs);
             } else if (MerkleTreeType::sub_tree_arity > 0) {
-                assert(("Cannot create sub-tree with a single tree config", !configs.empty()));
+                BOOST_ASSERT_MSG(!configs.empty(), "Cannot create sub-tree with a single tree config");
 
                 return DiskTree::from_store_configs(base_tree_leafs, configs);
             } else {
-                assert(("Invalid tree-shape specified", configs.size() == 1));
+                BOOST_ASSERT_MSG(configs.size() == 1, "Invalid tree-shape specified");
                 DiskStore store = DiskStore::new_from_disk(base_tree_len, MerkleTreeType::base_arity, configs[0]);
 
                 return DiskTree::from_data_store(store, base_tree_leafs);
@@ -82,15 +82,15 @@ namespace nil {
             std::size_t base_tree_leafs = get_merkle_tree_leafs(base_tree_len, MerkleTreeType::base_arity);
 
             if (MerkleTreeType::top_tree_arity > 0) {
-                assert(("Invalid top arity specified without sub arity", MerkleTreeType::sub_tree_arity > 0));
+                BOOST_ASSERT_MSG(MerkleTreeType::sub_tree_arity > 0, "Invalid top arity specified without sub arity");
 
                 return LCTree::from_sub_tree_store_configs_and_replica(base_tree_leafs, configs, replica_config);
             } else if (MerkleTreeType::sub_tree_arity > 0) {
-                assert(("Cannot create sub-tree with a single tree config", !configs.empty()));
+                BOOST_ASSERT_MSG(!configs.empty(), "Cannot create sub-tree with a single tree config");
 
                 return LCTree::from_store_configs_and_replica(base_tree_leafs, configs, replica_config);
             } else {
-                assert(("Invalid tree-shape specified", configs.size() == 1));
+                BOOST_ASSERT_MSG(configs.size() == 1, "Invalid tree-shape specified");
                 LCStore store =
                     LCStore::new_from_disk_with_reader(base_tree_len, MerkleTreeType::base_arity, configs[0],
                                                        ExternalReader::new_from_path(replica_config.path), );
@@ -113,7 +113,7 @@ namespace nil {
                 if (const auto Some(lc_store) = Any::downcast_mut::<merkletree::store::LevelCacheStore
                                                          << typename MerkleTreeType::hash_type>::Domain,
                     std::fs::File >, > (store)) {
-                    assert(("Cannot create LCTree without replica paths", replica_config));
+                    BOOST_ASSERT_MSG(replica_config, "Cannot create LCTree without replica paths");
                     lc_store.set_external_reader(ExternalReader::new_from_config(&replica_config, i));
                 }
 
@@ -126,16 +126,16 @@ namespace nil {
                 }
             }
 
-            assert(("Cannot have a sub/top tree without more than 1 config",
-                    MerkleTreeType::top_tree_arity > 0 || MerkleTreeType::sub_tree_arity > 0));
+            BOOST_ASSERT_MSG(MerkleTreeType::top_tree_arity > 0 || MerkleTreeType::sub_tree_arity > 0, 
+                "Cannot have a sub/top tree without more than 1 config");
             if (MerkleTreeType::top_tree_arity > 0) {
-                assert(("Invalid top arity specified without sub arity", MerkleTreeType::sub_tree_arity > 0));
+                BOOST_ASSERT_MSG(MerkleTreeType::sub_tree_arity > 0, "Invalid top arity specified without sub arity");
 
                 return MerkleTreeType<
                     typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>::
                     from_sub_trees_as_trees(trees);
             } else {
-                assert(("Cannot create sub-tree with a single tree config", !configs.empty()));
+                BOOST_ASSERT_MSG(!configs.empty(), "Cannot create sub-tree with a single tree config");
 
                 return MerkleTreeType::from_trees(trees);
             }
@@ -146,8 +146,8 @@ namespace nil {
                                                const std::vector<std::uint8_t> &data) {
             assert(data.size == NODE_SIZE * size);
 
-            assert(("Invalid merkle tree size given the arity",
-                    is_merkle_tree_size_valid(size, MerkleTreeType::base_arity)));
+            BOOST_ASSERT_MSG(is_merkle_tree_size_valid(size, MerkleTreeType::base_arity), 
+                "Invalid merkle tree size given the arity");
 
             const auto f = [&](std::size_t i) {
                 // TODO Replace `expect()` with `context()` (problem is the parallel iterator)
@@ -187,8 +187,8 @@ namespace nil {
                                                std::size_t size,
                                                const std::vector<std::uint8_t> &data,
                                                const ReplicaConfig &replica_config) {
-            assert(("Invalid merkle tree size given the arity", is_merkle_tree_size_valid(size, BaseTreeArity)));
-            assert(("Invalid data length for merkle tree", data.size() == Hash::digest_bits / CHAR_BIT));
+            BOOST_ASSERT_MSG(is_merkle_tree_size_valid(size, BaseTreeArity), "Invalid merkle tree size given the arity");
+            BOOST_ASSERT_MSG(data.size() == Hash::digest_bits / CHAR_BIT, "Invalid data length for merkle tree");
 
             const auto f = [&](std::size_t i) {
                 const auto d = data_at_node(&data, i);
@@ -364,7 +364,7 @@ namespace nil {
             std::size_t top_tree_arity = MerkleTreeType::top_tree_arity;
 
             if (top_tree_arity > 0) {
-                assert(("malformed tree with TopTreeArity > 0 and SubTreeARity == 0", sub_tree_arity != 0));
+                BOOST_ASSERT_MSG(sub_tree_arity != 0, "malformed tree with TopTreeArity > 0 and SubTreeARity == 0");
 
                 std::vector<MerkleTreeType> sub_trees(top_tree_arity);
                 std::vector<std::uint8_t> data;

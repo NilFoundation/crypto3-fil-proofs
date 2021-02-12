@@ -39,7 +39,8 @@ namespace nil {
                 auto hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_11);
                 return hasher.hash();
             } else {
-                assert(("unsupported column size: " std::distance(column_first, column_last)));
+                BOOST_ASSERT_MSG(std::distance(column_first, column_last), 
+                    std::format("unsupported column size: %d", std::distance(column_first, column_last)));
             }
         }
     }    // namespace filecoin

@@ -64,7 +64,7 @@ namespace nil {
                         const auto replica_id = pub_in.replica_id.context("missing replica id");
                         std::vector<typename public_inputs_type::challenge_type> challenges = pub_in.challenges;
 
-                        assert(("Public input parameter tau must be unset", pub_in.tau.is_none() == pub_params.priv));
+                        BOOST_ASSERT_MSG(pub_in.tau.is_none() == pub_params.priv, "Public input parameter tau must be unset");
 
                         if (pub_in.tau) {
 
@@ -120,9 +120,9 @@ namespace nil {
                         std::size_t challenges = public_params.challenges_count;
                         std::size_t len = proof.nodes.size();
 
-                        assert(("too many challenges", len <= challenges));
-                        assert(("Number of replica parents must match", proof.replica_parents.size() == len));
-                        assert(("Number of replica nodes must match", proof.replica_nodes.size() == len));
+                        BOOST_ASSERT_MSG(len <= challenges, "too many challenges");
+                        BOOST_ASSERT_MSG(proof.replica_parents.size() == len, "Number of replica parents must match");
+                        BOOST_ASSERT_MSG(proof.replica_nodes.size() == len, "Number of replica nodes must match");
 
                         const auto replica_nodes
                             : Vec<_> = proof.replica_nodes.iter().map(| node | Some(node.data.into())).collect();
@@ -166,7 +166,7 @@ namespace nil {
                         const auto data_nodes_paths : Vec<_> =
                                                    proof.nodes.iter().map(| node | node.proof.as_options()).collect();
 
-                        assert(("inconsistent private state", public_inputs.tau.is_none() == public_params.priv));
+                        BOOST_ASSERT_MSG(public_inputs.tau.is_none() == public_params.priv, "inconsistent private state");
 
                         return {
                             replica_nodes,

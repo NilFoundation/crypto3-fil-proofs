@@ -134,12 +134,10 @@ namespace nil {
                     virtual proof_type prove(const public_params_type &params,
                                              const public_inputs_type &inputs,
                                              const private_inputs_type &pinputs) override {
-                        assert(
-                            ("mismatched challenges and comm_rs", inputs.challenges.size() == inputs.comm_rs.size()));
-                        assert(
-                            ("mismatched challenges and comm_cs", inputs.challenges.size() == pinputs.comm_cs.size()));
-                        assert(("mismatched challenges and comm_r_lasts",
-                                pub_inputs.challenges.size() == priv_inputs.comm_r_lasts.size()));
+                        BOOST_ASSERT_MSG(inputs.challenges.size() == inputs.comm_rs.size(), "mismatched challenges and comm_rs");
+                        BOOST_ASSERT_MSG(inputs.challenges.size() == pinputs.comm_cs.size(), "mismatched challenges and comm_cs");
+                        BOOST_ASSERT_MSG(pub_inputs.challenges.size() == priv_inputs.comm_r_lasts.size(), 
+                            "mismatched challenges and comm_r_lasts");
                         const auto challenges = pub_inputs.challenges;
 
                         const auto proofs =
@@ -244,7 +242,7 @@ namespace nil {
                                          attempt += 1;
                                          attempted_sectors.insert(c.sector);
 
-                                         assert(("all sectors are faulty", attempted_sectors.size() < sectors.size()));
+                                         BOOST_ASSERT_MSG(attempted_sectors.size() < sectors.size(), "all sectors are faulty");
                                      }
                                  }
                              })

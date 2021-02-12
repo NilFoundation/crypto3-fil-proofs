@@ -116,8 +116,9 @@ namespace nil {
                     }
 
                     DiskStore<typename MerkleTreeType::hash_type::digest_type> labels_for_layer(std::size_t layer) {
-                        assert(("Layer cannot be 0", layer != 0));
-                        assert(("Layer {} is not available (only {} layers available)", layer <= layers()));
+                        BOOST_ASSERT_MSG(layer != 0, "Layer cannot be 0");
+                        BOOST_ASSERT_MSG(layer <= layers(), 
+                            std::format("Layer {%d} is not available (only {%d} layers available)", layer, layers()));
 
                         std::size_t row_index = layer - 1;
                         StoreConfig config = labels[row_index];
@@ -295,7 +296,7 @@ namespace nil {
                     }
 
                     const DiskStore<typename tree_hash_type::digest_type> &labels_for_layer(std::size_t layer) {
-                        assert(("Layer cannot be 0", layer != 0));
+                        BOOST_ASSERT_MSG(layer != 0, "Layer cannot be 0");
                         assert(layer <= layers());
 
                         std::size_t row_index = layer - 1;
@@ -529,16 +530,16 @@ namespace nil {
                         typename MerkleProofType::tree_type::hash_type::digest_type expected_comm_c = c_x.root();
 
                         BOOST_LOG_TRIVIAL(trace) << "  verify c_x";
-                        assert((c_x.verify(challenge, &expected_comm_c)));
+                        BOOST_ASSERT(c_x.verify(challenge, &expected_comm_c));
 
                         BOOST_LOG_TRIVIAL(trace) << "  verify drg_parents";
                         for ((proof, parent) : drg_parents.iter().zip(parents.iter())) {
-                            assert((proof.verify(parent, expected_comm_c)));
+                            BOOST_ASSERT_MSG(proof.verify(parent, expected_comm_c));
                         }
 
                         BOOST_LOG_TRIVIAL(trace) << "  verify exp_parents";
                         for ((proof, parent) : exp_parents.iter().zip(parents.iter().skip(drg_parents.size()))) {
-                            assert((proof.verify(parent, expected_comm_c)));
+                            BOOST_ASSERT_MSG(proof.verify(parent, expected_comm_c));
                         }
                     }
 

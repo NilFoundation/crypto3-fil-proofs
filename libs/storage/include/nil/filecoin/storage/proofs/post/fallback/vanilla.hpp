@@ -163,14 +163,14 @@ namespace nil {
                                                                  const public_inputs_type &pub_inputs,
                                                                  const private_inputs_type &priv_inputs,
                                                                  std::size_t partition_count) {
-                        assert(("inconsistent number of private and public sectors",
-                                priv_inputs.sectors.size() == pub_inputs.sectors.size()));
+                        BOOST_ASSERT_MSG(priv_inputs.sectors.size() == pub_inputs.sectors.size(), 
+                            "inconsistent number of private and public sectors");
 
                         std::size_t num_sectors_per_chunk = pub_params.sector_count;
                         std::size_t num_sectors = pub_inputs.sectors.size();
 
-                        assert(("cannot prove the provided number of sectors:",
-                                num_sectors <= partition_count * num_sectors_per_chunk));
+                        BOOST_ASSERT_MSG(num_sectors <= partition_count * num_sectors_per_chunk, 
+                            "cannot prove the provided number of sectors:");
 
                         std::vector<proof_type> partition_proofs;
 
@@ -229,17 +229,17 @@ namespace nil {
                         std::size_t num_sectors_per_chunk = pub_params.sector_count;
                         std::size_t num_sectors = pub_inputs.sectors.size();
 
-                        assert(("inconsistent number of sectors",
-                                num_sectors <= num_sectors_per_chunk * partition_proofs.size()));
+                        BOOST_ASSERT_MSG(num_sectors <= num_sectors_per_chunk * partition_proofs.size(), 
+                            "inconsistent number of sectors");
 
                         for ((j, (proof, pub_sectors_chunk)) :
                              partition_proofs.iter()
                                  .zip(pub_inputs.sectors.chunks(num_sectors_per_chunk))
                                  .enumerate()) {
-                            assert(("inconsistent number of public sectors",
-                                    pub_sectors_chunk.size() <= num_sectors_per_chunk));
-                            assert(("invalid number of sectors in the partition proof",
-                                    proof.sectors.size() == num_sectors_per_chunk));
+                            BOOST_ASSERT_MSG(pub_sectors_chunk.size() <= num_sectors_per_chunk, 
+                                "inconsistent number of public sectors");
+                            BOOST_ASSERT_MSG(proof.sectors.size() == num_sectors_per_chunk, 
+                                "invalid number of sectors in the partition proof");
                             for ((i, (pub_sector, sector_proof)) :
                                  pub_sectors_chunk.iter().zip(proof.sectors.iter()).enumerate()) {
                                 const auto sector_id = pub_sector.id;
@@ -307,8 +307,7 @@ namespace nil {
                         // Because partition proofs require a common setup, the general ProofScheme implementation,
                         // which makes use of `ProofScheme::prove` cannot be used here. Instead, we need to prove all
                         // partitions in one pass, as implemented by `prove_all_partitions` below.
-                        assert(("It is a programmer error to call StackedDrg::prove with more than one partition.",
-                                k < 1));
+                        BOOST_ASSERT_MSG(k < 1, "It is a programmer error to call StackedDrg::prove with more than one partition.");
 
                         return proofs[k].to_owned();
                     }

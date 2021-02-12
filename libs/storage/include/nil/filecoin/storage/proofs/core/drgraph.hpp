@@ -110,14 +110,13 @@ namespace nil {
                         const std::array<uint8_t, 32> &porep_id) :
                 nodes(nodes),
                 base_degree(base_degree) {
-                assert(("Expansion degree must be zero.", expansion_degree == 0));
+                BOOST_ASSERT_MSG(expansion_degree == 0, "Expansion degree must be zero.");
 
                 // The number of metagraph nodes must be less than `2u64^54` as to not incur rounding errors
                 // when casting metagraph node indexes from `std::uint64_t` to `double` during parent generation.
                 std::size_t m_prime = base_degree - 1;
                 std::size_t n_metagraph_nodes = nodes * m_prime;
-                assert(("The number of metagraph nodes must be precisely castable to `double`",
-                        n_metagraph_nodes <= 1ULL << 54));
+                BOOST_ASSERT_MSG(n_metagraph_nodes <= 1ULL << 54, "The number of metagraph nodes must be precisely castable to `double`");
 
                 seed = derive_drg_seed(porep_id);
             }

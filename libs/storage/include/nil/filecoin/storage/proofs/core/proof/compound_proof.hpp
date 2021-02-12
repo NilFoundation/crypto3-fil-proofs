@@ -88,27 +88,26 @@ namespace nil {
                       const groth16::mapped_parameters<algebra::curves::bls12<381>> &groth_parameters) {
                 std::size_t pc = partition_count(pp);
 
-                assert(("There must be partitions", pc > 0));
+                BOOST_ASSERT_MSG(pc > 0, "There must be partitions");
             }
 
             virtual bool verify(const public_params_type &pp, const public_inputs_type &pi,
                                 const groth16::mapped_parameters<algebra::curves::bls12<381>> &mproof,
                                 const requirements_type &requirements) {
-                assert(("Inconsistent inputs", mproof.circuit_proofs.size() == partition_count(pp)));
+                BOOST_ASSERT_MSG(mproof.circuit_proofs.size() == partition_count(pp), "Inconsistent inputs");
             }
 
             template<typename PublicInputsIterator, typename MultiProofIterator>
             bool verify(const public_params_type &pp, PublicInputsIterator pifirst, PublicInputsIterator pilast,
                         MultiProofIterator mpfirst, MultiProofIterator mplast, const requirements_type &requirements) {
-                assert(("Inconsistent inputs", std::distance(pifirst, pilast) == std::distance(mpfirst, mplast)));
-                assert(("Inconsistent inputs",
-                        std::accumulate(
+                BOOST_ASSERT_MSG(std::distance(pifirst, pilast) == std::distance(mpfirst, mplast), "Inconsistent inputs");
+                BOOST_ASSERT_MSG(std::accumulate(
                             mpfirst, mplast, true,
                             [&](typename std::iterator_traits<MultiProofIterator>::value_type c,
                                 const typename std::iterator_traits<MultiProofIterator>::value_type &v) -> bool {
                                 return std::move(c) * (v.circuit_proofs.size() == partition_count(pp));
-                            })));
-                assert(("Cannot verify empty proofs", std::distance(pifirst, pilast)));
+                            }), "Inconsistent inputs");
+                BOOST_ASSERT_MSG(std::distance(pifirst, pilast), "Cannot verify empty proofs");
             }
 
             /*!
@@ -125,8 +124,8 @@ namespace nil {
                 circuit_proofs(const public_inputs_type &pub_in, ProofIterator vanilla_proof_first,
                                ProofIterator vanilla_proof_last, const public_params_type &pp,
                                const groth16::mapped_params<algebra::curves::bls12<381>> &groth_params, bool priority) {
-                assert(("Cannot create a circuit proof over missing vanilla proofs",
-                        std::distance(vanilla_proof_first, vanilla_proof_last)));
+                BOOST_ASSERT_MSG(std::distance(vanilla_proof_first, vanilla_proof_last), 
+                    "Cannot create a circuit proof over missing vanilla proofs");
             }
 
             /*!

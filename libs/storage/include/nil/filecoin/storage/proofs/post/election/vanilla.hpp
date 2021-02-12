@@ -332,8 +332,7 @@ namespace nil {
                 std::uint64_t generate_leaf_challenge(const PublicParams &pub_params, const Domain &randomness,
                                                       std::uint64_t sector_challenge_index,
                                                       std::uint64_t leaf_challenge_index) {
-                    assert(
-                        ("sector size is too small", pub_params.sector_size > pub_params.challenged_nodes * NODE_SIZE));
+                    BOOST_ASSERT_MSG(pub_params.sector_size > pub_params.challenged_nodes * NODE_SIZE, "sector size is too small");
 
                     auto hasher = Sha256::new ();
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));

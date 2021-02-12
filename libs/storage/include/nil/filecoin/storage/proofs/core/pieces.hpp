@@ -36,7 +36,7 @@ namespace nil {
     namespace filecoin {
         namespace detail {
             std::size_t subtree_capacity(std::size_t pos, std::size_t total) {
-                assert(("position must be less than tree capacity", pos < total));
+                BOOST_ASSERT_MSG(pos < total, "position must be less than tree capacity");
 
                 std::size_t capacity = 1;
                 // If tree is not 'full', then pos 0 will have subtree_capacity greater than size of tree.
@@ -78,7 +78,7 @@ namespace nil {
             /// PieceInclusionProof.
             std::tuple<std::vector<std::tuple<std::size_t, std::size_t>>, std::size_t>
                 compute_packing(std::size_t tree_len) {
-                assert(is_aligned(tree_len));
+                BOOST_ASSERT(is_aligned(tree_len));
 
                 std::vector<std::tuple<std::size_t, std::size_t>> packing_list {{0, number_of_leaves}};
                 return std::make_tuple(packing_list, proof_length(tree_len));
@@ -96,8 +96,8 @@ namespace nil {
         /// Generate `comm_p` from a source and return it as bytes.
         template<typename Hash, typename Read, template<typename> class BinaryMerkleTree>
         fr32_array generate_piece_commitment_bytes_from_source(Read &source, std::size_t padded_piece_size) {
-            assert(("piece is too small", padded_piece_size > 32));
-            assert(("piece is not valid size", padded_piece_size % 32 == 0));
+            BOOST_ASSERT_MSG(padded_piece_size > 32, "piece is too small");
+            BOOST_ASSERT_MSG(padded_piece_size % 32 == 0, "piece is not valid size");
 
             std::array<std::uint32_t, NODE_SIZE> buf;
             buf.fill(0);

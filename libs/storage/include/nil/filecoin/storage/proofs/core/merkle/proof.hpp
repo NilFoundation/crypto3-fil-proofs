@@ -107,9 +107,9 @@ namespace nil {
                   std::vector<std::size_t> &path) : sub_tree_proof(sub_tree_proof), top_layer_nodes(TopLayerArity),
                 sub_tree_layer_nodes(SubTreeArity), lemma(lemma), path(path){
                 if (TopLayerArity == 0 && SubTreeArity == 0) {
-                    assert((lemma.size() > 2, "Invalid lemma length (short)"));
-                    assert((lemma.size() == get_merkle_proof_lemma_len(path.size() + 1, BaseTreeArity), "Invalid "
-                            "lemma length"));
+                    BOOST_ASSERT_MSG(lemma.size() > 2, "Invalid lemma length (short)");
+                    BOOST_ASSERT_MSG(lemma.size() == get_merkle_proof_lemma_len(path.size() + 1, BaseTreeArity), 
+                        "Invalid lemma length");
                 }
             }
 
@@ -175,28 +175,24 @@ namespace nil {
             bool validate() {
                 if (top_layer_nodes > 0) {
                     // Special Top layer handling here.
-                    assert((
-                        sub_tree_proof,
-                            "Sub tree proof must be present for validation")
-                    );
+                    BOOST_ASSERT_MSG(sub_tree_proof,
+                            "Sub tree proof must be present for validation");
 
                     return validate_sub_tree_proof<Algorithm>(top_layer_nodes);
                 }
 
                 if (sub_tree_layer_nodes > 0) {
                     // Sub-tree layer handling here.
-                    assert((
-                        sub_tree_proof,
-                            "Sub tree proof must be present for validation"
-                    ));
+                    BOOST_ASSERT_MSG(sub_tree_proof,
+                            "Sub tree proof must be present for validation");
 
                     return validate_sub_tree_proof<Algorithm>(sub_tree_layer_nodes);
                 }
 
                 // Base layer handling here.
-                assert((sub_tree_layer_nodes == 0, "Base layer proof must have 0 as sub-tree layer node count"));
-                assert((top_layer_nodes == 0, "Base layer proof must have 0 as top layer node count"));
-                assert((!sub_tree_proof, "Sub tree proof must be None"));
+                BOOST_ASSERT_MSG(sub_tree_layer_nodes == 0, "Base layer proof must have 0 as sub-tree layer node count");
+                BOOST_ASSERT_MSG(top_layer_nodes == 0, "Base layer proof must have 0 as top layer node count");
+                BOOST_ASSERT_MSG(!sub_tree_proof, "Sub tree proof must be None");
 
                 std::size_t size = lemma.size();
                 if (size < 2) {
@@ -419,8 +415,8 @@ namespace nil {
         struct SubProof {
             static SubProof<Hash, BaseArity, SubTreeArity>
                 try_from_proof(const Proof<typename Hash::digest_type, BaseArity> &p) {
-                assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
-                assert(("Cannot generate sub proof without a base-proof", p.sub_tree_proof));
+                BOOST_ASSERT_MSG(p.sub_layer_nodes() == SubTreeArity, "sub arity mismatch");
+                BOOST_ASSERT_MSG(p.sub_tree_proof, "Cannot generate sub proof without a base-proof");
                 std::shared_ptr<Proof<typename Hash::digest_type, BaseArity>> base_p = p.sub_tree_proof;
 
                 // Generate SubProof
@@ -474,13 +470,13 @@ namespace nil {
         struct TopProof {
             TopProof<Hash, BaseArity, SubTreeArity, TopTreeArity>
                 try_from_proof(const Proof<typename Hash::digest_type, BaseArity> &p) {
-                assert(("top arity mismatch", p.top_layer_nodes() == TopTreeArity));
-                assert(("sub arity mismatch", p.sub_layer_nodes() == SubTreeArity));
+                BOOST_ASSERT_MSG(p.top_layer_nodes() == TopTreeArity, "top arity mismatch");
+                BOOST_ASSERT_MSG(p.sub_layer_nodes() == SubTreeArity, "sub arity mismatch");
 
-                assert(("Cannot generate top proof without a sub-proof", p.sub_tree_proof));
+                BOOST_ASSERT_MSG(p.sub_tree_proof, "Cannot generate top proof without a sub-proof");
                 const auto sub_p = p.sub_tree_proof;
 
-                assert(("Cannot generate top proof without a base-proof", sub_p.sub_tree_proof));
+                BOOST_ASSERT_MSG(sub_p.sub_tree_proof, "Cannot generate top proof without a base-proof");
                 const auto base_p = sub_p.sub_tree_proof.as_ref();
 
                 const auto root = p.root();

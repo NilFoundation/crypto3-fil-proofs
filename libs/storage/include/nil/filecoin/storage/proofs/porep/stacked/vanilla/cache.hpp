@@ -83,7 +83,7 @@ namespace nil {
                     ///
                     /// Panics if the `node` is not in the cache.
                     std::array<std::uint32_t, DEGREE> read(std::uint32_t node) {
-                        assert(("node not in cache", node >= offset));
+                        BOOST_ASSERT_MSG(node >= offset, "node not in cache");
                         std::size_t start = (node - offset) * DEGREE * NODE_BYTES;
                         std::size_t end = start + DEGREE * NODE_BYTES;
 
@@ -198,7 +198,7 @@ namespace nil {
                         }
 
                         // not in memory, shift cache
-                        assert(("cache must be read in ascending order", node >= cache.offset + cache.len));
+                        BOOST_ASSERT_MSG(node >= cache.offset + cache.len, "cache must be read in ascending order");
 
                         // Shift cache by its current size.
                         std::size_t new_offset = (num_cache_entries - cache.len).min(cache.offset + cache.len);

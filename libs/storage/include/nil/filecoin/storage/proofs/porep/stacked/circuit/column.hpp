@@ -42,8 +42,8 @@ namespace nil {
                     }
 
                     AllocatedNumber<algebra::curves::bls12<381>> get_value(std::size_t layer) {
-                        assert(("layers are 1 indexed", layer > 0));
-                        assert(layer <= self.rows.len(), "layer {} out of range: 1..={}", layer, rows.size());
+                        BOOST_ASSERT_MSG(layer > 0, "layers are 1 indexed");
+                        BOOST_ASSERT_MSG(layer <= self.rows.len(), std::format("layer {} out of range: 1..={}", layer, rows.size()));
                         return rows[layer - 1];
                     }
 

@@ -58,7 +58,7 @@ namespace nil {
                     return std::make_pair(cur, std::vector<bool>());
                 }
 
-                assert(("arity must be a power of two", std::ceil(std::log2(arity)) == std::floor(std::log2(arity))));
+                BOOST_ASSERT_MSG(std::ceil(std::log2(arity)) == std::floor(std::log2(arity)), "arity must be a power of two");
                 std::size_t index_bit_count = arity.trailing_zeros();
 
                 std::vector<bool> auth_path_bits(path.size());
@@ -82,7 +82,7 @@ namespace nil {
                     return std::make_pair(cur, std::vector<bool>());
                 }
 
-                assert(("arity must be a power of two", std::ceil(std::log2(arity)) == std::floor(std::log2(arity))));
+                BOOST_ASSERT_MSG(std::ceil(std::log2(arity)) == std::floor(std::log2(arity)), "arity must be a power of two");
                 std::size_t index_bit_count = arity.trailing_zeros();
 
                 std::vector<bool> auth_path_bits(path.size());
@@ -248,12 +248,12 @@ namespace nil {
                 root<algebra::curves::bls12<381>> root = root;
 
                 // All arities must be powers of two or circuits cannot be generated.
-                assert(("base arity must be power of two", 1 == base_arity.count_ones()));
+                BOOST_ASSERT_MSG(1 == base_arity.count_ones(), "base arity must be power of two");
                 if (sub_arity > 0) {
-                    assert(("subtree arity must be power of two", 1 == sub_arity.count_ones()));
+                    BOOST_ASSERT_MSG(1 == sub_arity.count_ones(), "subtree arity must be power of two");
                 }
                 if (top_arity > 0) {
-                    assert(("top tree arity must be power of two", 1 == top_arity.count_ones()));
+                    BOOST_ASSERT_MSG(1 == top_arity.count_ones(), "top tree arity must be power of two");
                 }
 
                 
