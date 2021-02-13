@@ -86,7 +86,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
                               .map(| v | {(v .0.iter().copied().map(Into::into).map(Some).collect(), Some(v .1), )})
                               .collect::<Vec<_>>()})
                     .collect();
-    const auto leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
+    std::vector<_> leafs = proof.leafs().iter().map(| l | Some((*l).into())).collect();
 
     auto cs = TestConstraintSystem<algebra::curves::bls12<381>>();
 

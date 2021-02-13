@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(test_hash2_circuit) {
     num::AllocatedNumber::alloc(cs, || Ok(b))
 };
 
-const auto out = <PedersenHasher>::Function::hash2_circuit(cs.namespace(|| "hash2"), &a_num, &b_num, )
+const auto out = <PedersenHasher>::Function::hash2_circuit(cs.namespace(|| "hash2"), &a_num, &b_num)
               .expect("hash2 function failed");
 
 BOOST_CHECK(cs.is_satisfied(), "constraints not satisfied");

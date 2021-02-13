@@ -182,7 +182,8 @@ namespace nil {
 
                             auto parents = vec ![0; pub_params.graph.degree()];
                             pub_params.graph.parents(challenge, parents) ? ;
-                            auto replica_parentsi = Vec::with_capacity(parents.len());
+                            std::vector<auto> replica_parentsi;
+                            replica_parentsi.reserve(parents.len());
 
                             for (p : parents) {
                                 replica_parentsi.push_back((*p, {

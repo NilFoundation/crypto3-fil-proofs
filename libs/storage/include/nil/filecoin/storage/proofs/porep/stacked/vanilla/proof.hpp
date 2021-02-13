@@ -159,7 +159,8 @@ namespace nil {
                                     BOOST_ASSERT(comm_r_last_proof.validate(challenge));
 
                                     // Labeling Proofs Layer 1..l
-                                    auto labeling_proofs = Vec::with_capacity(layers);
+                                    std::vector<auto> labeling_proofs;
+                                    labeling_proofs.reserve(layers);
                                     auto encoding_proof = None;
 
                                     for (int layer = 1; layer != layers; layer++) {
@@ -261,8 +262,11 @@ namespace nil {
 
                         const auto layers = layer_challenges.layers();
                         // For now, we require it due to changes in encodings structure.
-                        auto labels : Vec<DiskStore << typename MerkleTreeType::hash_type>::Domain >> = Vec::with_capacity(layers);
-                        auto label_configs : Vec<StoreConfig> = Vec::with_capacity(layers);
+                        std::vector<DiskStore << typename MerkleTreeType::hash_type>::Domain >> labels;
+                        labels.reserve(layers);
+
+                        std::vector<StoreConfig> label_configs;
+                        label_configs.reserve(layers);
 
                         const auto layer_size = graph.size() * NODE_SIZE;
                         // NOTE: this means we currently keep 2x sector size around, to improve speed.
@@ -274,7 +278,7 @@ namespace nil {
                         for (layer in 1.. = layers) {
                             BOOST_LOG_TRIVIAL(info) << std::format("generating layer: %d", layer);
                             if (const auto Some(ref mut cache) = cache) {
-                                cache.reset() ? ;
+                                cache.reset();
                             }
 
                             if (layer == 1) {
@@ -312,10 +316,10 @@ namespace nil {
 
                         BOOST_ASSERT_MSG(labels.len() == layers, "Invalid amount of layers encoded expected");
 
-                        Ok((LabelsCache::<Tree> {labels}, Labels::<Tree> {
+                        return ((LabelsCache::<Tree> {labels}, Labels::<Tree> {
                             labels : label_configs,
                             _h : PhantomData,
-                        }, ))
+                        }))
                     }
 
                     template<typename TreeHash>
@@ -377,7 +381,7 @@ namespace nil {
 
                         // This channel will receive batches of columns and add them to the ColumnTreeBuilder.
                         const auto(builder_tx, builder_rx) = mpsc::sync_channel(0);
-                        mpsc::sync_channel::<(Vec<GenericArray<Fr, ColumnArity>>, bool)>(
+                        mpsc::sync_channel::<(std::vector<GenericArray<Fr, ColumnArity>>, bool)>(
                             max_gpu_column_batch_size * ColumnArity::to_usize() * 32, );
 
                         const auto config_count = configs.len();    // Don't move config into closure below.
@@ -391,19 +395,17 @@ namespace nil {
                                             std::cmp::min(nodes_count - node_index, max_gpu_column_batch_size);
                                         BOOST_LOG_TRIVIAL(trace) << std::format("processing config {}/{} with column nodes {}", i + 1, tree_count,
                                                 chunked_nodes_count, );
-                                        auto columns
-                                            : Vec<GenericArray<Fr, ColumnArity>> =
+                                        std::vector<GenericArray<Fr, ColumnArity>> columns =
                                                   vec ![GenericArray::<Fr, ColumnArity>::generate(| _i
                                                                                                   : usize | Fr::zero());
                                                       chunked_nodes_count];
 
                                         // Allocate layer data array and insert a placeholder for each layer.
-                                        auto layer_data : Vec<Vec<Fr>> =
-                                                                 vec ![Vec::with_capacity(chunked_nodes_count); layers];
+                                        std::vector<std::vector<Fr>> layer_data = vec ![Vec::with_capacity(chunked_nodes_count); layers];
 
                                         rayon::scope(| s | {
                                             // capture a shadowed version of layer_data.
-                                            const auto layer_data : &mut Vec<_> = layer_data;
+                                            std::vector<_><_> layer_data = layer_data;
 
                                             // gather all layer data in parallel.
                                             s.spawn(move | _ | {
@@ -412,7 +414,7 @@ namespace nil {
                                                     const auto store = labels.labels_for_layer(layer_index + 1);
                                                     const auto start = (i * nodes_count) + node_index;
                                                     const auto end = start + chunked_nodes_count;
-                                                    const auto elements : Vec << typename MerkleTreeType::hash_type> ::Domain >
+                                                    const std::vector << typename MerkleTreeType::hash_type> ::Domain > elements
                                                         = store.read_range(std::ops::Range {start, end})
                                                               .expect("failed to read store range");
                                                     layer_elements.extend(elements.into_iter().map(Into::into));
@@ -454,9 +456,10 @@ namespace nil {
 
                                 // Loop until all trees for all configs have been built.
                                 while (i < configs.size()) {
-                                    const auto(columns, is_final) :
-                                        (Vec<GenericArray<Fr, ColumnArity>>, bool) =
-                                            builder_rx.recv().expect("failed to recv columns");
+                                    std::vector<GenericArray<Fr, ColumnArity>> columns;
+                                    bool is_final;
+
+                                    std::tie(columns, is_final) = builder_rx.recv().expect("failed to recv columns");
 
                                     // Just add non-final column batches.
                                     if (!is_final) {
@@ -465,10 +468,14 @@ namespace nil {
                                     };
 
                                     // If we get here, this is a final column: build a sub-tree.
-                                    const auto(base_data, tree_data) = column_tree_builder.add_final_columns(&columns).expect(
+                                    auto base_data, tree_data;
+
+                                    std::tie(base_data, tree_data) = column_tree_builder.add_final_columns(&columns).expect(
                                         "failed to add final columns");
                                     BOOST_LOG_TRIVIAL(trace) << std::format("base data len {}, tree data len {}", base_data.len(), tree_data.len());
+
                                     const auto tree_len = base_data.len() + tree_data.len();
+
                                     BOOST_LOG_TRIVIAL(info) << std::format("persisting base tree_c {}/{} of length {}", i + 1, tree_count, tree_len);
                                     BOOST_ASSERT (base_data.len() == nodes_count);
                                     BOOST_ASSERT (tree_len == config.size);
@@ -476,7 +483,7 @@ namespace nil {
                                     // Persist the base and tree data to disk based using the current store config.
                                     const auto tree_c_store =
                                         DiskStore:: << typename MerkleTreeType::hash_type> ::Domain >
-                                        ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone(), )
+                                        ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone())
                                             .expect("failed to create DiskStore for base tree data");
 
                                     const auto store = Arc (RwLock(tree_c_store));
@@ -486,7 +493,8 @@ namespace nil {
                                                       .chunks(column_write_batch_size)
                                                       .enumerate()
                                                       .try_for_each(| (index, fr_elements) | {
-                                                          auto buf = Vec::with_capacity(batch_size * NODE_SIZE);
+                                                          std::vector<auto> buf
+                                                          buf.reserve(batch_size * NODE_SIZE);
 
                                                           for (fr : fr_elements) {
                                                               buf.extend(fr_into_bytes(&fr));
@@ -540,9 +548,11 @@ namespace nil {
                         
                         BOOST_LOG_TRIVIAL(info) << "Building column hashes";
 
-                        auto trees = Vec::with_capacity(tree_count);
+                        std::vector<auto> trees;
+                        trees.reserve(tree_count);
+
                         for ((i, config) : configs.iter().enumerate()) {
-                            auto hashes : Vec << typename MerkleTreeType::hash_type > ::Domain >
+                            std::vector << typename MerkleTreeType::hash_type > ::Domain > hashes
                                 = vec ![<typename MerkleTreeType::hash_type>::Domain::default(); nodes_count];
 
                             rayon::scope(| s | {
@@ -648,7 +658,7 @@ namespace nil {
                                             node_index += chunked_nodes_count;
                                             BOOST_LOG_TRIVIAL(trace) << std::format("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
 
-                                            const auto encoded : Vec<_> = encoded_data.into_par_iter().map(| x | x.into()).collect();
+                                            std::vector<_> encoded = encoded_data.into_par_iter().map(| x | x.into()).collect();
 
                                             const auto is_final = node_index == nodes_count;
                                             builder_tx.send((encoded, is_final)).expect("failed to send encoded");
@@ -681,8 +691,8 @@ namespace nil {
 
                                         // If we get here, this is a final leaf batch: build a sub-tree.
                                         BOOST_LOG_TRIVIAL(info) << std::format("building base tree_r_last with GPU {}/{}", i + 1, tree_count);
-                                        const auto(_, tree_data) =
-                                            tree_builder.add_final_leaves(&encoded).expect("failed to add final leaves");
+                                        const auto tree_data = std::get<1>(
+                                            tree_builder.add_final_leaves(&encoded).expect("failed to add final leaves"));
                                         const auto tree_data_len = tree_data.len();
                                         const auto cache_size =
                                             get_merkle_tree_cache_size(
@@ -692,8 +702,7 @@ namespace nil {
                                                 .expect("failed to get merkle tree cache size");
                                         BOOST_ASSERT (tree_data_len == cache_size);
 
-                                        const auto flat_tree_data
-                                            : Vec<_> =
+                                        const std::vector<_> flat_tree_data =
                                                   tree_data.into_par_iter().flat_map(| el | fr_into_bytes(&el)).collect();
 
                                         // Persist the data to the store based on the current config.
@@ -762,8 +771,8 @@ namespace nil {
                                                        const BinaryMerkleTree<G> &data_tree, const StoreConfig &config,
                                                        const boost::filesystem::path &replica_path) {
                         // Generate key layers.
-                        const auto(_, labels) =
-                                       generate_labels(graph, layer_challenges, replica_id, config.clone());
+                        const Labels<tree_type> labels =
+                                       std::get<1>(generate_labels(graph, layer_challenges, replica_id, config.clone()));
 
                         return transform_and_replicate_layers_inner(graph, layer_challenges, data, data_tree, config,
                                                                     replica_path, labels);
@@ -878,21 +887,21 @@ namespace nil {
                         const auto comm_r : <typename MerkleTreeType::hash_type>::Domain =
                                          <typename MerkleTreeType::hash_type>::Function::hash2(&tree_c_root, &tree_r_last_root);
 
-                        Ok((Tau {
-                            comm_d : tree_d_root,
-                            comm_r,
-                        },
-                            PersistentAux {
-                                comm_c : tree_c_root,
-                                comm_r_last : tree_r_last_root,
-                            },
-                            TemporaryAux {
-                                labels : label_configs,
-                                tree_d_config,
-                                tree_r_last_config,
-                                tree_c_config,
-                                _g : PhantomData,
-                            }, ))
+                        return ((Tau {
+                                    comm_d : tree_d_root,
+                                    comm_r,
+                                },
+                                PersistentAux {
+                                    comm_c : tree_c_root,
+                                    comm_r_last : tree_r_last_root,
+                                },
+                                TemporaryAux {
+                                    labels : label_configs,
+                                    tree_d_config,
+                                    tree_r_last_config,
+                                    tree_c_config,
+                                    _g : PhantomData,
+                                }));
                     }
 
                     /// Phase1 of replication.
@@ -901,9 +910,7 @@ namespace nil {
                                                        const StoreConfig &config) {
                         BOOST_LOG_TRIVIAL(info) << "replicate_phase1";
 
-                        auto(_, labels) = generate_labels(&pp.graph, &pp.layer_challenges, replica_id, config);
-
-                        return labels;
+                        return std::get<1>(generate_labels(&pp.graph, &pp.layer_challenges, replica_id, config));
                     }
 
                     std::tuple << Self as PoRep<'a, typename MerkleTreeType::hash_type, G>>::Tau, < Self as PoRep <' a, typename MerkleTreeType::hash_type, G> >

@@ -124,11 +124,11 @@ namespace nil {
                         BOOST_ASSERT_MSG(proof.replica_parents.size() == len, "Number of replica parents must match");
                         BOOST_ASSERT_MSG(proof.replica_nodes.size() == len, "Number of replica nodes must match");
 
-                        const auto replica_nodes
-                            : Vec<_> = proof.replica_nodes.iter().map(| node | Some(node.data.into())).collect();
+                        std::vector<_> replica_nodes
+                            = proof.replica_nodes.iter().map(| node | Some(node.data.into())).collect();
 
-                        const auto replica_nodes_paths
-                            : Vec<_> = proof.replica_nodes.iter().map(| node | node.proof.as_options()).collect();
+                        std::vector<_> replica_nodes_paths
+                            = proof.replica_nodes.iter().map(| node | node.proof.as_options()).collect();
 
                         bool is_private = public_params.priv;
 
@@ -142,28 +142,26 @@ namespace nil {
 
                         const auto replica_id = public_inputs.replica_id;
 
-                        const auto replica_parents
-                            : Vec<_> =
+                        std::vector<_> replica_parents =
                                   proof.replica_parents.iter()
                                       .map(| parents |
                                            {parents.iter().map(| (_, parent) | Some(parent.data.into())).collect()})
                                       .collect();
 
-                        const auto replica_parents_paths
-                            : Vec<Vec<_>> =
+                        std::vector<std::vector<_>> replica_parents_paths =
                                   proof.replica_parents.iter()
                                       .map(| parents |
                                            {
-                                               const auto p : Vec<_> = parents.iter()
+                                               std::vector<_> p = parents.iter()
                                                                     .map(| (_, parent) | parent.proof.as_options())
                                                                     .collect();
                                                p
                                            })
                                       .collect();
 
-                        const auto data_nodes : Vec<_> = proof.nodes.iter().map(| node | Some(node.data.into())).collect();
+                        std::vector<_> data_nodes = proof.nodes.iter().map(| node | Some(node.data.into())).collect();
 
-                        const auto data_nodes_paths : Vec<_> =
+                        std::vector<_> data_nodes_paths =
                                                    proof.nodes.iter().map(| node | node.proof.as_options()).collect();
 
                         BOOST_ASSERT_MSG(public_inputs.tau.is_none() == public_params.priv, "inconsistent private state");

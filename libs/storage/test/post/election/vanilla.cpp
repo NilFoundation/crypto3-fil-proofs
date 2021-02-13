@@ -41,7 +41,7 @@ void test_election_post() {
     const auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
     const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
 
-    Vec<SectorId> sectors = Vec();
+    std::vector<SectorId> sectors;
     auto trees = BTreeMap();
 
     // Construct and store an MT using a named store.

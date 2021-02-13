@@ -113,7 +113,8 @@ namespace nil {
                             // -- verify replica column openings
 
                             // Private Inputs for the DRG parent nodes.
-                            auto drg_parents = Vec::with_capacity(layers);
+                            std::vector<auto> drg_parents;
+                            drg_parents.reserve(layers);
 
                             for ((i, parent) : drg_parents_proofs.into_iter().enumerate()) {
                                 const auto(parent_col, inclusion_path) =
@@ -129,7 +130,7 @@ namespace nil {
                             }
 
                             // Private Inputs for the Expander parent nodes.
-                            auto exp_parents = Vec();
+                            std::vector<auto> exp_parents;
 
                             for ((i, parent) : exp_parents_proofs.into_iter().enumerate()) {
                                 const auto(parent_col, inclusion_path) =
@@ -148,7 +149,7 @@ namespace nil {
                             // -- Verify labeling and encoding
 
                             // stores the labels of the challenged column
-                            auto column_labels = Vec();
+                            std::vector<auto> column_labels;
 
                             // PublicInput: challenge index
                             const auto challenge_num = uint64::UInt64::alloc(cs.namespace(|| "challenge"), challenge) ? ;
@@ -160,7 +161,7 @@ namespace nil {
                                 auto cs = cs.namespace(|| std::format("labeling_{}", layer));
 
                                 // Collect the parents
-                                auto parents = Vec();
+                                std::vector<auto> parents;
 
                                 // all layers have drg parents
                                 for (parent_col : &drg_parents) {

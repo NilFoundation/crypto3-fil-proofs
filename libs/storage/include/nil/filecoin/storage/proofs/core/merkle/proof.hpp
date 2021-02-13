@@ -149,7 +149,9 @@ namespace nil {
                 a.reset();
                 const auto node_count = arity;
                 const auto h = {
-                    auto nodes: Vec<T> = Vec::with_capacity(node_count);
+                    std::vector<T> nodes;
+                    nodes.reserve(node_count);
+
                     auto cur_index = 0;
                     for (const auto j = 0; j < node_count; ++j) {
                         if j == self.path()[0] {
@@ -161,7 +163,7 @@ namespace nil {
                     }
 
                     if cur_index != node_count - 1 {
-                        return Ok(false);
+                        return false;
                     }
 
                     a.multi_node(&nodes, 0)
@@ -207,7 +209,8 @@ namespace nil {
                 for (i in (1..size - 1).step_by(branches - 1)) {
                     a.reset();
                     h = {
-                        auto nodes: Vec<T> = Vec::with_capacity(branches);
+                        std::vector<T> nodes;
+                        nodes.reserve(branches);
                         auto cur_index = 0;
                         for (j = 0; j < branches; ++j) {
                             if j == self.path[path_index - 1] {
@@ -219,7 +222,7 @@ namespace nil {
                         }
 
                         if cur_index != branches - 1 {
-                            return Ok(false);
+                            return false;
                         }
 
                         path_index += 1;

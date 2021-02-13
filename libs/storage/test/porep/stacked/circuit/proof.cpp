@@ -38,7 +38,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     const auto replica_id : Fr = Fr::random(rng);
-    const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
@@ -183,7 +183,7 @@ void stacked_test_compound() {
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     const auto replica_id : Fr = Fr::random(rng);
-    const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     const auto arbitrary_porep_id = [55; 32];
     const auto setup_params = compound_proof::SetupParams {

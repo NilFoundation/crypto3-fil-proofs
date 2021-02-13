@@ -271,7 +271,7 @@ namespace nil {
                 // top
                 const auto(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur) ? ;
 
-                auto auth_path_bits = Vec ();
+                std::vector<auto> auth_path_bits;
                 auth_path_bits.extend(base_auth_path_bits);
                 auth_path_bits.extend(sub_auth_path_bits);
                 auth_path_bits.extend(top_auth_path_bits);

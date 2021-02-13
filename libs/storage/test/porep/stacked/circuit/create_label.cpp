@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     const auto replica_parents = proof_nc.replica_parents.iter()
                               .map(| v | {v.iter().map(| (_, parent) | Some(parent.data.into())).collect()})
                               .collect();
-    const auto replica_parents_paths : Vec<_> =
+    std::vector<std::uint8_t> replica_parents_paths =
                                     proof_nc.replica_parents.iter()
                                         .map(| v | {v.iter().map(| (_, parent) | parent.proof.as_options()).collect()})
                                         .collect();

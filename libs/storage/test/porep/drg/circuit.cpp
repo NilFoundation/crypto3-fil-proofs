@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     const auto replica_id : Fr = Fr::random(rng);
 
-    const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     const auto replica_parents = proof_nc.replica_parents.iter()
                               .map(| v | {v.iter().map(| (_, parent) | Some(parent.data.into())).collect()})
                               .collect();
-    const auto replica_parents_paths : Vec<_> =
+    std::vector<std::uint8_t> replica_parents_paths =
                                     proof_nc.replica_parents.iter()
                                         .map(| v | {v.iter().map(| (_, parent) | parent.proof.as_options()).collect()})
                                         .collect();

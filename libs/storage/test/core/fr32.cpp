@@ -40,7 +40,7 @@ void bytes_fr_test(const fr32_array &bytes, bool expect_success) {
 
 void bytes_into_frs_into_bytes_test(const fr32 &bytes) {
     auto bytes = bytes.clone();
-    const auto frs = bytes_into_frs(bytes).expect("Failed to convert bytes into a `Vec<Fr>`");
+    const auto frs = bytes_into_frs(bytes).expect("Failed to convert bytes into a `std::vector<Fr>`");
     BOOST_CHECK(frs.len() == 3);
     const auto bytes_back = frs_into_bytes(&frs);
     BOOST_CHECK(bytes.to_vec() == bytes_back);

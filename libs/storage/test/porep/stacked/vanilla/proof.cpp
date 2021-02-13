@@ -191,7 +191,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     const auto degree = BASE_DEGREE;
     const auto expansion_degree = EXP_DEGREE;
     const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
