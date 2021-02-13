@@ -6,7 +6,7 @@
 	url = git@github.com:nilfoundation/block.git
 [submodule "libs/actor"]
 	path = libs/actor
-	url = git@github.com:nilfoundation/actor-core.git
+	url = git@github.com:nilfoundation/actor.git
 [submodule "libs/network"]
 	path = libs/network
 	url = git@github.com:nilfoundation/actor-network.git
