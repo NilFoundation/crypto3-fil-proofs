@@ -6,7 +6,7 @@
 	url = git@github.com:nilfoundation/block.git
 [submodule "libs/actor"]
 	path = libs/actor
-	url = git@github.com:nilfoundation/actor-core.git
+	url = git@github.com:nilfoundation/actor.git
 [submodule "libs/network"]
 	path = libs/network
 	url = git@github.com:nilfoundation/actor-network.git
@@ -64,3 +64,21 @@
 [submodule "libs/blueprint"]
 	path = libs/blueprint
 	url = git@github.com:NilFoundation/crypto3-blueprint.git
+[submodule "libs/actor/core"]
+	path = libs/actor/core
+	url = git@github.com:nilfoundation/actor-core.git
+[submodule "libs/actor/network"]
+	path = libs/actor/network
+	url = git@github.com:nilfoundation/actor-network.git
+[submodule "libs/actor/cluster"]
+	path = libs/actor/cluster
+	url = git@github.com:nilfoundation/actor-cluster.git
+[submodule "libs/actor/dpdk"]
+	path = libs/actor/dpdk
+	url = git@github.com:DPDK/dpdk.git
+[submodule "libs/actor/cuda"]
+	path = libs/actor/cuda
+	url = git@github.com:nilfoundation/actor-cuda.git
+[submodule "libs/actor/opencl"]
+	path = libs/actor/opencl
+	url = git@github.com:nilfoundation/actor-opencl.git
