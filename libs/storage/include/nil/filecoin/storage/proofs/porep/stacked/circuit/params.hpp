@@ -59,8 +59,7 @@ namespace nil {
                                                 drg_parents_proofs
                                 : vec ![ColumnProof::empty(params); params.graph.base_graph().degree()],
                                   exp_parents_proofs
-                                : vec ![ColumnProof::empty(params); params.graph.expansion_degree()],
-                                  _t : PhantomData,
+                                : vec ![ColumnProof::empty(params); params.graph.expansion_degree()]
                         }
 
                         Proof(const vanilla::Proof<MerkleTreeType, Hash> &vanilla_proof) {
@@ -82,8 +81,7 @@ namespace nil {
                                       comm_r_last_path : comm_r_last_proof.as_options().into(),
                                       comm_c_path : c_x.inclusion_proof.as_options().into(),
                                       drg_parents_proofs : drg_parents.into_iter().map(| p | p.into()).collect(),
-                                      exp_parents_proofs : exp_parents.into_iter().map(| p | p.into()).collect(),
-                                      _t : PhantomData,
+                                      exp_parents_proofs : exp_parents.into_iter().map(| p | p.into()).collect()
                             }
                         }
 

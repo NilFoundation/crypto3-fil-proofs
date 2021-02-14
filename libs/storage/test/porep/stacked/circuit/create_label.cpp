@@ -48,11 +48,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     const auto replica_path = cache_dir.path().join("replica-path");
     auto mmapped_data = setup_replica(&data, &replica_path);
 
-    try {
     const Option<Fr> data_node = Some(bytes_into_fr(data_at_node(&mmapped_data, challenge)));
-    } catch ("failed to read original data"){
-
-    }
 
     const auto sp = drg::SetupParams {
         drg : drg::DrgParams {
@@ -65,26 +61,25 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
         challenges_count : 1,
     };
 
-    const auto pp = drg::DrgPoRep::<PedersenHasher, BucketGraph<_>>::setup(&sp).expect("failed to create drgporep setup");
+    const auto pp = drg::DrgPoRep::<PedersenHasher, BucketGraph<_>>::setup(&sp);
     const auto(tau, aux) = drg::DrgPoRep::<PedersenHasher, _>::replicate(
-                        &pp, &replica_id.into(), (mmapped_data).into(), None, config, replica_path.clone(), )
-                        .expect("failed to replicate");
+                        &pp, &replica_id.into(), (mmapped_data).into(), None, config, replica_path.clone());
 
-    const auto pub_inputs = drg::PublicInputs {
-        replica_id : Some(replica_id.into()),
-        challenges : vec ![challenge],
-        tau : Some(tau.into()),
+    const drg::PublicInputs pub_inputs = {
+        .replica_id = Some(replica_id.into()),
+        .challenges = vec ![challenge],
+        .tau = Some(tau.into())
     };
 
-    const auto priv_inputs = drg::PrivateInputs::<PedersenHasher> {
-        tree_d : &aux.tree_d,
-        tree_r : &aux.tree_r,
-        tree_r_config_rows_to_discard : default_rows_to_discard(nodes, BINARY_ARITY),
+    const drg::PrivateInputs::<PedersenHasher> priv_inputs = {
+        .tree_d = &aux.tree_d,
+        .tree_r = &aux.tree_r,
+        .tree_r_config_rows_to_discard = default_rows_to_discard(nodes, BINARY_ARITY),
     };
 
-    const auto proof_nc = drg::DrgPoRep::<PedersenHasher, _>::prove(&pp, &pub_inputs, &priv_inputs).expect("failed to prove");
+    const auto proof_nc = drg::DrgPoRep::<PedersenHasher, _>::prove(&pp, &pub_inputs, &priv_inputs);
 
-    BOOST_ASSERT_MSG(drg::DrgPoRep::<PedersenHasher, _>::verify(&pp, &pub_inputs, &proof_nc).expect("failed to verify"),
+    BOOST_ASSERT_MSG(drg::DrgPoRep::<PedersenHasher, _>::verify(&pp, &pub_inputs, &proof_nc),
              "failed to verify (non circuit)");
 
     const auto replica_node : Option<Fr> = Some(proof_nc.replica_nodes[0].data.into());
@@ -110,13 +105,11 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
     auto cs = TestConstraintSystem<algebra::curves::bls12<381>>();
     DrgPoRepCircuit::<PedersenHasher>::synthesize(
         cs.namespace(|| "drgporep"), vec ![replica_node], vec ![replica_node_path], replica_root, replica_parents,
-        replica_parents_paths, vec ![data_node], vec ![data_node_path], data_root, replica_id, false, )
-        .expect("failed to synthesize circuit");
+        replica_parents_paths, vec ![data_node], vec ![data_node_path], data_root, replica_id, false);
 
-    if
-        !cs.is_satisfied() {
-            std::cout << std::format("failed to satisfy: {:?}", cs.which_is_unsatisfied()) << std::endl;
-        }
+    if (!cs.is_satisfied()) {
+        std::cout << std::format("failed to satisfy: {:?}", cs.which_is_unsatisfied()) << std::endl;
+    }
 
     BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
     BOOST_CHECK_EQUAL(cs.num_inputs(), 18, "wrong number of inputs");
@@ -138,7 +131,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     BOOST_CHECK_EQUAL(generated_inputs.len(), expected_inputs.len() - 1, "inputs are not the same length");
 
-    cache_dir.close().expect("Failed to remove cache dir");
+    cache_dir.close();
 }
 
 BOOST_AUTO_TEST_CASE(drgporep_input_circuit_num_constraints) {

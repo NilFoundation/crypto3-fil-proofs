@@ -80,36 +80,20 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     // Store copy of original t_aux for later resource deletion.
     const auto t_aux_orig = t_aux.clone();
 
-    try{
-        // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
-        // elements based on the configs stored in TemporaryAux.
-        const auto t_aux = TemporaryAuxCache::<Tree, Sha256Hasher>(&t_aux, replica_path);
-    } catch("failed to restore contents of t_aux"){
-
-    }
+    // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
+    // elements based on the configs stored in TemporaryAux.
+    const auto t_aux = TemporaryAuxCache::<Tree, Sha256Hasher>(&t_aux, replica_path);
 
     const auto priv_inputs = PrivateInputs::<Tree, Sha256Hasher> {p_aux, t_aux};
 
-    try{
-        const auto proofs = StackedDrg::<Tree, Sha256Hasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, 1);
-    } catch ("failed to generate partition proofs"){
+    const auto proofs = StackedDrg::<Tree, Sha256Hasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, 1);
 
-    }
-
-    try {
-        const auto proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs);
-    } catch ("failed while trying to verify partition proofs"){
-
-    }
+    const auto proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs);
 
     BOOST_ASSERT (proofs_are_valid);
 
-    try{
-        // Discard cached MTs that are no longer needed.
-        TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig);
-    } catch("t_aux delete failed"){
-
-    }
+    // Discard cached MTs that are no longer needed.
+    TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig);
 
     // Verify that MetricCS returns the same metrics as TestConstraintSystem.
     auto cs = MetricCS::<Bls12>();

@@ -212,8 +212,7 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
             value : Root::Val(Some(proof.data.into())),
             auth_path : proof.proof.as_options().into(),
             root : Root::Val(Some(pub_inputs.commitment.into())),
-            private : false,
-            _tree : PhantomData,
+            private : false
         };
 
         por.synthesize(cs).expect("circuit synthesis failed");
@@ -421,8 +420,7 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
             value : Root::Val(Some(proof.data.into())),
             auth_path : proof.proof.as_options().into(),
             root : Root::Val(Some(tree.root().into())),
-            private : true,
-            _tree : PhantomData,
+            private : true
         };
 
         por.synthesize(cs).expect("circuit synthesis failed");

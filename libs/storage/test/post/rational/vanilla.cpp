@@ -198,12 +198,7 @@ void test_rational_post_validates_challenge_identity() {
         comm_rs : &comm_rs,
     };
 
-    try {
-        const auto verified =
-            RationalPoSt::<Tree>::verify(&pub_params, &different_pub_inputs, &proof);
-    } catch ("verification failed"){
-
-    }
+    const auto verified = RationalPoSt::<Tree>::verify(&pub_params, &different_pub_inputs, &proof);
 
     // A proof created with a the wrong challenge not be verified!
     BOOST_CHECK(!verified);

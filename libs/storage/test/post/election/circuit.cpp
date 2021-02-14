@@ -99,8 +99,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
         partial_ticket : Some(candidate.partial_ticket),
         randomness : Some(randomness.into()),
         prover_id : Some(prover_id.into()),
-        sector_id : Some(candidate.sector_id.into()),
-        _t : PhantomData,
+        sector_id : Some(candidate.sector_id.into())
     };
 
     instance.synthesize(cs).expect("failed to synthesize circuit");

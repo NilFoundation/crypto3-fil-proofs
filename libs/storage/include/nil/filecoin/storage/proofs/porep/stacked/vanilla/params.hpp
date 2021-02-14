@@ -187,9 +187,6 @@ namespace nil {
                     // 'clear_temp' will discard all persisted merkle and layer data
                     // that is no longer required.
                     void clear_temp(TemporaryAux<MerkleTreeType, Hash> t_aux) {
-                        const auto cached = [&](const StoreConfig &config) -> bool {
-                            return boost::filesystem::path(StoreConfig::data_path(config.path, config.id)).exists();
-                        };
 
                         const auto delete_tree_c_store = [&](const StoreConfig &config, std::size_t tree_c_size) {
                             DiskStore<typename MerkleTreeType::hash_type::digest_type> tree_c_store =
@@ -205,7 +202,7 @@ namespace nil {
                             tree_c.erase(config.clone());
                         };
 
-                        if (cached(&t_aux.tree_d_config)) {
+                        if (is_cached(&t_aux.tree_d_config)) {
                             std::size_t tree_d_size = t_aux.tree_d_config.size.context("tree_d config has no size");
                             DiskStore<typename Hash::digest_type> tree_d_store =
                                 DiskStore::new_from_disk(tree_d_size, BINARY_ARITY, &t_aux.tree_d_config)
@@ -222,9 +219,9 @@ namespace nil {
                         std::size_t tree_c_size = t_aux.tree_c_config.size;
                         const auto configs = split_config(t_aux.tree_c_config.clone(), tree_count);
 
-                        if (cached(&t_aux.tree_c_config)) {
+                        if (is_cached(&t_aux.tree_c_config)) {
                             delete_tree_c_store(&t_aux.tree_c_config, tree_c_size);
-                        } else if (cached(configs[0])) {
+                        } else if (is_cached(configs[0])) {
                             for (configs::const_iterator config = configs.begin(); 
                                 config != configs.end(); ++config){
                                 // Trees with sub-trees cannot be instantiated and deleted via the existing tree
@@ -232,14 +229,14 @@ namespace nil {
                                 // light.  For now, we manually remove each on disk tree file since we know where they
                                 // are here.
                                 boost::filesystem::path tree_c_path = StoreConfig::data_path(config->path, config->id);
-                                remove_file(tree_c_path);
+                                boost::filesystem::remove(tree_c_path);
                             }
                         }
                         BOOST_LOG_TRIVIAL(trace) << "tree c deleted";
 
                         for (int i = 0; i < t_aux.labels.labels.size(); i++) {
                             StoreConfig cur_config = t_aux.labels.labels[i].clone();
-                            if (cached(cur_config)) {
+                            if (is_cached(cur_config)) {
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::delete (cur_config)
                                     .with_context(|| std::format("labels %d", i));
                                 BOOST_LOG_TRIVIAL(trace) << std::format("layer %d deleted", i);
@@ -251,6 +248,10 @@ namespace nil {
                     StoreConfig tree_d_config;
                     StoreConfig tree_r_last_config;
                     StoreConfig tree_c_config;
+                private:
+                    bool is_cached (const StoreConfig &config) {
+                        return boost::filesystem::exists(boost::filesystem::path(StoreConfig::data_path(config.path, config.id)));
+                    };
                 };
 
                 template<typename T, typename S>

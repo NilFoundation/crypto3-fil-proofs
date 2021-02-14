@@ -90,40 +90,24 @@ void rational_post_test_compound() {
         comm_cs : &comm_cs,
     };
 
-    try {
-        const auto gparams = RationalPoStCompound::<Tree>::groth_params(Some(rng), &pub_params.vanilla_params);
-    } catch("failed to create groth params"){
+    const auto gparams = RationalPoStCompound::<Tree>::groth_params(Some(rng), &pub_params.vanilla_params);
 
-    }
-
-    try {
-        const auto proof =
-            RationalPoStCompound::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs, &gparams);
-    } catch ("proving failed"){
-
-    }
+    const auto proof =
+        RationalPoStCompound::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs, &gparams);
 
     const auto(circuit, inputs) =
         RationalPoStCompound::<Tree>::circuit_for_test(&pub_params, &pub_inputs, &priv_inputs);
 
     auto cs = TestConstraintSystem();
 
-    try {
-        circuit.synthesize(cs);
-    } catch("failed to synthesize"){
-
-    }
+    circuit.synthesize(cs);
 
     BOOST_ASSERT (cs.is_satisfied());
     BOOST_ASSERT (cs.verify(&inputs));
 
-    try {
-        const auto verified = RationalPoStCompound::<Tree>::verify(&pub_params, &pub_inputs, &proof, &NoRequirements);
+    const auto verified = RationalPoStCompound::<Tree>::verify(&pub_params, &pub_inputs, &proof, &NoRequirements);
 
-        BOOST_ASSERT (verified);
-    } catch ("failed while verifying"){
-
-    }
+    BOOST_ASSERT (verified);
 }
 
 BOOST_AUTO_TEST_CASE(rational_post_test_compound_pedersen) {

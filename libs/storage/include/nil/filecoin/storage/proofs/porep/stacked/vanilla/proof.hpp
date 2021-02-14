@@ -179,7 +179,7 @@ namespace nil {
 
                                     if (layer == 1) {
                                         std::vector<auto> parents (graph.base_graph().degree(), 0);
-                                        graph.base_parents(*challenge, parents) ;
+                                        graph.base_parents(*challenge, parents);
 
                                         parents_data.reserve(parents.size());
 
@@ -228,17 +228,17 @@ namespace nil {
 
                                     if (layer == layers) {
                                         encoding_proof =
-                                            Some(EncodingProof (std::uint32_t(layer), std::uint64_t(*challenge), parents_data_full, ));
+                                            Some(EncodingProof (std::uint32_t(layer), std::uint64_t(*challenge), parents_data_full));
                                     }
                                 }
 
-                                result_k.push_back(Proof {
-                                    comm_d_proofs: comm_d_proof,
-                                    replica_column_proofs: rcp,
-                                    comm_r_last_proof,
-                                    labeling_proofs,
-                                    encoding_proof: encoding_proof.expect("invalid tapering"),
-                                });
+                                result_k.push_back(Proof ({
+                                    .comm_d_proofs = comm_d_proof,
+                                    .replica_column_proofs = rcp,
+                                    .comm_r_last_proof,
+                                    .labeling_proofs,
+                                    .encoding_proof = encoding_proof
+                                }));
                             }
                             result.push_back(result_k);
                         }
@@ -362,10 +362,10 @@ namespace nil {
                                         const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
                         if (settings ::SETTINGS.lock().use_gpu_column_builder) {
                             generate_tree_c_gpu::<ColumnArity, TreeArity>(layers, nodes_count, tree_count, configs,
-                                                                                labels, )
+                                                                                labels)
                         } else {
                             generate_tree_c_cpu::<ColumnArity, TreeArity>(layers, nodes_count, tree_count, configs,
-                                                                                labels, )
+                                                                                labels)
                         }
                     }
 
@@ -398,7 +398,7 @@ namespace nil {
                         // This channel will receive batches of columns and add them to the ColumnTreeBuilder.
                         const auto(builder_tx, builder_rx) = mpsc::sync_channel(0);
                         mpsc::sync_channel::<(std::vector<GenericArray<Fr, ColumnArity>>, bool)>(
-                            max_gpu_column_batch_size * ColumnArity::to_usize() * 32, );
+                            max_gpu_column_batch_size * ColumnArity::to_usize() * 32);
 
                         const auto config_count = configs.len();    // Don't move config into closure below.
                         rayon::scope(| s | {
@@ -410,7 +410,7 @@ namespace nil {
                                         const auto chunked_nodes_count =
                                             std::cmp::min(nodes_count - node_index, max_gpu_column_batch_size);
                                         BOOST_LOG_TRIVIAL(trace) << std::format("processing config {}/{} with column nodes {}", i + 1, tree_count,
-                                                chunked_nodes_count, );
+                                                chunked_nodes_count);
                                         std::vector<GenericArray<Fr, ColumnArity>> columns (chunked_nodes_count, GenericArray::<Fr, ColumnArity>::generate(| _i
                                                                                                   : usize | Fr::zero()));
 
@@ -432,8 +432,7 @@ namespace nil {
                                                     const auto start = (i * nodes_count) + node_index;
                                                     const auto end = start + chunked_nodes_count;
                                                     const std::vector << typename MerkleTreeType::hash_type> ::Domain > elements
-                                                        = store.read_range(std::ops::Range {start, end})
-                                                              .expect("failed to read store range");
+                                                        = store.read_range(std::ops::Range {start, end});
                                                     layer_elements.extend(elements.into_iter().map(Into::into));
                                                 }
                                             });
@@ -449,26 +448,21 @@ namespace nil {
                                         drop(layer_data);
 
                                         node_index += chunked_nodes_count;
-                                        BOOST_LOG_TRIVIAL(trace) << std::format("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
+                                        BOOST_LOG_TRIVIAL(trace) << std::format("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count);
 
                                         const auto is_final = node_index == nodes_count;
-                                        builder_tx.send((columns, is_final)).expect("failed to send columns");
+                                        builder_tx.send((columns, is_final));
                                     }
                                 }
                             });
-                            const auto configs = &configs;
+                            
                             s.spawn(move | _ | {
 
-                                try{
-                                    auto column_tree_builder = ColumnTreeBuilder::<ColumnArity, TreeArity>(
-                                                                  Some(BatcherType::GPU), nodes_count,
-                                                                  max_gpu_column_batch_size, max_gpu_tree_batch_size);
-                                }
-                                catch ("failed to create ColumnTreeBuilder"){
+                                auto column_tree_builder = ColumnTreeBuilder::<ColumnArity, TreeArity>(
+                                                              Some(BatcherType::GPU), nodes_count,
+                                                              max_gpu_column_batch_size, max_gpu_tree_batch_size);
 
-                                }
-
-                                auto i = 0;
+                                std::size_t i = 0;
                                 auto config = &configs[i];
 
                                 // Loop until all trees for all configs have been built.
@@ -476,19 +470,18 @@ namespace nil {
                                     std::vector<GenericArray<Fr, ColumnArity>> columns;
                                     bool is_final;
 
-                                    std::tie(columns, is_final) = builder_rx.recv().expect("failed to recv columns");
+                                    std::tie(columns, is_final) = builder_rx.recv();
 
                                     // Just add non-final column batches.
                                     if (!is_final) {
-                                        column_tree_builder.add_columns(&columns).expect("failed to add columns");
+                                        column_tree_builder.add_columns(&columns);
                                         continue;
                                     };
 
                                     // If we get here, this is a final column: build a sub-tree.
                                     auto base_data, tree_data;
 
-                                    std::tie(base_data, tree_data) = column_tree_builder.add_final_columns(&columns).expect(
-                                        "failed to add final columns");
+                                    std::tie(base_data, tree_data) = column_tree_builder.add_final_columns(&columns);
                                     BOOST_LOG_TRIVIAL(trace) << std::format("base data len {}, tree data len {}", base_data.len(), tree_data.len());
 
                                     const auto tree_len = base_data.len() + tree_data.len();
@@ -500,8 +493,7 @@ namespace nil {
                                     // Persist the base and tree data to disk based using the current store config.
                                     const auto tree_c_store =
                                         DiskStore:: << typename MerkleTreeType::hash_type> ::Domain >
-                                        ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone())
-                                            .expect("failed to create DiskStore for base tree data");
+                                        ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone());
 
                                     const auto store = Arc (RwLock(tree_c_store));
                                     const auto batch_size = std::cmp::min(base_data.len(), column_write_batch_size);
@@ -519,14 +511,13 @@ namespace nil {
                                                               buf.extend(fr_into_bytes(*fr));
                                                           }
                                                           store.write()
-                                                              .expect("failed to access store for write")
                                                               .copy_from_slice(&buf[..], offset + (batch_size * index))
                                                       })};
 
                                     BOOST_LOG_TRIVIAL(trace) << std::format("flattening tree_c base data of {} nodes using batch size {}",
                                             base_data.len(),
                                             batch_size);
-                                    flatten_and_write_store(&base_data, 0).expect("failed to flatten and write store");
+                                    flatten_and_write_store(&base_data, 0);
                                     BOOST_LOG_TRIVIAL(trace) << "done flattening tree_c base data";
 
                                     const auto base_offset = base_data.len();
@@ -535,12 +526,11 @@ namespace nil {
                                         "offset "
                                         "{}",
                                         tree_data.len(), batch_size, base_offset);
-                                    flatten_and_write_store(&tree_data, base_offset)
-                                        .expect("failed to flatten and write store");
+                                    flatten_and_write_store(&tree_data, base_offset);
                                     BOOST_LOG_TRIVIAL(trace) << "done flattening tree_c tree data";
 
                                     BOOST_LOG_TRIVIAL(trace) << "writing tree_c store data";
-                                    store.write().expect("failed to access store for sync").sync();
+                                    store.write().sync();
                                     BOOST_LOG_TRIVIAL(trace) << "done writing tree_c store data";
 
                                     // Move on to the next config.
@@ -603,8 +593,7 @@ namespace nil {
                                                                             : <typename MerkleTreeType::hash_type>::Domain =
                                                                                   store
                                                                                       .read_at((i * nodes_count) + j +
-                                                                                               chunk * chunk_size)
-                                                                                      ;
+                                                                                               chunk * chunk_size);
                                                                         el.into()
                                                                     })
                                                                .collect();
@@ -633,7 +622,7 @@ namespace nil {
                                              const StoreConfig &tree_r_last_config, const boost::filesystem::path &replica_path,
                                              const LabelsCache<Tree> &labels) {
                         const auto(configs, replica_config) =
-                            split_config_and_replica(tree_r_last_config.clone(), replica_path, nodes_count, tree_count, );
+                            split_config_and_replica(tree_r_last_config.clone(), replica_path, nodes_count, tree_count);
 
                         data.ensure_data();
                         const auto last_layer_labels = labels.labels_for_last_layer();
@@ -647,30 +636,28 @@ namespace nil {
                             // This channel will receive batches of leaf nodes and add them to the TreeBuilder.
                             const auto(builder_tx, builder_rx) = mpsc::sync_channel::<(Vec<Fr>, bool)>(0);
                             const auto config_count = configs.len();    // Don't move config into closure below.
-                            const auto configs = &configs;
+
                             rayon::scope(| s | {
                                 s.spawn(move | _ | {
                                     for (int i = 0; i < config_count; i++) {
-                                        auto node_index = 0;
+                                        std::size_t node_index = 0;
                                         while (node_index != nodes_count) {
-                                            const auto chunked_nodes_count =
+                                            const std::size_t chunked_nodes_count =
                                                 std::cmp::min(nodes_count - node_index, max_gpu_tree_batch_size);
-                                            const auto start = (i * nodes_count) + node_index;
-                                            const auto end = start + chunked_nodes_count;
+                                            const std::size_t start = (i * nodes_count) + node_index;
+                                            const std::size_t end = start + chunked_nodes_count;
 
-                                            BOOST_LOG_TRIVIAL(trace) << std::format("processing config {}/{} with leaf nodes {} [{}, {}, {}-{}]", i + 1,
+                                            BOOST_LOG_TRIVIAL(trace) << std::format("processing config %d/%d with leaf nodes {} [%d, %d, %d-%d]", i + 1,
                                                     tree_count, chunked_nodes_count, node_index, nodes_count, start, end);
 
                                             const auto encoded_data =
                                                 last_layer_labels.read_range(start..end)
-                                                    .expect("failed to read layer range")
                                                     .into_par_iter()
                                                     .zip(data[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(
-                                                             NODE_SIZE), )
+                                                             NODE_SIZE))
                                                     .map(| (key, data_node_bytes) | {
                                                         const auto data_node =
-                                                            <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes, )
-                                                                .expect("try_from_bytes failed");
+                                                            <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes);
                                                         const auto encoded_node =
                                                             encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
                                                         data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
@@ -679,50 +666,48 @@ namespace nil {
                                                     });
 
                                             node_index += chunked_nodes_count;
-                                            BOOST_LOG_TRIVIAL(trace) << std::format("node index {}/{}/{}", node_index, chunked_nodes_count, nodes_count, );
+                                            BOOST_LOG_TRIVIAL(trace) << std::format("node index %d/%d/%d", node_index, chunked_nodes_count, nodes_count);
 
                                             std::vector<_> encoded = encoded_data.into_par_iter().map(| x | x.into()).collect();
 
                                             const auto is_final = node_index == nodes_count;
-                                            builder_tx.send((encoded, is_final)).expect("failed to send encoded");
+                                            builder_tx.send((encoded, is_final));
                                         }
                                     }
                                 });
 
                                 const auto tree_r_last_config = &tree_r_last_config;
                                 s.spawn(move | _ | {
-                                    try{
-                                        auto tree_builder = TreeBuilder::<MerkleTreeType::base_arity>(
-                                                                   Some(BatcherType::GPU), nodes_count, max_gpu_tree_batch_size,
-                                                                   tree_r_last_config.rows_to_discard);
-                                    }catch("failed to create TreeBuilder"){
 
-                                    }
+                                    auto tree_builder = TreeBuilder::<MerkleTreeType::base_arity>(
+                                                               Some(BatcherType::GPU), nodes_count, max_gpu_tree_batch_size,
+                                                               tree_r_last_config.rows_to_discard);
 
-                                    auto i = 0;
+                                    std::size_t i = 0;
                                     auto config = &configs[i];
 
                                     // Loop until all trees for all configs have been built.
                                     while (i < configs.size()) {
-                                        const auto(encoded, is_final) = builder_rx.recv().expect("failed to recv encoded data");
+
+                                        const auto(encoded, is_final) = builder_rx.recv();
 
                                         // Just add non-final leaf batches.
                                         if (!is_final) {
-                                            tree_builder.add_leaves(&encoded).expect("failed to add leaves");
+                                            tree_builder.add_leaves(&encoded);
                                             continue;
                                         };
 
                                         // If we get here, this is a final leaf batch: build a sub-tree.
-                                        BOOST_LOG_TRIVIAL(info) << std::format("building base tree_r_last with GPU {}/{}", i + 1, tree_count);
+                                        BOOST_LOG_TRIVIAL(info) << std::format("building base tree_r_last with GPU %d/%d", i + 1, tree_count);
                                         const auto tree_data = std::get<1>(
-                                            tree_builder.add_final_leaves(&encoded).expect("failed to add final leaves"));
+                                            tree_builder.add_final_leaves(&encoded));
+
                                         const auto tree_data_len = tree_data.len();
                                         const auto cache_size =
                                             get_merkle_tree_cache_size(
-                                                get_merkle_tree_leafs(config.size, MerkleTreeType::base_arity, )
-                                                    .expect("failed to get merkle tree leaves"),
-                                                MerkleTreeType::base_arity, config.rows_to_discard, )
-                                                .expect("failed to get merkle tree cache size");
+                                                get_merkle_tree_leafs(config.size, MerkleTreeType::base_arity),
+                                                MerkleTreeType::base_arity, config.rows_to_discard);
+
                                         BOOST_ASSERT (tree_data_len == cache_size);
 
                                         const std::vector<_> flat_tree_data =
@@ -759,13 +744,12 @@ namespace nil {
 
                             for (std::size_t i = 0, configs::iterator config = configs.begin(); 
                                 config != configs.end(); ++i, ++config) {
-                                
+
                                 const auto encoded_data = last_layer_labels.read_range(start..end)
                                     .into_par_iter()
-                                    .zip(data[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE), )
+                                    .zip(data[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE))
                                     .map(| (key, data_node_bytes) | {
-                                        const auto data_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes)
-                                                            .expect("try from bytes failed");
+                                        const auto data_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes);
 
                                         const auto encoded_node = encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
                                         data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
@@ -810,7 +794,7 @@ namespace nil {
                         std::size_t nodes_count = graph.size();
 
                         assert(data.len() == nodes_count * NODE_SIZE);
-                        BOOST_LOG_TRIVIAL(trace) << std::format("nodes count {}, data len {}", nodes_count, data.len());
+                        BOOST_LOG_TRIVIAL(trace) << std::format("nodes count %d, data len {}", nodes_count, data.len());
 
                         std::size_t tree_count = get_base_tree_count::<Tree>();
                         std::size_t nodes_count = graph.size() / tree_count;
@@ -819,8 +803,8 @@ namespace nil {
                         bool binary_arity_valid = is_merkle_tree_size_valid(nodes_count, BINARY_ARITY);
                         bool other_arity_valid = is_merkle_tree_size_valid(nodes_count, MerkleTreeType::base_arity);
 
-                        BOOST_LOG_TRIVIAL(trace) << std::format("is_merkle_tree_size_valid({}, BINARY_ARITY) = {}", nodes_count, binary_arity_valid);
-                        BOOST_LOG_TRIVIAL(trace) << std::format("is_merkle_tree_size_valid({}, {}) = {}", nodes_count, MerkleTreeType::base_arity,
+                        BOOST_LOG_TRIVIAL(trace) << std::format("is_merkle_tree_size_valid(%d, BINARY_ARITY) = {}", nodes_count, binary_arity_valid);
+                        BOOST_LOG_TRIVIAL(trace) << std::format("is_merkle_tree_size_valid(%d, {}) = {}", nodes_count, MerkleTreeType::base_arity,
                                 other_arity_valid);
 
                         assert(binary_arity_valid);
@@ -858,15 +842,15 @@ namespace nil {
                         typename tree_hash_type::digest_type tree_c_root;
                         if (layers == 2) {
                             const auto tree_c =
-                                generate_tree_c::<U2, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, );
+                                generate_tree_c::<U2, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels);
                             tree_c_root = tree_c.root();
                         } else if (layers == 8) {
                             const auto tree_c =
-                                generate_tree_c::<U8, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, );
+                                generate_tree_c::<U8, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels);
                             tree_c_root = tree_c.root();
                         } else if (layers == 11) {
                             const auto tree_c =
-                                generate_tree_c::<U11, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels, );
+                                generate_tree_c::<U11, MerkleTreeType::base_arity>(layers, nodes_count, tree_count, configs, &labels);
                             tree_c_root = tree_c.root();
                         } else {
                             throw "Unsupported column arity";
@@ -895,8 +879,8 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(info) << "building tree_r_last";
                         auto tree_r_last = generate_tree_r_last::<MerkleTreeType::base_arity>(
                                                             data, nodes_count, tree_count, tree_r_last_config.clone(),
-                                                            replica_path.clone(), &labels, );
-                            ;
+                                                            replica_path.clone(), &labels);
+
                         BOOST_LOG_TRIVIAL(info) << "tree_r_last done";
 
                         const auto tree_r_last_root = tree_r_last.root();

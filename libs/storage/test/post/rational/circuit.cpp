@@ -81,18 +81,10 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
         comm_r_lasts : &comm_r_lasts,
     };
 
-    try {
-        const auto proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs);
-    } catch ("proving failed"){
+    const auto proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs);
 
-    }
-
-    try {
-        const auto is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof);
-        BOOST_ASSERT (is_valid);
-    } catch("verification failed"){
-
-    }
+    const auto is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof);
+    BOOST_ASSERT (is_valid);
 
     // actual circuit test
 
@@ -113,15 +105,10 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
         paths,
         comm_rs : comm_rs.iter().copied().map(| c | Some(c.into())).collect(),
         comm_cs : comm_cs.into_iter().map(| c | Some(c.into())).collect(),
-        comm_r_lasts : comm_r_lasts.into_iter().map(| c | Some(c.into())).collect(),
-        _t : PhantomData,
+        comm_r_lasts : comm_r_lasts.into_iter().map(| c | Some(c.into())).collect()
     };
 
-    try{
-        instance.synthesize(cs);
-    } catch("failed to synthesize circuit"){
-
-    }
+    instance.synthesize(cs);
 
     BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
 
