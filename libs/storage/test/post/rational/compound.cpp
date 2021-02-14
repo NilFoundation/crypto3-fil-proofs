@@ -63,7 +63,7 @@ void rational_post_test_compound() {
     const auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
     const auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
 
-    const auto comm_r_lasts_raw = vec ![ tree1.root(), tree2.root() ];
+    const std::vector<auto> comm_r_lasts_raw = { tree1.root(), tree2.root() };
     const std::vector<_> comm_r_lasts = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
 
     const std::vector << typename MerkleTreeType::hash_type > ::Domain > comm_cs

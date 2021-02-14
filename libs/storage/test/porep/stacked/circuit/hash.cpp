@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(test_hash_single_column_circuit) {
         for (std::size_t i=0; i < 1; ++i) {
                 auto cs = TestConstraintSystem::<Bls12>();
 
-                const auto vals = vec ![Fr::random(rng); 11];
+                const std::vector<auto> vals (11, Fr::random(rng));
                 const auto vals_opt =
                     vals.iter()
                         .enumerate()

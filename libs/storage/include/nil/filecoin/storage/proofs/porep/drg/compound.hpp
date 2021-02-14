@@ -187,16 +187,16 @@ namespace nil {
 
                         std::size_t challenges_count = public_params.challenges_count;
 
-                        const auto replica_nodes = vec ![None; challenges_count];
-                        const auto replica_nodes_paths =
+                        const std::vector<auto> replica_nodes (challenges_count, None);
+                        const std::vector<std::vector<std::vector<auto>>> replica_nodes_paths =
                             vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; challenges_count];
 
                         const auto replica_root = Root::Val(None);
-                        const auto replica_parents = vec ![vec ![None; degree]; challenges_count];
-                        const auto replica_parents_paths =
+                        const std::vector<std::vector<auto>> replica_parents (challenges_count, std::vector<auto>(degree, None));
+                        const std::vector<std::vector<std::vector<std::vector<auto>>>> replica_parents_paths =
                             vec ![vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; degree]; challenges_count];
                         const auto data_nodes = vec ![None; challenges_count];
-                        const auto data_nodes_paths =
+                        const std::vector<std::vector<std::vector<auto>>> data_nodes_paths =
                             vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; challenges_count];
                         const auto data_root = Root::Val(None);
 

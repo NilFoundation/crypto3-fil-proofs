@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(test_derive_challenges_fails_on_all_faulty) {
     faults.insert(SectorId::from(1));
     faults.insert(SectorId::from(2));
 
-    const auto seed = vec ![0u8];
+    const std::vector<auto> seed = {0u8};
 
     BOOST_ASSERT (derive_challenges(10, 1024, &sectors, &seed, &faults).is_err());
 }

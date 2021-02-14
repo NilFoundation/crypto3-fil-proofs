@@ -95,7 +95,7 @@ namespace nil {
                             cs.namespace(|| "sector_id"),
                             || {sector_id.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
 
-                        const auto partial_ticket_nums = vec ![ randomness_num, prover_id_num, sector_id_num ];
+                        const std::vector<auto> partial_ticket_nums = {randomness_num, prover_id_num, sector_id_num};
                         for ((i, leaf) in leafs.iter().enumerate()) {
                             const auto leaf_num = num::AllocatedNumber::alloc(
                                 cs.namespace(|| std::format("leaf_{}", i)),

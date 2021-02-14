@@ -55,7 +55,7 @@ namespace nil {
                         std::vector<AuthPath<typename MerkleTreeType::hash_type,
                                     MerkleTreeType::base_arity,
                                     MerkleTreeType::sub_tree_arity,
-                        MerkleTreeType::top_tree_arity>> paths = vec ![AuthPath::blank(por_params.leaves); challenges_count];
+                        MerkleTreeType::top_tree_arity>> paths (challenges_count, AuthPath::blank(por_params.leaves));
 
                         return Sector {
                         id:

@@ -65,9 +65,9 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
                                                   replica_path.clone(), )
             .expect("replication failed");
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto seed = rng.gen();
     const auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Sha256Hasher>::Domain > {
@@ -214,9 +214,9 @@ void stacked_test_compound() {
                                          (mmapped_data.as_mut()).into(), None, config, replica_path.clone(), )
             .expect("replication failed");
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto seed = rng.gen();
     const auto public_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Sha256Hasher>::Domain > {

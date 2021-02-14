@@ -180,7 +180,7 @@ namespace nil {
                             const auto tree_proof = tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard)) ? ;
                             replica_nodes.emplace_back(tree_proof, data);
 
-                            auto parents = vec ![0; pub_params.graph.degree()];
+                            std::vector<auto> parents (pub_params.graph.degree(), 0);
                             pub_params.graph.parents(challenge, parents) ? ;
                             std::vector<auto> replica_parentsi;
                             replica_parentsi.reserve(parents.len());
@@ -239,7 +239,7 @@ namespace nil {
                                 return false;
                             }
 
-                            auto expected_parents = vec ![0; pub_params.graph.degree()];
+                            std::vector<auto> expected_parents (pub_params.graph.degree(), 0);
                             pub_params.graph.parents(pub_inputs.challenges[i], expected_parents);
                             if (proof.replica_parents[i].size() != expected_parents.size()) {
                                 std::cout << std::format(
@@ -325,7 +325,7 @@ namespace nil {
                         // we can always get each parent's encodings with a simple lookup --
                         // since we will already have encoded the parent earlier in the traversal.
 
-                        auto parents = vec ![0; graph.degree()];
+                        std::vector<auto> parents (graph.degree(), 0);
                         for (int node = 0; node < graph.size(); node++) {
                             graph.parents(node, parents);
                             auto key = graph.create_key(replica_id, node, &parents, data.as_ref(), None);

@@ -89,8 +89,8 @@ BOOST_AUTO_TEST_CASE(test_bytes_into_frs_into_bytes) {
     const auto bytes = b "012345678901234567890123456789--012345678901234567890123456789--012345678901234567890123456789--";
     bytes_into_frs_into_bytes_test(&bytes[..]);
 
-    const auto _short_bytes = b "012345678901234567890123456789--01234567890123456789";
-    // This will panic because _short_bytes is not a multiple of 32 bytes.
+    const auto short_bytes = b "012345678901234567890123456789--01234567890123456789";
+    // This will panic because short_bytes is not a multiple of 32 bytes.
     // bytes_into_frs_into_bytes_test(&_short_bytes[..]);
 }
 

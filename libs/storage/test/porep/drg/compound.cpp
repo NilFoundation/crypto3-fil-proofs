@@ -32,7 +32,7 @@ void drgporep_test_compound() {
 
     const auto nodes = 8;
     const auto degree = BASE_DEGREE;
-    const auto challenges = vec ![ 1, 3 ];
+    const std::vector<auto> challenges = {1, 3};
 
     const auto replica_id : Fr = Fr::random(rng);
     std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();

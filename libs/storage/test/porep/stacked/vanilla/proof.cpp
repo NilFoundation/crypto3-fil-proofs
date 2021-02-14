@@ -128,9 +128,9 @@ void test_extract_all() {
     StackedDrg<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(),
                                                  replica_path);
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto decoded_data =
         StackedDrg::<Tree, Blake2sHasher>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config), )
@@ -220,9 +220,9 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
                                                      replica_path.clone(), )
             .expect("replication failed");
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto seed = rng.gen();
     const auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Blake2sHasher>::Domain > {
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(setup_terminates) {
 
     // When this fails, the call to setup should panic, but seems to actually hang (i.e. neither return nor panic) for
     // some reason. When working as designed, the call to setup returns without error.
-    const auto _pp = StackedDrg<DiskTree<PedersenHasher, 8, 0, 0>, Blake2sHasher>::setup(sp);
+    const auto pp = StackedDrg<DiskTree<PedersenHasher, 8, 0, 0>, Blake2sHasher>::setup(sp);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
