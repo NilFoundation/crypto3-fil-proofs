@@ -185,12 +185,12 @@ namespace nil {
                             std::vector<auto> replica_parentsi;
                             replica_parentsi.reserve(parents.len());
 
-                            for (p : parents) {
-                                replica_parentsi.push_back((*p, {
+                            for (parents::iterator parent; parent != parents.end(); ++parent) {
+                                replica_parentsi.push_back((*parent, {
                                     const auto proof =
-                                        tree_r.gen_cached_proof(std::size_t(*p), Some(tree_r_config_rows_to_discard));
+                                        tree_r.gen_cached_proof(std::size_t(*parent), Some(tree_r_config_rows_to_discard));
                                     DataProof {
-                                        proof, data : tree_r.read_at(std::size_t(*p))
+                                        proof, data : tree_r.read_at(std::size_t(*parent))
                                     }
                                 }));
                             }
@@ -277,8 +277,8 @@ namespace nil {
                         const auto prover_bytes = pub_inputs.replica_id.context("missing replica_id");
                         hasher.input(AsRef::<[u8]>::as_ref(&prover_bytes));
 
-                        for (p : proof.replica_parents[i].iter()) {
-                            hasher.input(AsRef::<[u8]>::as_ref(&p .1.data));
+                        for (proof.replica_parents[i]::iterator p; p != proof.replica_parents[i].end(); ++p) {
+                            hasher.input(AsRef::<[u8]>::as_ref(*p .1.data));
                         }
 
                         const auto hash = hasher.result_reset();
@@ -417,7 +417,7 @@ namespace nil {
                         std::array<std::uint8_t, NODE_SIZE> scratch;
                         scratch.fill(0);
 
-                        for (std::uint32_t &parent : parents) {
+                        for (parents::iterator parent; parent != parents.end(); ++parent) {
                             tree.read_into(*parent, scratch);
                             hasher.input(&scratch);
                         }

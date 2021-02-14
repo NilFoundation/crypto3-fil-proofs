@@ -102,13 +102,11 @@ namespace nil {
                             // PrivateInput: data_leaf
                             const auto data_leaf_num = num::AllocatedNumber::alloc(
                                 cs.namespace(|| "data_leaf"),
-                                || {data_leaf.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
-                                ;
+                                || {data_leaf.ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                             // enforce inclusion of the data leaf in the tree D
                             enforce_inclusion(cs.namespace(|| "comm_d_inclusion"), comm_d_path, comm_d,
-                                              &data_leaf_num, ) ?
-                                ;
+                                              &data_leaf_num);
 
                             // -- verify replica column openings
 
@@ -116,33 +114,36 @@ namespace nil {
                             std::vector<auto> drg_parents;
                             drg_parents.reserve(layers);
 
-                            for ((i, parent) : drg_parents_proofs.into_iter().enumerate()) {
+                            for ( std::size_t i = 0, drg_parents_proofs::iterator parent; 
+                                parent != drg_parents_proofs.end(); ++i, ++parent ) {
+
                                 const auto(parent_col, inclusion_path) =
-                                    parent.alloc(cs.namespace(|| std::format("drg_parent_{}_num", i))) ?;
+                                    (*parent).alloc(cs.namespace(|| std::format("drg_parent_%d_num", i)));
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
-                                const auto val = parent_col.hash(cs.namespace(|| std::format("drg_parent_{}_constraint", i))) ? ;
+                                const auto val = parent_col.hash(cs.namespace(|| std::format("drg_parent_%d_constraint", i)));
                                 // enforce inclusion of the column hash in the tree C
-                                enforce_inclusion(cs.namespace(|| std::format("drg_parent_{}_inclusion", i)),
-                                                  inclusion_path, comm_c, &val, ) ?;
+                                enforce_inclusion(cs.namespace(|| std::format("drg_parent_%d_inclusion", i)),
+                                                  inclusion_path, comm_c, &val);
                                 drg_parents.push(parent_col);
                             }
 
                             // Private Inputs for the Expander parent nodes.
                             std::vector<auto> exp_parents;
 
-                            for ((i, parent) : exp_parents_proofs.into_iter().enumerate()) {
+                            for ( std::size_t i = 0, exp_parents_proofs::iterator parent; 
+                                parent != exp_parents_proofs.end(); ++i, ++parent ) {
+
                                 const auto(parent_col, inclusion_path) =
-                                    parent.alloc(cs.namespace(|| std::format("exp_parent_{}_num", i))) ?
-                                    ;
+                                    (*parent).alloc(cs.namespace(|| std::format("exp_parent_%d_num", i)));
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
-                                const auto val = parent_col.hash(cs.namespace(|| std::format("exp_parent_{}_constraint", i))) ? ;
+                                const auto val = parent_col.hash(cs.namespace(|| std::format("exp_parent_%d_constraint", i)));
                                 // enforce inclusion of the column hash in the tree C
-                                enforce_inclusion(cs.namespace(|| std::format("exp_parent_{}_inclusion", i)),
-                                                  inclusion_path, comm_c, &val, ) ?;
+                                enforce_inclusion(cs.namespace(|| std::format("exp_parent_%d_inclusion", i)),
+                                                  inclusion_path, comm_c, &val);
                                 exp_parents.push_back(parent_col);
                             }
 
@@ -152,36 +153,33 @@ namespace nil {
                             std::vector<auto> column_labels;
 
                             // PublicInput: challenge index
-                            const auto challenge_num = uint64::UInt64::alloc(cs.namespace(|| "challenge"), challenge) ? ;
-                            challenge_num.pack_into_input(cs.namespace(|| "challenge input")) ? ;
+                            const auto challenge_num = uint64::UInt64::alloc(cs.namespace(|| "challenge"), challenge);
+                            challenge_num.pack_into_input(cs.namespace(|| "challenge input"));
 
                             for (uint32_t layer = 1; layer != layers; layer++) {
                                 const auto layer_num = uint32::UInt32::constant(layer as u32);
 
-                                auto cs = cs.namespace(|| std::format("labeling_{}", layer));
+                                auto cs = cs.namespace(|| std::format("labeling_%d", layer));
 
                                 // Collect the parents
                                 std::vector<auto> parents;
 
                                 // all layers have drg parents
-                                for (parent_col : &drg_parents) {
-                                    const auto parent_val_num = parent_col.get_value(layer);
-                                    const auto parent_val_bits =
-                                        reverse_bit_numbering(parent_val_num.to_bits_le(
-                                    cs.namespace(|| std::format("drg_parent_{}_bits", parents.len())),
-                                    )?);
+                                for (drg_parents::iterator parent_col; parent_col != drg_parents.end(); ++parent_col) {
+                                    const auto parent_val_num = (*parent_col).get_value(layer);
+                                    const auto parent_val_bits = reverse_bit_numbering(parent_val_num.to_bits_le(
+                                        cs.namespace(|| std::format("drg_parent_%d_bits", parents.len()))));
                                     parents.push(parent_val_bits);
                                 }
 
                                 // the first layer does not contain expander parents
                                 if (layer > 1) {
-                                    for (parent_col : exp_parents) {
+                                    for (exp_parents::iterator parent_col; parent_col != exp_parents.end(); ++parent_col) {
                                         // subtract 1 from the layer index, as the exp parents, are shifted by one,
                                         // as they do not store a value for the first layer
-                                        const auto parent_val_num = parent_col.get_value(layer - 1);
+                                        const auto parent_val_num = (*parent_col).get_value(layer - 1);
                                         const auto parent_val_bits = reverse_bit_numbering(parent_val_num.to_bits_le(
-                                        cs.namespace(|| std::format("exp_parent_{}_bits", parents.len())),
-                                        )?);
+                                            cs.namespace(|| std::format("exp_parent_%d_bits", parents.len()))));
                                         parents.push(parent_val_bits);
                                     }
                                 }
@@ -203,8 +201,7 @@ namespace nil {
 
                                 // Reconstruct the label
                                 const auto label = create_label(cs.namespace(|| "create_label"), replica_id, expanded_parents,
-                                                         layer_num, challenge_num.clone(), ) ?
-                                    ;
+                                                         layer_num, challenge_num.clone());
                                 column_labels.push(label);
                             }
 
@@ -213,21 +210,20 @@ namespace nil {
 
                             // key is the last label
                             const auto key = &column_labels[column_labels.len() - 1];
-                            const auto encoded_node = encode(cs.namespace(|| "encode_node"), key, &data_leaf_num) ? ;
+                            const auto encoded_node = encode(cs.namespace(|| "encode_node"), key, &data_leaf_num);
 
                             // verify inclusion of the encoded node
                             enforce_inclusion(cs.namespace(|| "comm_r_last_data_inclusion"), comm_r_last_path,
-                                              comm_r_last, &encoded_node, ) ?;
+                                              comm_r_last, &encoded_node);
 
                             // -- ensure the column hash of the labels is included
                             // calculate column_hash
                             const auto column_hash =
-                                hash_single_column(cs.namespace(|| "c_x_column_hash"), &column_labels) ?
-                                ;
+                                hash_single_column(cs.namespace(|| "c_x_column_hash"), &column_labels);
 
                             // enforce inclusion of the column hash in the tree C
                             enforce_inclusion(cs.namespace(|| "c_x_inclusion"), comm_c_path, comm_c,
-                                              &column_hash, ) ?;
+                                              &column_hash);
                         }
 
                         /// Inclusion path for the challenged data node in tree D.

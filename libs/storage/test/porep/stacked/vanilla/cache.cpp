@@ -75,14 +75,14 @@ BOOST_AUTO_TEST_CASE(test_read_partial_range) {
     half_cache.reset();
     quarter_cache.reset();
 
-    for (node : nodes) {
+    for (nodes::iterator node; node != nodes.end(); ++node) {
         auto expected_parents = [0; DEGREE];
-        graph.parents(std::uint(node), expected_parents);
+        graph.parents(std::uint(*node), expected_parents);
 
-        const auto parents = half_cache.read(node);
+        const auto parents = half_cache.read(*node);
         BOOST_CHECK_EQUAL(expected_parents, parents);
 
-        const auto parents = quarter_cache.read(node);
+        const auto parents = quarter_cache.read(*node);
         BOOST_CHECK_EQUAL(expected_parents, parents);
     }
 }

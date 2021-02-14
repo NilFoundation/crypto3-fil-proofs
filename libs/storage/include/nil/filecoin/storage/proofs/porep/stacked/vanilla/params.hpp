@@ -109,9 +109,9 @@ namespace nil {
                     void verify_stores(VerifyCallback callback, const boost::filesystem::path &cache_dir) {
                         std::vector<StoreConfig> updated_path_labels = labels;
                         std::size_t required_configs = get_base_tree_count<MerkleTreeType>();
-                        for (const StoreConfig &label : updated_path_labels) {
+                        for (updated_path_labels::const_iterator label; label != updated_path_labels.end(); ++label) {
                             label.path = cache_dir;
-                            callback(label, BINARY_ARITY, required_configs);
+                            callback(*label, BINARY_ARITY, required_configs);
                         }
                     }
 
@@ -141,9 +141,9 @@ namespace nil {
                     Column<typename MerkleTreeType::hash_type> column(std::uint32_t node) {
                         std::vector<typename MerkleTreeType::hash_type::digest_type> rows;
 
-                        for (const StoreConfig &label : labels) {
-                            assert(label.size.is_some());
-                            DiskStore store = DiskStore::new_from_disk(label.size, MerkleTreeType::base_arity, label);
+                        for (labels::const_iterator label; label != labels.end(); ++label) {
+                            assert((*label).size.is_some());
+                            DiskStore store = DiskStore::new_from_disk((*label).size, MerkleTreeType::base_arity, *label);
                             rows.push_back(store.read_at(node));
                         }
 
@@ -152,8 +152,8 @@ namespace nil {
 
                     /// Update all configs to the new passed in root cache path.
                     void update_root(const boost::filesystem::path &root) {
-                        for (StoreConfig &config : labels) {
-                            config.path = root;
+                        for (labels::iterator config; config != labels.end(); ++config) {
+                            (*config).path = root;
                         }
                     }
 
@@ -163,8 +163,8 @@ namespace nil {
                 template<typename MerkleTreeType, typename Hash>
                 struct TemporaryAux {
                     void set_cache_path(const boost::filesystem::path &cache_path) {
-                        for (StoreConfig &label : labels.labels) {
-                            label.path = cache_path;
+                        for (labels::iterator label; label != labels.end(); ++label) {
+                            (*label).path = cache_path;
                         }
                         tree_d_config.path = cache_path;
                         tree_r_last_config.path = cache_path;

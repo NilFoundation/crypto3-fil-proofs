@@ -91,20 +91,20 @@ namespace nil {
                         input.push_back(replica_id.into());
 
                         std::vector<typename Hash::digest_type> parents(pub_params.graph.degree());
-                        for (const typename public_inputs_type::challenge_type &challenge : challenges) {
-                            std::vector<std::uint32_t> por_nodes = static_cast<std::uint32_t>(challenge);
+                        for (challenges::iterator challenge; challenge != challenges.end(); ++challenge) {
+                            std::vector<std::uint32_t> por_nodes = static_cast<std::uint32_t>(*challenge);
                             pub_params.graph.parents(*challenge, parents);
                             por_nodes.extend_from_slice(&parents);
 
-                            for (const std::uint32_t node : por_nodes) {
-                                public_inputs por_pub_inputs = {comm_r, node};
+                            for (por_nodes::iterator node; node != por_nodes.end(); ++node) {
+                                public_inputs por_pub_inputs = {comm_r, *node};
                                 const auto por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
                                     &por_pub_inputs, &por_pub_params, None);
 
                                 input.extend(por_inputs);
                             }
 
-                            public_inputs por_pub_inputs = {comm_d, challenge};
+                            public_inputs por_pub_inputs = {comm_d, *challenge};
 
                             const auto por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
                                 por_pub_inputs, por_pub_params, None);

@@ -262,26 +262,28 @@ namespace nil {
                                          challenge_count,
                                          inclusion_proofs.len());
 
-                                for ((n, inclusion_proof) : inclusion_proofs.iter().enumerate()) {
+                                for (std::size_t n = 0, inclusion_proofs::iterator inclusion_proof; 
+                                    inclusion_proof != inclusion_proofs.end(); ++n, ++inclusion_proof) {
+
                                     const auto challenge_index =
                                         ((j * num_sectors_per_chunk + i) * pub_params.challenge_count + n) as u64;
                                     const auto challenged_leaf_start = generate_leaf_challenge(
                                         pub_params, pub_inputs.randomness, sector_id.into(), challenge_index);
 
                                     // validate all comm_r_lasts match
-                                    if (inclusion_proof.root() != comm_r_last) {
+                                    if ((*inclusion_proof).root() != comm_r_last) {
                                         return false;
                                     }
 
                                     // validate the path length
                                     const auto expected_path_length =
-                                        inclusion_proof.expected_len(pub_params.sector_size as usize / NODE_SIZE);
+                                        (*inclusion_proof).expected_len(pub_params.sector_size as usize / NODE_SIZE);
 
-                                    if (expected_path_length != inclusion_proof.path().size()) {
+                                    if (expected_path_length != (*inclusion_proof).path().size()) {
                                         return false;
                                     }
 
-                                    if (!inclusion_proof.validate(challenged_leaf_start)) {
+                                    if (!(*inclusion_proof).validate(challenged_leaf_start)) {
                                         return false;
                                     }
                                 }

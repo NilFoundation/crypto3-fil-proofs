@@ -232,8 +232,8 @@ namespace nil {
                     hash<FormatHash>(FormatHash::name, acc);
                     hash<FormatHash>(graph.identifier(), acc);
 
-                    for (const auto key : graph.feistel_keys) {
-                        hash<FormatHash>(key, acc);
+                    for (graph.feistel_keys::iterator key; key != graph.feistel_keys.end(); ++key) {
+                        hash<FormatHash>(*key, acc);
                     }
 
                     hash<FormatHash>(cache_entries, acc);

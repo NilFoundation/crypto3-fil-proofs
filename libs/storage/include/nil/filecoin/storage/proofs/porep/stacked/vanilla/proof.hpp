@@ -79,7 +79,7 @@ namespace nil {
                             std::vector<std::uint64_t> parents(0, base_degree);
                             graph.base_parents(x, parents);
 
-                            for (std::uint64_t parent : parents) {
+                            for (parents::iterator parent; parent != parents.end(); ++parent) {
                                 columns.push_back(t_aux.column(*parent));
                             }
 
@@ -563,7 +563,7 @@ namespace nil {
                         std::vector<auto> trees;
                         trees.reserve(tree_count);
 
-                        for ((i, config) : configs.iter().enumerate()) {
+                        for (std::size_t i = 0, configs::iterator config; config != configs.end(); ++i, ++config) {
                             std::vector << typename MerkleTreeType::hash_type > ::Domain > hashes (nodes_count, 
                                 <typename MerkleTreeType::hash_type>::Domain::default());
 
@@ -582,7 +582,7 @@ namespace nil {
                                     const auto labels = &labels;
 
                                     s.spawn(move | _ | {
-                                        for ((j, hash) : hashes_chunk.iter_mut().enumerate()) {
+                                        for (std::size_t j = 0, hashes_chunk::iterator hash; hash != hashes_chunk.end(); ++j, ++hash) {
                                             const std::vector<> data =
                                                            (1.. = layers)
                                                                .map(| layer |
@@ -604,9 +604,9 @@ namespace nil {
                                 }
                             });
 
-                            BOOST_LOG_TRIVIAL(info) << std::format("building base tree_c {}/{}", i + 1, tree_count);
+                            BOOST_LOG_TRIVIAL(info) << std::format("building base tree_c %d/%d", i + 1, tree_count);
                             trees.push(DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::
-                                           from_par_iter_with_config(hashes.into_par_iter(), config.clone()));
+                                           from_par_iter_with_config(hashes.into_par_iter(), (*config).clone()));
                         }
 
                         assert(tree_count == trees.len());
@@ -751,7 +751,7 @@ namespace nil {
                             auto start = 0;
                             auto end = size / tree_count;
 
-                            for ((i, config) : configs.iter().enumerate()) {
+                            for (std::size_t i = 0, configs::iterator config; config != configs.end(); ++i, ++config) {
                                 const auto encoded_data = last_layer_labels.read_range(start..end) ?
                                     .into_par_iter()
                                     .zip(data.as_mut()[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE), )
@@ -765,8 +765,8 @@ namespace nil {
                                         encoded_node
                                     });
 
-                                BOOST_LOG_TRIVIAL(info) << std::format("building base tree_r_last with CPU {}/{}", i + 1, tree_count);
-                                LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::from_par_iter_with_config(encoded_data, config.clone());
+                                BOOST_LOG_TRIVIAL(info) << std::format("building base tree_r_last with CPU %d/%d", i + 1, tree_count);
+                                LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::from_par_iter_with_config(encoded_data, (*config).clone());
 
                                 start = end;
                                 end += size / tree_count;
