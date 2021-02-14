@@ -216,7 +216,7 @@ namespace nil {
                     const auto leaf_challenge = LittleEndian::read_u64(&challenge_bytes[8..16]);
 
                     const auto sector_index = (std::uint64_t(sector_challenge % sectors.len())) as usize;
-                    const auto sector = *sectors.iter().nth(sector_index).context("invalid challenge generated") ? ;
+                    const auto sector = *sectors.iter().nth(sector_index).context("invalid challenge generated");
 
                     return {sector, leaf_challenge % (sector_size / NODE_SIZE)};
                 }

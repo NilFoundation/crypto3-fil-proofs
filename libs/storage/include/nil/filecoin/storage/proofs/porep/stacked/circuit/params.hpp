@@ -114,7 +114,7 @@ namespace nil {
                             std::vector<auto> drg_parents;
                             drg_parents.reserve(layers);
 
-                            for ( std::size_t i = 0, drg_parents_proofs::iterator parent; 
+                            for ( std::size_t i = 0, drg_parents_proofs::iterator parent = drg_parents_proofs.begin(); 
                                 parent != drg_parents_proofs.end(); ++i, ++parent ) {
 
                                 const auto(parent_col, inclusion_path) =
@@ -132,7 +132,7 @@ namespace nil {
                             // Private Inputs for the Expander parent nodes.
                             std::vector<auto> exp_parents;
 
-                            for ( std::size_t i = 0, exp_parents_proofs::iterator parent; 
+                            for ( std::size_t i = 0, exp_parents_proofs::iterator parent = exp_parents_proofs.begin(); 
                                 parent != exp_parents_proofs.end(); ++i, ++parent ) {
 
                                 const auto(parent_col, inclusion_path) =
@@ -165,7 +165,9 @@ namespace nil {
                                 std::vector<auto> parents;
 
                                 // all layers have drg parents
-                                for (drg_parents::iterator parent_col; parent_col != drg_parents.end(); ++parent_col) {
+                                for (drg_parents::iterator parent_col = drg_parents.begin(); 
+                                    parent_col != drg_parents.end(); ++parent_col) {
+
                                     const auto parent_val_num = (*parent_col).get_value(layer);
                                     const auto parent_val_bits = reverse_bit_numbering(parent_val_num.to_bits_le(
                                         cs.namespace(|| std::format("drg_parent_%d_bits", parents.len()))));
@@ -174,7 +176,9 @@ namespace nil {
 
                                 // the first layer does not contain expander parents
                                 if (layer > 1) {
-                                    for (exp_parents::iterator parent_col; parent_col != exp_parents.end(); ++parent_col) {
+                                    for (exp_parents::iterator parent_col = exp_parents.begin(); 
+                                        parent_col != exp_parents.end(); ++parent_col) {
+                                        
                                         // subtract 1 from the layer index, as the exp parents, are shifted by one,
                                         // as they do not store a value for the first layer
                                         const auto parent_val_num = (*parent_col).get_value(layer - 1);

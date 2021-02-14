@@ -233,7 +233,7 @@ namespace nil {
                                  };
 
                                  generate_candidate::<Tree>(pub_params, tree, prover_id, *sector_id, randomness,
-                                                            std::uint_64t(sector_challenge_index), )
+                                                            std::uint64_t(sector_challenge_index), )
                              })
                         .collect()
                 }
@@ -305,9 +305,9 @@ namespace nil {
                     hasher.input(&n.to_le_bytes()[..]);
                     const auto hash = hasher.result();
 
-                    const auto sector_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
+                    const auto sector_challenge = LittleEndian::read_u64(&hash[..8]);
                     std::uint sector_index = (std::uint64_t(sector_challenge % sectors.len()));
-                    const auto sector = *sectors.iter().nth(sector_index).context("invalid challenge generated") ? ;
+                    const auto sector = *sectors.iter().nth(sector_index).context("invalid challenge generated");
 
                     return sector;
                 }
@@ -340,7 +340,7 @@ namespace nil {
                     hasher.input(&leaf_challenge_index.to_le_bytes()[..]);
                     const auto hash = hasher.result();
 
-                    const auto leaf_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
+                    const auto leaf_challenge = LittleEndian::read_u64(&hash[..8]);
 
                     std::uint64_t challenged_range_index =
                         leaf_challenge % (pub_params.sector_size / (pub_params.challenged_nodes * NODE_SIZE));

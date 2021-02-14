@@ -51,21 +51,21 @@ namespace nil {
 
                         const auto comm_r_last_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "comm_r_last"),
-                            || {comm_r_last.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
+                            || {comm_r_last.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                         const auto comm_c_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "comm_c"),
-                            || {comm_c.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
+                            || {comm_c.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                         const auto comm_r_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "comm_r"),
-                            || {comm_r.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
+                            || {comm_r.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
-                        comm_r_num.inputize(cs.namespace(|| "comm_r_input")) ? ;
+                        comm_r_num.inputize(cs.namespace(|| "comm_r_input"));
 
                         // Verify H(Comm_C || comm_r_last) == comm_r
                         const auto hash_num = <typename MerkleTreeType::hash_type>::Function::hash2_circuit(
-                            cs.namespace(|| "H_comm_c_comm_r_last"), &comm_c_num, &comm_r_last_num, ) ?;
+                            cs.namespace(|| "H_comm_c_comm_r_last"), &comm_c_num, &comm_r_last_num, );
 
                         // Check actual equality
                         constraint::equal(cs, || "enforce_comm_c_comm_r_last_hash_comm_r", &comm_r_num,
@@ -75,7 +75,7 @@ namespace nil {
                         for ((i, (leaf, path)) : leafs.iter().zip(paths.iter()).enumerate()) {
                             PoRCircuit::<Tree>::synthesize(
                                 cs.namespace(|| std::format("challenge_inclusion{}", i)), Root::Val(*leaf),
-                                path.clone().into(), Root::from_allocated::<CS>(comm_r_last_num.clone()), true, ) ?;
+                                path.clone().into(), Root::from_allocated::<CS>(comm_r_last_num.clone()), true, );
                         }
 
                         // 3. Verify partial ticket
@@ -83,23 +83,23 @@ namespace nil {
                         // randomness
                         const auto randomness_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "randomness"),
-                            || {randomness.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
+                            || {randomness.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                         // prover_id
                         const auto prover_id_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "prover_id"),
-                            || {prover_id.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
+                            || {prover_id.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                         // sector_id
                         const auto sector_id_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "sector_id"),
-                            || {sector_id.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
+                            || {sector_id.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                         const std::vector<auto> partial_ticket_nums = {randomness_num, prover_id_num, sector_id_num};
                         for ((i, leaf) in leafs.iter().enumerate()) {
                             const auto leaf_num = num::AllocatedNumber::alloc(
                                 cs.namespace(|| std::format("leaf_{}", i)),
-                                || {leaf.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
+                                || {leaf.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
                             partial_ticket_nums.push(leaf_num);
                         }
 
@@ -108,19 +108,19 @@ namespace nil {
                         while (partial_ticket_nums.size() % arity) {
                             partial_ticket_nums.push(num::AllocatedNumber::alloc(
                                 cs.namespace(|| std::format("padding_{}", partial_ticket_nums.len())),
-                            || Ok(Fr::zero()),)?);
+                            || Ok(Fr::zero())));
                         }
 
                         // hash it
                         const auto partial_ticket_num = PoseidonFunction::hash_md_circuit::<_>(
-                            cs.namespace(|| "partial_ticket_hash"), &partial_ticket_nums, ) ?;
+                            cs.namespace(|| "partial_ticket_hash"), &partial_ticket_nums, );
 
                         // allocate expected input
                         const auto expected_partial_ticket_num = num::AllocatedNumber::alloc(
                             cs.namespace(|| "partial_ticket"),
-                            || {partial_ticket.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?;
+                            || {partial_ticket.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
-                        expected_partial_ticket_num.inputize(cs.namespace(|| "partial_ticket_input")) ? ;
+                        expected_partial_ticket_num.inputize(cs.namespace(|| "partial_ticket_input"));
 
                         // check equality
                         constraint::equal(cs, || "enforce partial_ticket is correct", &partial_ticket_num,

@@ -125,7 +125,7 @@ void test_extract_all() {
 
     const auto pp = StackedDrg<Tree, Blake2sHasher>::setup(&sp);
 
-    StackedDrg<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(),
+    StackedDrg<Tree, Blake2sHasher>::replicate(&pp, &replica_id, mmapped_data.into(), None, config.clone(),
                                                  replica_path);
 
     std::vector<auto> copied (data.len(), 0);
@@ -133,7 +133,7 @@ void test_extract_all() {
     BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto decoded_data =
-        StackedDrg::<Tree, Blake2sHasher>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config), )
+        StackedDrg::<Tree, Blake2sHasher>::extract_all(&pp, &replica_id, mmapped_data, Some(config), )
             .expect("failed to extract data");
 
     BOOST_ASSERT(data, decoded_data);
@@ -216,7 +216,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
 
     const auto pp = StackedDrg::<Tree, Blake2sHasher>::setup(&sp).expect("setup failed");
     const auto(tau, (p_aux, t_aux)) =
-        StackedDrg::<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config,
+        StackedDrg::<Tree, Blake2sHasher>::replicate(&pp, &replica_id, mmapped_data.into(), None, config,
                                                      replica_path.clone(), )
             .expect("replication failed");
 

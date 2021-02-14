@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(test_read_partial_range) {
     half_cache.reset();
     quarter_cache.reset();
 
-    for (nodes::iterator node; node != nodes.end(); ++node) {
+    for (nodes::iterator node = nodes.begin(); node != nodes.end(); ++node) {
         auto expected_parents = [0; DEGREE];
         graph.parents(std::uint(*node), expected_parents);
 

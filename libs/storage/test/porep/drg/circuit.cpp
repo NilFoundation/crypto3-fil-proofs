@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(drgporep_input_circuit_with_bls12_381) {
 
     const auto pp = drg::DrgPoRep::<PedersenHasher, BucketGraph<_>>::setup(&sp).expect("failed to create drgporep setup");
     const auto(tau, aux) = drg::DrgPoRep::<PedersenHasher, _>::replicate(
-                        &pp, &replica_id.into(), (mmapped_data.as_mut()).into(), None, config, replica_path.clone(), )
+                        &pp, &replica_id.into(), (mmapped_data).into(), None, config, replica_path.clone(), )
                         .expect("failed to replicate");
 
     const auto pub_inputs = drg::PublicInputs {

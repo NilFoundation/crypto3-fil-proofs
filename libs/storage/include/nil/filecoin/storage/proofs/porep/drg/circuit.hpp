@@ -170,10 +170,9 @@ namespace nil {
 
                             const auto replica_node_num = num::AllocatedNumber::alloc(
                                 cs.namespace(|| "replica_node"),
-                                || {(*replica_node).ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
-                                ;
+                                || {(*replica_node).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
-                            const auto decoded = encode::decode(cs.namespace(|| "decode"), &key, &replica_node_num) ? ;
+                            const auto decoded = encode::decode(cs.namespace(|| "decode"), &key, &replica_node_num);
 
                             // TODO this should not be here, instead, this should be the leaf Fr in the
                             // data_auth_path
@@ -181,8 +180,7 @@ namespace nil {
                             // of hashes of the data
                             const auto expected = num::AllocatedNumber::alloc(
                                 cs.namespace(|| "data node"),
-                                || {data_node.ok_or_else(|| SynthesisError::AssignmentMissing)}) ?
-                                ;
+                                || {data_node.ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                             // ensure the encrypted data and data_node match
                             constraint::equal(cs, || "equality", &expected, &decoded);
@@ -219,7 +217,7 @@ namespace nil {
                     if (alloc_bits[0].get_value().is_some()) {
                         const auto be_bits = alloc_bits.iter()
                                           .map(| v | v.get_value().ok_or(SynthesisError::AssignmentMissing))
-                                          .collect::<Result<Vec<bool>, SynthesisError>>() ?;
+                                          .collect::<Result<Vec<bool>, SynthesisError>>();
 
                         const auto le_bits = be_bits.chunks(8)
                                           .flat_map(| chunk | chunk.iter().rev())

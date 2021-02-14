@@ -29,6 +29,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/assert.hpp>
 #include <boost/log/trivial.hpp>
+#include <boost/iterator/zip_iterator.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/column.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
@@ -69,7 +70,7 @@ namespace nil {
 
                         // Sanity checks on restored trees.
                         assert(pub_inputs.tau.is_some());
-                        assert(pub_inputs.tau.as_ref().comm_d == t_aux.tree_d.root());
+                        assert(pub_inputs.tau.comm_d == t_aux.tree_d.root());
 
                         auto get_drg_parents_columns = [&](std::size_t x) -> std::vector<Column<tree_hash_type>> {
                             std::size_t base_degree = graph.base_graph().degree();
@@ -79,7 +80,7 @@ namespace nil {
                             std::vector<std::uint64_t> parents(0, base_degree);
                             graph.base_parents(x, parents);
 
-                            for (parents::iterator parent; parent != parents.end(); ++parent) {
+                            for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent) {
                                 columns.push_back(t_aux.column(*parent));
                             }
 
@@ -95,7 +96,7 @@ namespace nil {
                             std::vector<Column<tree_hash_type>> result;
                             result.reserve(parents.size());
 
-                            for (parents::iterator parent; parent != parents.end(); ++parent){
+                            for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent){
                                 result.push_back(t_aux.column(*(*parent)));
                             }
 
@@ -108,21 +109,21 @@ namespace nil {
                             std::vector<auto> result_k;
                             result_k.reserve(challenges.size()); // not sure about actual size of result_k
 
-                            BOOST_LOG_TRIVIAL(trace) << std::format("proving partition {}/{}", k + 1, partition_count);
+                            BOOST_LOG_TRIVIAL(trace) << std::format("proving partition %d/%d", k + 1, partition_count);
 
                             // Derive the set of challenges we are proving over.
-                            auto challenges = pub_inputs.challenges(layer_challenges, graph_size, Some(k));
+                            std::vector<std::size_t> challenges = pub_inputs.challenges(layer_challenges, graph_size, Some(k));
 
                             // Stacked commitment specifics
-                            for (std::size_t challenge_index = 0, challenges::iterator challenge; 
+                            for (std::size_t challenge_index = 0, challenges::iterator challenge = challenges.begin(); 
                                  challenge != challenges.end(); ++challenge_index, ++challenge) {
 
-                                BOOST_LOG_TRIVIAL(trace) << std::format(" challenge {} (%d)", *challenge, challenge_index);
+                                BOOST_LOG_TRIVIAL(trace) << std::format(" challenge %d (%d)", *challenge, challenge_index);
                                 BOOST_ASSERT_MSG(*challenge < graph.size(), "Invalid challenge");
                                 BOOST_ASSERT_MSG(*challenge > 0, "Invalid challenge");
 
                                 // Initial data layer openings (c_X in Comm_D)
-                                auto comm_d_proof = t_aux.tree_d.gen_proof(*challenge) ? ;
+                                auto comm_d_proof = t_aux.tree_d.gen_proof(*challenge);
                                 BOOST_ASSERT(comm_d_proof.validate(*challenge));
 
                                 // Stacked replica column openings
@@ -133,19 +134,19 @@ namespace nil {
 
                                         // All labels in C_X
                                         BOOST_LOG_TRIVIAL(trace) << "  c_x";
-                                        auto c_x = t_aux.column(std::uint_32t(*challenge)) ?.into_proof(tree_c);
+                                        auto c_x = t_aux.column(std::uint32_t(*challenge)).into_proof(tree_c);
 
                                         // All labels in the DRG parents.
                                         BOOST_LOG_TRIVIAL(trace) << "  drg_parents";
                                         auto drg_parents =
-                                            get_drg_parents_columns(*challenge) ?.into_iter()
+                                            get_drg_parents_columns(*challenge).into_iter()
                                                                                     .map(| column | column.into_proof(tree_c))
                                                                                     .collect::<Result<_>>();
 
                                         // Labels for the expander parents
                                         BOOST_LOG_TRIVIAL(trace) << "  exp_parents";
                                         auto exp_parents =
-                                            get_exp_parents_columns(*challenge) ?.into_iter()
+                                            get_exp_parents_columns(*challenge).into_iter()
                                                                                     .map(| column | column.into_proof(tree_c))
                                                                                     .collect::<Result<_>>();
 
@@ -182,7 +183,9 @@ namespace nil {
 
                                         parents_data.reserve(parents.size());
 
-                                        for (parents::iterator parent; parent != parent.end(); ++parent){
+                                        for (parents::iterator parent = parents.begin(); 
+                                            parent != parent.end(); ++parent){
+
                                             parents_data.push_back(t_aux.domain_node_at_layer(layer, *parent));
                                         }
                                     } else {
@@ -192,7 +195,9 @@ namespace nil {
 
                                         parents_data.reserve(parents.size());
 
-                                        for (std::size_t i = 0, parents::iterator parent; parent != parent.end(); ++i, ++parent){
+                                        for (std::size_t i = 0, parents::iterator parent = parents.begin(); 
+                                            parent != parent.end(); ++i, ++parent){
+
                                             if (i < base_parents_count) {
                                                 // parents data for base parents is from the current
                                                 // layer
@@ -211,10 +216,10 @@ namespace nil {
                                         chunk.copy_from_slice(&parents_data[..chunk.size()]);
                                     }
 
-                                    const auto proof = LabelingProof::<typename MerkleTreeType::hash_type> (std::uint_32t(layer), 
-                                        std::uint_64t(challenge), parents_data_full.clone());
+                                    const auto proof = LabelingProof::<typename MerkleTreeType::hash_type> (std::uint32_t(layer), 
+                                        std::uint64_t(*challenge), parents_data_full.clone());
 
-                                    const auto labeled_node = rcp.c_x.get_node_at_layer(layer) ? ;
+                                    const auto labeled_node = rcp.c_x.get_node_at_layer(layer);
                                     BOOST_ASSERT_MSG(proof.verify(&pub_inputs.replica_id, &labeled_node),
                                              std::format("Invalid encoding proof generated at layer {}", layer));
                                     BOOST_LOG_TRIVIAL(trace) << std::format("Valid encoding proof generated at layer %d", layer);
@@ -223,7 +228,7 @@ namespace nil {
 
                                     if (layer == layers) {
                                         encoding_proof =
-                                            Some(EncodingProof (std::uint_32t(layer), std::uint_64t(challenge), parents_data_full, ));
+                                            Some(EncodingProof (std::uint32_t(layer), std::uint64_t(*challenge), parents_data_full, ));
                                     }
                                 }
 
@@ -251,12 +256,13 @@ namespace nil {
                         // generate labels
                         const auto labels = std::get<0>(generate_labels(graph, layer_challenges, replica_id, config));
 
-                        const auto last_layer_labels = labels.labels_for_last_layer() ? ;
+                        const auto last_layer_labels = labels.labels_for_last_layer();
                         const auto size = merkletree::store::Store::len(last_layer_labels);
 
                         for ((key, encoded_node_bytes)
-                            : last_layer_labels.read_range(0..size) ?.into_iter().zip(data.chunks_mut(NODE_SIZE))) {
-                            const auto encoded_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(encoded_node_bytes) ? ;
+                            : last_layer_labels.read_range(0..size).into_iter().zip(data.chunks_mut(NODE_SIZE))) {
+
+                            const auto encoded_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(encoded_node_bytes);
                             const auto data_node = decode:: << typename MerkleTreeType::hash_type> ::Domain > (key, encoded_node);
 
                             // store result in the data
@@ -284,7 +290,7 @@ namespace nil {
                         std::vector<auto> labels_buffer (2 * layer_size, 0u8);
 
                         const auto use_cache = settings::SETTINGS.lock().maximize_caching;
-                        auto cache = use_cache ? Some(graph.parent_cache()?) : None;
+                        auto cache = use_cache ? Some(graph.parent_cache()) : None;
 
                         for (layer in 1.. = layers) {
                             BOOST_LOG_TRIVIAL(info) << std::format("generating layer: %d", layer);
@@ -294,14 +300,14 @@ namespace nil {
 
                             if (layer == 1) {
                                 const auto layer_labels = labels_buffer[..layer_size];
-                                for (node = 0; node < graph.size(); ++node) {
-                                    create_label(graph, cache.as_mut(), replica_id, layer_labels, layer, node) ? ;
+                                for (std::size_t node = 0; node < graph.size(); ++node) {
+                                    create_label(graph, cache, replica_id, layer_labels, layer, node);
                                 }
                             } else {
                                 const auto(layer_labels, exp_labels) = labels_buffer.split_at_mut(layer_size);
-                                for (node = 0; node < graph.size(); ++node) {
-                                    create_label_exp(graph, cache.as_mut(), replica_id, exp_labels, layer_labels, layer,
-                                                     node, ) ?;
+                                for (std::size_t node = 0; node < graph.size(); ++node) {
+                                    create_label_exp(graph, cache, replica_id, exp_labels, layer_labels, layer,
+                                                     node);
                                 }
                             }
 
@@ -328,8 +334,7 @@ namespace nil {
                         BOOST_ASSERT_MSG(labels.len() == layers, "Invalid amount of layers encoded expected");
 
                         return ((LabelsCache::<Tree> {labels}, Labels::<Tree> {
-                            labels : label_configs,
-                            _h : PhantomData,
+                            labels : label_configs
                         }))
                     }
 
@@ -508,8 +513,10 @@ namespace nil {
                                                           std::vector<auto> buf
                                                           buf.reserve(batch_size * NODE_SIZE);
 
-                                                          for (fr : fr_elements) {
-                                                              buf.extend(fr_into_bytes(&fr));
+                                                          for (fr_elements::iterator fr = fr_elements.begin(); 
+                                                            fr != fr_elements.end(); ++fr) {
+
+                                                              buf.extend(fr_into_bytes(*fr));
                                                           }
                                                           store.write()
                                                               .expect("failed to access store for write")
@@ -563,7 +570,9 @@ namespace nil {
                         std::vector<auto> trees;
                         trees.reserve(tree_count);
 
-                        for (std::size_t i = 0, configs::iterator config; config != configs.end(); ++i, ++config) {
+                        for (std::size_t i = 0, configs::iterator config = configs.begin(); 
+                            config != configs.end(); ++i, ++config) {
+
                             std::vector << typename MerkleTreeType::hash_type > ::Domain > hashes (nodes_count, 
                                 <typename MerkleTreeType::hash_type>::Domain::default());
 
@@ -571,7 +580,7 @@ namespace nil {
                                 const auto n = num_cpus::get();
 
                                 // only split if we have at least two elements per thread
-                                std::size_t num_chunks = n > nodes_count * 2 ? 1 : n;
+                                std::size_t num_chunks = (n > nodes_count * 2) ? 1 : n;
 
                                 // chunk into n chunks
                                 std::size_t chunk_size =
@@ -582,7 +591,9 @@ namespace nil {
                                     const auto labels = &labels;
 
                                     s.spawn(move | _ | {
-                                        for (std::size_t j = 0, hashes_chunk::iterator hash; hash != hashes_chunk.end(); ++j, ++hash) {
+                                        for (std::size_t j = 0, hashes_chunk::iterator hash = hashes_chunk.begin(); 
+                                            hash != hashes_chunk.end(); ++j, ++hash) {
+
                                             const std::vector<> data =
                                                            (1.. = layers)
                                                                .map(| layer |
@@ -654,7 +665,7 @@ namespace nil {
                                                 last_layer_labels.read_range(start..end)
                                                     .expect("failed to read layer range")
                                                     .into_par_iter()
-                                                    .zip(data.as_mut()[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(
+                                                    .zip(data[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(
                                                              NODE_SIZE), )
                                                     .map(| (key, data_node_bytes) | {
                                                         const auto data_node =
@@ -718,21 +729,16 @@ namespace nil {
                                                   tree_data.into_par_iter().flat_map(| el | fr_into_bytes(&el)).collect();
 
                                         // Persist the data to the store based on the current config.
-                                        const auto tree_r_last_path = StoreConfig::data_path(&config.path, &config.id);
+                                        const boost::filesystem::path tree_r_last_path = StoreConfig::data_path(&config.path, &config.id);
 
-                                        BOOST_LOG_TRIVIAL(trace) << std::format("persisting tree r of len {} with {} rows to discard at path {:?}",
+                                        BOOST_LOG_TRIVIAL(trace) << std::format("persisting tree r of len %d with {} rows to discard at path %s",
                                                 tree_data_len,
                                                 config.rows_to_discard,
-                                                tree_r_last_path);
-                                        try{
-                                            auto f = OpenOptions ()
-                                                            .create(true)
-                                                            .write(true)
-                                                            .open(&tree_r_last_path);
-                                        } catch ("failed to open file for tree_r_last"){
+                                                tree_r_last_path.string());
+                                            
+                                        boost::filesystem::ofstream f (tree_r_last_path);
 
-                                        }
-                                        f.write_all(&flat_tree_data).expect("failed to wrote tree_r_last data");
+                                        f << flat_tree_data;
 
                                         // Move on to the next config.
                                         i += 1;
@@ -751,10 +757,12 @@ namespace nil {
                             auto start = 0;
                             auto end = size / tree_count;
 
-                            for (std::size_t i = 0, configs::iterator config; config != configs.end(); ++i, ++config) {
-                                const auto encoded_data = last_layer_labels.read_range(start..end) ?
+                            for (std::size_t i = 0, configs::iterator config = configs.begin(); 
+                                config != configs.end(); ++i, ++config) {
+                                
+                                const auto encoded_data = last_layer_labels.read_range(start..end)
                                     .into_par_iter()
-                                    .zip(data.as_mut()[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE), )
+                                    .zip(data[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE), )
                                     .map(| (key, data_node_bytes) | {
                                         const auto data_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes)
                                                             .expect("try from bytes failed");
@@ -840,12 +848,12 @@ namespace nil {
                         StoreConfig tree_c_config = StoreConfig::from_config(
                                 &config,
                                 cache_key::CommCTree.to_string(),
-                                Some(get_merkle_tree_len(nodes_count, MerkleTreeType::base_arity)?),
+                                Some(get_merkle_tree_len(nodes_count, MerkleTreeType::base_arity)),
                             );
                         tree_c_config.rows_to_discard = default_rows_to_discard(nodes_count, MerkleTreeType::base_arity);
 
                         LabelsCache<tree_type> labels(&label_configs);
-                        const auto configs = split_config(tree_c_config.clone(), tree_count) ? ;
+                        const auto configs = split_config(tree_c_config.clone(), tree_count);
 
                         typename tree_hash_type::digest_type tree_c_root;
                         if (layers == 2) {
@@ -871,7 +879,7 @@ namespace nil {
                         if (data_tree.empty()) {
                             BOOST_LOG_TRIVIAL(trace) << "building merkle tree for the original data";
                             data.ensure_data();
-                            build_binary_tree::<G>(data.as_ref(), tree_d_config.clone());
+                            build_binary_tree::<G>(data, tree_d_config.clone());
                         } else {
                             BOOST_LOG_TRIVIAL(trace) << "using existing original data merkle tree";
                             BOOST_ASSERT (t.len() == 2 * (data.len() / NODE_SIZE) - 1);
@@ -897,24 +905,24 @@ namespace nil {
                         data.drop_data();
 
                         // comm_r = H(comm_c || comm_r_last)
-                        const auto comm_r : <typename MerkleTreeType::hash_type>::Domain =
+                        typename <typename MerkleTreeType::hash_type>::Domain comm_r =
                                          <typename MerkleTreeType::hash_type>::Function::hash2(&tree_c_root, &tree_r_last_root);
 
-                        return ((Tau {
-                                    comm_d : tree_d_root,
-                                    comm_r,
-                                },
-                                PersistentAux {
-                                    comm_c : tree_c_root,
-                                    comm_r_last : tree_r_last_root,
-                                },
-                                TemporaryAux {
-                                    labels : label_configs,
-                                    tree_d_config,
-                                    tree_r_last_config,
-                                    tree_c_config,
-                                    _g : PhantomData,
-                                }));
+                        return std::make_tuple(Tau<typename MerkleTreeType::hash_type::digest_type, 
+                                                   typename Hash::digest_type> ({
+                                                   .comm_d = tree_d_root,
+                                                   .comm_r
+                                               }),
+                                               PersistentAux<typename MerkleTreeType::hash_type::digest_type> ({
+                                                   .comm_c = tree_c_root,
+                                                   .comm_r_last = tree_r_last_root
+                                               }),
+                                               TemporaryAux<MerkleTreeType, Hash> ({
+                                                   .labels = label_configs,
+                                                   .tree_d_config,
+                                                   .tree_r_last_config,
+                                                   .tree_c_config
+                                               }));
                     }
 
                     /// Phase1 of replication.

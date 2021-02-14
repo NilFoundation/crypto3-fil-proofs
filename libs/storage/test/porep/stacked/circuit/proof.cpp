@@ -61,7 +61,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
 
     const auto pp = StackedDrg<Tree, Sha256Hasher>::setup(&sp).expect("setup failed");
     const auto(tau, (p_aux, t_aux)) =
-        StackedDrg<Tree, Sha256Hasher>::replicate(&pp, &replica_id.into(), (mmapped_data.as_mut()).into(), None, config,
+        StackedDrg<Tree, Sha256Hasher>::replicate(&pp, &replica_id.into(), mmapped_data.into(), None, config,
                                                   replica_path.clone(), )
             .expect("replication failed");
 
@@ -211,7 +211,7 @@ void stacked_test_compound() {
     const auto public_params = StackedCompound::setup(&setup_params).expect("setup failed");
     const auto(tau, (p_aux, t_aux)) =
         StackedDrg::<Tree, _>::replicate(&public_params.vanilla_params, &replica_id.into(),
-                                         (mmapped_data.as_mut()).into(), None, config, replica_path.clone(), )
+                                         mmapped_data.into(), None, config, replica_path.clone(), )
             .expect("replication failed");
 
     std::vector<auto> copied (data.len(), 0);

@@ -67,7 +67,7 @@ void drgporep_test_compound() {
 
     const auto data_tree : Option<BinaryMerkleTree<typename MerkleTreeType::hash_type>> = None;
     const auto(tau, aux) = drg::DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<_>>::replicate(
-                        &public_params.vanilla_params, &replica_id.into(), (mmapped_data.as_mut()).into(), data_tree,
+                        &public_params.vanilla_params, &replica_id.into(), (mmapped_data).into(), data_tree,
                         config, replica_path.clone(), )
                         .expect("failed to replicate");
 

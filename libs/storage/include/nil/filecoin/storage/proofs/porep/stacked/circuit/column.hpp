@@ -72,7 +72,7 @@ namespace nil {
                                             {num::AllocatedNumber::alloc(
                                                 cs.namespace(|| std::format("column_num_row_{}", i)),
                                                 || {val.ok_or_else(|| SynthesisError::AssignmentMissing)})})
-                                       .collect::<Result<Vec<_>, _>>() ?;
+                                       .collect::<Result<Vec<_>, _>>();
 
                         return {rows};
                     }

@@ -134,7 +134,7 @@ namespace nil {
             bool validate_sub_tree_proof(std::size_t arity) {
                 // Ensure that the sub_tree validates to the root of that
                 // sub_tree.
-                bool valid = sub_tree_proof.as_ref().unwrap().validate::<A>();
+                bool valid = sub_tree_proof.unwrap().validate::<A>();
                 if (!valid) {
                         return valid;
                     }
@@ -480,7 +480,7 @@ namespace nil {
                 const auto sub_p = p.sub_tree_proof;
 
                 BOOST_ASSERT_MSG(sub_p.sub_tree_proof, "Cannot generate top proof without a base-proof");
-                const auto base_p = sub_p.sub_tree_proof.as_ref();
+                const auto base_p = sub_p.sub_tree_proof;
 
                 const auto root = p.root();
                 const auto leaf = base_p.item();

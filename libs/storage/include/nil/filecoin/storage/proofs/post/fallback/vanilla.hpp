@@ -262,7 +262,7 @@ namespace nil {
                                          challenge_count,
                                          inclusion_proofs.len());
 
-                                for (std::size_t n = 0, inclusion_proofs::iterator inclusion_proof; 
+                                for (std::size_t n = 0, inclusion_proofs::iterator inclusion_proof = inclusion_proofs.begin(); 
                                     inclusion_proof != inclusion_proofs.end(); ++n, ++inclusion_proof) {
 
                                     const auto challenge_index =
@@ -351,7 +351,7 @@ namespace nil {
 
                     const auto hash = hasher.result();
 
-                    const auto sector_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
+                    const auto sector_challenge = LittleEndian::read_u64(&hash[..8]);
                     std::uint64_t sector_index = sector_challenge % sector_set_len;
 
                     return sector_index;
@@ -367,7 +367,7 @@ namespace nil {
                     hasher.input(&leaf_challenge_index.to_le_bytes()[..]);
                     const auto hash = hasher.result();
 
-                    const auto leaf_challenge = LittleEndian::read_u64(&hash.as_ref()[..8]);
+                    const auto leaf_challenge = LittleEndian::read_u64(&hash[..8]);
 
                     std::uint64_t challenged_range_index = leaf_challenge % (pub_params.sector_size / NODE_SIZE);
 

@@ -152,7 +152,7 @@ namespace nil {
 
                     /// Update all configs to the new passed in root cache path.
                     void update_root(const boost::filesystem::path &root) {
-                        for (labels::iterator config; config != labels.end(); ++config) {
+                        for (labels::iterator config = labels.begin(); config != labels.end(); ++config) {
                             (*config).path = root;
                         }
                     }
@@ -163,7 +163,7 @@ namespace nil {
                 template<typename MerkleTreeType, typename Hash>
                 struct TemporaryAux {
                     void set_cache_path(const boost::filesystem::path &cache_path) {
-                        for (labels::iterator label; label != labels.end(); ++label) {
+                        for (labels::iterator label = labels.begin(); label != labels.end(); ++label) {
                             (*label).path = cache_path;
                         }
                         tree_d_config.path = cache_path;
@@ -225,12 +225,13 @@ namespace nil {
                         if (cached(&t_aux.tree_c_config)) {
                             delete_tree_c_store(&t_aux.tree_c_config, tree_c_size);
                         } else if (cached(configs[0])) {
-                            for (const StoreConfig &config : configs) {
+                            for (configs::const_iterator config = configs.begin(); 
+                                config != configs.end(); ++config){
                                 // Trees with sub-trees cannot be instantiated and deleted via the existing tree
                                 // interface since knowledge of how the base trees are split exists outside of merkle
                                 // light.  For now, we manually remove each on disk tree file since we know where they
                                 // are here.
-                                boost::filesystem::path tree_c_path = StoreConfig::data_path(config.path, config.id);
+                                boost::filesystem::path tree_c_path = StoreConfig::data_path(config->path, config->id);
                                 remove_file(tree_c_path);
                             }
                         }
@@ -240,7 +241,7 @@ namespace nil {
                             StoreConfig cur_config = t_aux.labels.labels[i].clone();
                             if (cached(cur_config)) {
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::delete (cur_config)
-                                    .with_context(|| std::format("labels {}", i));
+                                    .with_context(|| std::format("labels %d", i));
                                 BOOST_LOG_TRIVIAL(trace) << std::format("layer %d deleted", i);
                             }
                         }
