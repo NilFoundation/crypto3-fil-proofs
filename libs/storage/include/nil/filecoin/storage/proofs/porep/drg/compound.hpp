@@ -91,20 +91,20 @@ namespace nil {
                         input.push_back(replica_id.into());
 
                         std::vector<typename Hash::digest_type> parents(pub_params.graph.degree());
-                        for (const typename public_inputs_type::challenge_type &challenge : challenges) {
-                            std::vector<std::uint32_t> por_nodes = static_cast<std::uint32_t>(challenge);
+                        for (challenges::iterator challenge = challenges.begin(); challenge != challenges.end(); ++challenge) {
+                            std::vector<std::uint32_t> por_nodes = static_cast<std::uint32_t>(*challenge);
                             pub_params.graph.parents(*challenge, parents);
                             por_nodes.extend_from_slice(&parents);
 
-                            for (const std::uint32_t node : por_nodes) {
-                                public_inputs por_pub_inputs = {comm_r, node};
+                            for (por_nodes::iterator node = por_nodes.begin(); node != por_nodes.end(); ++node) {
+                                public_inputs por_pub_inputs = {comm_r, *node};
                                 const auto por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
                                     &por_pub_inputs, &por_pub_params, None);
 
                                 input.extend(por_inputs);
                             }
 
-                            public_inputs por_pub_inputs = {comm_d, challenge};
+                            public_inputs por_pub_inputs = {comm_d, *challenge};
 
                             const auto por_inputs = PoRCompound<BinaryMerkleTree<hash_type>>::generate_public_inputs(
                                 por_pub_inputs, por_pub_params, None);
@@ -124,11 +124,11 @@ namespace nil {
                         BOOST_ASSERT_MSG(proof.replica_parents.size() == len, "Number of replica parents must match");
                         BOOST_ASSERT_MSG(proof.replica_nodes.size() == len, "Number of replica nodes must match");
 
-                        const auto replica_nodes
-                            : Vec<_> = proof.replica_nodes.iter().map(| node | Some(node.data.into())).collect();
+                        std::vector<_> replica_nodes
+                            = proof.replica_nodes.iter().map(| node | Some(node.data.into())).collect();
 
-                        const auto replica_nodes_paths
-                            : Vec<_> = proof.replica_nodes.iter().map(| node | node.proof.as_options()).collect();
+                        std::vector<_> replica_nodes_paths
+                            = proof.replica_nodes.iter().map(| node | node.proof.as_options()).collect();
 
                         bool is_private = public_params.priv;
 
@@ -142,28 +142,26 @@ namespace nil {
 
                         const auto replica_id = public_inputs.replica_id;
 
-                        const auto replica_parents
-                            : Vec<_> =
+                        std::vector<_> replica_parents =
                                   proof.replica_parents.iter()
                                       .map(| parents |
                                            {parents.iter().map(| (_, parent) | Some(parent.data.into())).collect()})
                                       .collect();
 
-                        const auto replica_parents_paths
-                            : Vec<Vec<_>> =
+                        std::vector<std::vector<_>> replica_parents_paths =
                                   proof.replica_parents.iter()
                                       .map(| parents |
                                            {
-                                               const auto p : Vec<_> = parents.iter()
+                                               std::vector<_> p = parents.iter()
                                                                     .map(| (_, parent) | parent.proof.as_options())
                                                                     .collect();
                                                p
                                            })
                                       .collect();
 
-                        const auto data_nodes : Vec<_> = proof.nodes.iter().map(| node | Some(node.data.into())).collect();
+                        std::vector<_> data_nodes = proof.nodes.iter().map(| node | Some(node.data.into())).collect();
 
-                        const auto data_nodes_paths : Vec<_> =
+                        std::vector<_> data_nodes_paths =
                                                    proof.nodes.iter().map(| node | node.proof.as_options()).collect();
 
                         BOOST_ASSERT_MSG(public_inputs.tau.is_none() == public_params.priv, "inconsistent private state");
@@ -189,16 +187,16 @@ namespace nil {
 
                         std::size_t challenges_count = public_params.challenges_count;
 
-                        const auto replica_nodes = vec ![None; challenges_count];
-                        const auto replica_nodes_paths =
+                        const std::vector<auto> replica_nodes (challenges_count, None);
+                        const std::vector<std::vector<std::vector<auto>>> replica_nodes_paths =
                             vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; challenges_count];
 
                         const auto replica_root = Root::Val(None);
-                        const auto replica_parents = vec ![vec ![None; degree]; challenges_count];
-                        const auto replica_parents_paths =
+                        const std::vector<std::vector<auto>> replica_parents (challenges_count, std::vector<auto>(degree, None));
+                        const std::vector<std::vector<std::vector<std::vector<auto>>>> replica_parents_paths =
                             vec ![vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; degree]; challenges_count];
                         const auto data_nodes = vec ![None; challenges_count];
-                        const auto data_nodes_paths =
+                        const std::vector<std::vector<std::vector<auto>>> data_nodes_paths =
                             vec ![vec ![(vec ![None; arity - 1], None); depth - 1]; challenges_count];
                         const auto data_root = Root::Val(None);
 

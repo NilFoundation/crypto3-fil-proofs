@@ -38,7 +38,7 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     const auto replica_id : Fr = Fr::random(rng);
-    const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
@@ -61,13 +61,13 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
 
     const auto pp = StackedDrg<Tree, Sha256Hasher>::setup(&sp).expect("setup failed");
     const auto(tau, (p_aux, t_aux)) =
-        StackedDrg<Tree, Sha256Hasher>::replicate(&pp, &replica_id.into(), (mmapped_data.as_mut()).into(), None, config,
+        StackedDrg<Tree, Sha256Hasher>::replicate(&pp, &replica_id.into(), mmapped_data.into(), None, config,
                                                   replica_path.clone(), )
             .expect("replication failed");
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto seed = rng.gen();
     const auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Sha256Hasher>::Domain > {
@@ -80,36 +80,20 @@ void stacked_input_circuit(std::size_t expected_inputs, std::size_t expected_con
     // Store copy of original t_aux for later resource deletion.
     const auto t_aux_orig = t_aux.clone();
 
-    try{
-        // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
-        // elements based on the configs stored in TemporaryAux.
-        const auto t_aux = TemporaryAuxCache::<Tree, Sha256Hasher>(&t_aux, replica_path);
-    } catch("failed to restore contents of t_aux"){
-
-    }
+    // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
+    // elements based on the configs stored in TemporaryAux.
+    const auto t_aux = TemporaryAuxCache::<Tree, Sha256Hasher>(&t_aux, replica_path);
 
     const auto priv_inputs = PrivateInputs::<Tree, Sha256Hasher> {p_aux, t_aux};
 
-    try{
-        const auto proofs = StackedDrg::<Tree, Sha256Hasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, 1);
-    } catch ("failed to generate partition proofs"){
+    const auto proofs = StackedDrg::<Tree, Sha256Hasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, 1);
 
-    }
-
-    try {
-        const auto proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs);
-    } catch ("failed while trying to verify partition proofs"){
-
-    }
+    const auto proofs_are_valid = StackedDrg::<Tree, Sha256Hasher>::verify_all_partitions(&pp, &pub_inputs, &proofs);
 
     BOOST_ASSERT (proofs_are_valid);
 
-    try{
-        // Discard cached MTs that are no longer needed.
-        TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig);
-    } catch("t_aux delete failed"){
-
-    }
+    // Discard cached MTs that are no longer needed.
+    TemporaryAux::<Tree, Sha256Hasher>::clear_temp(t_aux_orig);
 
     // Verify that MetricCS returns the same metrics as TestConstraintSystem.
     auto cs = MetricCS::<Bls12>();
@@ -183,7 +167,7 @@ void stacked_test_compound() {
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     const auto replica_id : Fr = Fr::random(rng);
-    const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     const auto arbitrary_porep_id = [55; 32];
     const auto setup_params = compound_proof::SetupParams {
@@ -211,12 +195,12 @@ void stacked_test_compound() {
     const auto public_params = StackedCompound::setup(&setup_params).expect("setup failed");
     const auto(tau, (p_aux, t_aux)) =
         StackedDrg::<Tree, _>::replicate(&public_params.vanilla_params, &replica_id.into(),
-                                         (mmapped_data.as_mut()).into(), None, config, replica_path.clone(), )
+                                         mmapped_data.into(), None, config, replica_path.clone(), )
             .expect("replication failed");
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto seed = rng.gen();
     const auto public_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Sha256Hasher>::Domain > {

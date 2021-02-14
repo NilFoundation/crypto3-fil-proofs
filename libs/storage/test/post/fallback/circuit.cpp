@@ -43,7 +43,7 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
         challenged_nodes : 1,
     };
 
-    Vec<SectorId> sectors = Vec();
+    std::vector<SectorId> sectors;
     auto trees = BTreeMap();
 
     // Construct and store an MT using a named store.
@@ -94,7 +94,7 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
                               .map(| v | {(v .0.iter().copied().map(Into::into).map(Some).collect(), Some(v .1), )})
                               .collect::<Vec<_>>()})
                     .collect();
-    const auto leafs : Vec<_> = proof.leafs().iter().map(| l | Some((*l).into())).collect();
+    std::vector<_> leafs = proof.leafs().iter().map(| l | Some((*l).into())).collect();
 
     auto cs = TestConstraintSystem<algebra::curves::bls12<381>>();
 
@@ -107,8 +107,7 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
         partial_ticket : Some(candidate.partial_ticket),
         randomness : Some(randomness.into()),
         prover_id : Some(prover_id.into()),
-        sector_id : Some(candidate.sector_id.into()),
-        _t : PhantomData,
+        sector_id : Some(candidate.sector_id.into())
     };
 
     instance.synthesize(cs).expect("failed to synthesize circuit");

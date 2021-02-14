@@ -125,24 +125,20 @@ void test_extract_all() {
 
     const auto pp = StackedDrg<Tree, Blake2sHasher>::setup(&sp);
 
-    StackedDrg<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(),
+    StackedDrg<Tree, Blake2sHasher>::replicate(&pp, &replica_id, mmapped_data.into(), None, config.clone(),
                                                  replica_path);
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto decoded_data =
-        StackedDrg::<Tree, Blake2sHasher>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config), )
+        StackedDrg::<Tree, Blake2sHasher>::extract_all(&pp, &replica_id, mmapped_data, Some(config), )
             .expect("failed to extract data");
 
     BOOST_ASSERT(data, decoded_data);
 
-    try {
-        cache_dir.close();
-    } catch ("Failed to remove cache dir"){
-
-    }
+    cache_dir.close();
 }
 
 void prove_verify_fixed(std::size_t n) {
@@ -191,7 +187,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     const auto degree = BASE_DEGREE;
     const auto expansion_degree = EXP_DEGREE;
     const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
@@ -216,13 +212,13 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
 
     const auto pp = StackedDrg::<Tree, Blake2sHasher>::setup(&sp).expect("setup failed");
     const auto(tau, (p_aux, t_aux)) =
-        StackedDrg::<Tree, Blake2sHasher>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config,
+        StackedDrg::<Tree, Blake2sHasher>::replicate(&pp, &replica_id, mmapped_data.into(), None, config,
                                                      replica_path.clone(), )
             .expect("replication failed");
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto seed = rng.gen();
     const auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Blake2sHasher>::Domain > {
@@ -235,44 +231,26 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     // Store a copy of the t_aux for later resource deletion.
     const auto t_aux_orig = t_aux.clone();
 
-    try {
-        // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
-        // elements based on the configs stored in TemporaryAux.
-        const auto t_aux = TemporaryAuxCache::<Tree, Blake2sHasher>(&t_aux, replica_path);
-    } catch("failed to restore contents of t_aux"){
-
-    }
+    
+    // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
+    // elements based on the configs stored in TemporaryAux.
+    const auto t_aux = TemporaryAuxCache::<Tree, Blake2sHasher>(&t_aux, replica_path);
 
     const auto priv_inputs = PrivateInputs {p_aux, t_aux};
 
-    try {
-        const auto all_partition_proofs =
-            &StackedDrg::<Tree, Blake2sHasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, partitions);
-    } catch("failed to generate partition proofs"){
+    
+    const auto all_partition_proofs =
+        &StackedDrg::<Tree, Blake2sHasher>::prove_all_partitions(&pp, &pub_inputs, &priv_inputs, partitions);
 
-    }
+    const auto proofs_are_valid =
+        StackedDrg::<Tree, Blake2sHasher>::verify_all_partitions(&pp, &pub_inputs, all_partition_proofs);
 
-    try {
-        const auto proofs_are_valid =
-            StackedDrg::<Tree, Blake2sHasher>::verify_all_partitions(&pp, &pub_inputs, all_partition_proofs);
-    } catch("failed to verify partition proofs"){
-
-    }
-
-    try {
-        // Discard cached MTs that are no longer needed.
-        TemporaryAux::<Tree, Blake2sHasher>::clear_temp(t_aux_orig);
-    } catch("t_aux delete failed"){
-
-    }
+    // Discard cached MTs that are no longer needed.
+    TemporaryAux::<Tree, Blake2sHasher>::clear_temp(t_aux_orig);
 
     BOOST_ASSERT (proofs_are_valid);
 
-    try {
-        cache_dir.close();
-    } catch("Failed to remove cache dir"){
-
-    }
+    cache_dir.close();
 }
 
 // We are seeing a bug, in which setup never terminates for some sector sizes.
@@ -288,7 +266,7 @@ BOOST_AUTO_TEST_CASE(setup_terminates) {
 
     // When this fails, the call to setup should panic, but seems to actually hang (i.e. neither return nor panic) for
     // some reason. When working as designed, the call to setup returns without error.
-    const auto _pp = StackedDrg<DiskTree<PedersenHasher, 8, 0, 0>, Blake2sHasher>::setup(sp);
+    const auto pp = StackedDrg<DiskTree<PedersenHasher, 8, 0, 0>, Blake2sHasher>::setup(sp);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

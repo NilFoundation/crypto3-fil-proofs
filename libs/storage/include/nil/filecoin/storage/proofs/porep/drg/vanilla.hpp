@@ -176,20 +176,21 @@ namespace nil {
                             const auto tree_r = &priv_inputs.tree_r;
                             const auto tree_r_config_rows_to_discard = priv_inputs.tree_r_config_rows_to_discard;
 
-                            const auto data = tree_r.read_at(challenge) ? ;
-                            const auto tree_proof = tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard)) ? ;
+                            const auto data = tree_r.read_at(challenge);
+                            const auto tree_proof = tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard));
                             replica_nodes.emplace_back(tree_proof, data);
 
-                            auto parents = vec ![0; pub_params.graph.degree()];
-                            pub_params.graph.parents(challenge, parents) ? ;
-                            auto replica_parentsi = Vec::with_capacity(parents.len());
+                            std::vector<auto> parents (pub_params.graph.degree(), 0);
+                            pub_params.graph.parents(challenge, parents);
+                            std::vector<auto> replica_parentsi;
+                            replica_parentsi.reserve(parents.len());
 
-                            for (p : parents) {
-                                replica_parentsi.push_back((*p, {
+                            for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent) {
+                                replica_parentsi.push_back((*parent, {
                                     const auto proof =
-                                        tree_r.gen_cached_proof(std::size_t(*p), Some(tree_r_config_rows_to_discard));
+                                        tree_r.gen_cached_proof(std::size_t(*parent), Some(tree_r_config_rows_to_discard));
                                     DataProof {
-                                        proof, data : tree_r.read_at(std::size_t(*p))
+                                        proof, data : tree_r.read_at(std::size_t(*parent))
                                     }
                                 }));
                             }
@@ -198,19 +199,11 @@ namespace nil {
 
                             const auto node_proof = generate_proof(tree_d, challenge);
 
-                            // TODO: use this again, I can't make lifetimes work though atm and I do not know
-                            // why auto extracted = Self::extract(
-                            //     pub_params,
-                            //     &pub_inputs.replica_id.into_bytes(),
-                            //     &replica,
-                            //     challenge,
-                            // )?;
-
                             const auto extracted = decode_domain_block::<H>(
-                                &pub_inputs.replica_id.context("missing replica_id")?,
+                                &pub_inputs.replica_id.context("missing replica_id"),
                                     tree_r,
                                     challenge,
-                                    tree_r.read_at(challenge)?,
+                                    tree_r.read_at(challenge),
                                     &parents,
                             );
                             data_nodes.emplace_back(extracted, node_proof);
@@ -238,7 +231,7 @@ namespace nil {
                                 return false;
                             }
 
-                            auto expected_parents = vec ![0; pub_params.graph.degree()];
+                            std::vector<auto> expected_parents (pub_params.graph.degree(), 0);
                             pub_params.graph.parents(pub_inputs.challenges[i], expected_parents);
                             if (proof.replica_parents[i].size() != expected_parents.size()) {
                                 std::cout << std::format(
@@ -276,12 +269,14 @@ namespace nil {
                         const auto prover_bytes = pub_inputs.replica_id.context("missing replica_id");
                         hasher.input(AsRef::<[u8]>::as_ref(&prover_bytes));
 
-                        for (p : proof.replica_parents[i].iter()) {
-                            hasher.input(AsRef::<[u8]>::as_ref(&p .1.data));
+                        for (proof.replica_parents[i]::iterator p = proof.replica_parents[i].begin(); 
+                            p != proof.replica_parents[i].end(); ++p) {
+                            
+                            hasher.input(AsRef::<[u8]>::as_ref(*p .1.data));
                         }
 
                         const auto hash = hasher.result_reset();
-                        const auto key = bytes_into_fr_repr_safe(hash.as_ref()).into();
+                        const auto key = bytes_into_fr_repr_safe(hash).into();
 
                         const auto unsealed = encode::decode(key, proof.replica_nodes[i].data);
 
@@ -313,7 +308,7 @@ namespace nil {
                                 break;
                             case None:
                                 tree_d = create_base_merkle_tree<BinaryMerkleTree<Hash>>(
-                                                              Some(config.clone()), pp.graph.size(), data.as_ref());
+                                                              Some(config.clone()), pp.graph.size(), data);
                         };
 
                         const auto graph = &pp.graph;
@@ -324,15 +319,15 @@ namespace nil {
                         // we can always get each parent's encodings with a simple lookup --
                         // since we will already have encoded the parent earlier in the traversal.
 
-                        auto parents = vec ![0; graph.degree()];
+                        std::vector<auto> parents (graph.degree(), 0);
                         for (int node = 0; node < graph.size(); node++) {
                             graph.parents(node, parents);
-                            auto key = graph.create_key(replica_id, node, &parents, data.as_ref(), None);
+                            auto key = graph.create_key(replica_id, node, &parents, data, None);
                             auto start = data_at_node_offset(node);
                             auto end = start + NODE_SIZE;
 
-                            auto node_data = <H>::Domain::try_from_bytes(&data.as_ref()[start..end]);
-                            auto encoded = H::sloth_encode(key.as_ref(), &node_data);
+                            auto node_data = <H>::Domain::try_from_bytes(&data[start..end]);
+                            auto encoded = H::sloth_encode(key, &node_data);
 
                             encoded.write_bytes(data[start..end]);
                         }
@@ -344,7 +339,7 @@ namespace nil {
                         const auto tree_r_last_config =
                             StoreConfig::from_config(&config, cache_key::CommRLastTree.to_string(), None);
                         const auto tree_r = create_base_lcmerkle_tree::<H, <BinaryLCMerkleTree<H> as MerkleTreeTrait>::Arity>(
-                            tree_r_last_config, pp.graph.size(), &data.as_ref(), &replica_config);
+                            tree_r_last_config, pp.graph.size(), &data, &replica_config);
 
                         const auto comm_d = tree_d.root();
                         const auto comm_r = tree_r.root();
@@ -374,10 +369,10 @@ namespace nil {
 
                     std::vector<std::uint8_t> parents(graph.degree());
                     graph.parents(v, parents);
-                    const auto key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data) ? ;
-                    const auto node_data = <H>::Domain::try_from_bytes(&data_at_node(data, v)?)?;
+                    const auto key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data);
+                    const auto node_data = <H>::Domain::try_from_bytes(&data_at_node(data, v));
 
-                    return encode::decode(*key.as_ref(), node_data);
+                    return encode::decode(*key, node_data);
                 }
 
                 template<typename Hash, template<typename> class Graph>
@@ -416,14 +411,14 @@ namespace nil {
                         std::array<std::uint8_t, NODE_SIZE> scratch;
                         scratch.fill(0);
 
-                        for (std::uint32_t &parent : parents) {
+                        for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent) {
                             tree.read_into(*parent, scratch);
                             hasher.input(&scratch);
                         }
                     }
 
                     const auto hash = hasher.result();
-                    return bytes_into_fr_repr_safe(hash.as_ref()).into();
+                    return bytes_into_fr_repr_safe(hash).into();
                 }
 
                 template<typename Hash, template<typename> class BinaryLCMerkleTree>

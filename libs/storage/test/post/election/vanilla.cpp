@@ -41,7 +41,7 @@ void test_election_post() {
     const auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
     const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
 
-    Vec<SectorId> sectors = Vec();
+    std::vector<SectorId> sectors;
     auto trees = BTreeMap();
 
     // Construct and store an MT using a named store.
@@ -67,19 +67,12 @@ void test_election_post() {
 
     PrivateInputs<MerkleTreeType> priv_inputs = {tree, comm_c, comm_r_last};
 
-    try {
-        const auto proof = ElectionPoSt<MerkleTreeType>::prove(&pub_params, &pub_inputs, &priv_inputs);
-    } catch("proving failed"){
+    
+    const auto proof = ElectionPoSt<MerkleTreeType>::prove(&pub_params, &pub_inputs, &priv_inputs);
 
-    }
+    bool is_valid = ElectionPoSt<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof);
 
-    try {
-        bool is_valid = ElectionPoSt<MerkleTreeType>::verify(&pub_params, &pub_inputs, &proof);
-
-        BOOST_CHECK(is_valid);
-    } catch("verification failed"){
-
-    }
+    BOOST_CHECK(is_valid);
 
 }
 

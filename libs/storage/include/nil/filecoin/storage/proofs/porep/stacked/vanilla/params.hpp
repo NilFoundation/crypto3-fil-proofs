@@ -109,9 +109,9 @@ namespace nil {
                     void verify_stores(VerifyCallback callback, const boost::filesystem::path &cache_dir) {
                         std::vector<StoreConfig> updated_path_labels = labels;
                         std::size_t required_configs = get_base_tree_count<MerkleTreeType>();
-                        for (const StoreConfig &label : updated_path_labels) {
+                        for (updated_path_labels::const_iterator label; label != updated_path_labels.end(); ++label) {
                             label.path = cache_dir;
-                            callback(label, BINARY_ARITY, required_configs);
+                            callback(*label, BINARY_ARITY, required_configs);
                         }
                     }
 
@@ -141,9 +141,9 @@ namespace nil {
                     Column<typename MerkleTreeType::hash_type> column(std::uint32_t node) {
                         std::vector<typename MerkleTreeType::hash_type::digest_type> rows;
 
-                        for (const StoreConfig &label : labels) {
-                            assert(label.size.is_some());
-                            DiskStore store = DiskStore::new_from_disk(label.size, MerkleTreeType::base_arity, label);
+                        for (labels::const_iterator label; label != labels.end(); ++label) {
+                            assert((*label).size.is_some());
+                            DiskStore store = DiskStore::new_from_disk((*label).size, MerkleTreeType::base_arity, *label);
                             rows.push_back(store.read_at(node));
                         }
 
@@ -152,8 +152,8 @@ namespace nil {
 
                     /// Update all configs to the new passed in root cache path.
                     void update_root(const boost::filesystem::path &root) {
-                        for (StoreConfig &config : labels) {
-                            config.path = root;
+                        for (labels::iterator config = labels.begin(); config != labels.end(); ++config) {
+                            (*config).path = root;
                         }
                     }
 
@@ -163,8 +163,8 @@ namespace nil {
                 template<typename MerkleTreeType, typename Hash>
                 struct TemporaryAux {
                     void set_cache_path(const boost::filesystem::path &cache_path) {
-                        for (StoreConfig &label : labels.labels) {
-                            label.path = cache_path;
+                        for (labels::iterator label = labels.begin(); label != labels.end(); ++label) {
+                            (*label).path = cache_path;
                         }
                         tree_d_config.path = cache_path;
                         tree_r_last_config.path = cache_path;
@@ -187,9 +187,6 @@ namespace nil {
                     // 'clear_temp' will discard all persisted merkle and layer data
                     // that is no longer required.
                     void clear_temp(TemporaryAux<MerkleTreeType, Hash> t_aux) {
-                        const auto cached = [&](const StoreConfig &config) -> bool {
-                            return boost::filesystem::path(StoreConfig::data_path(config.path, config.id)).exists();
-                        };
 
                         const auto delete_tree_c_store = [&](const StoreConfig &config, std::size_t tree_c_size) {
                             DiskStore<typename MerkleTreeType::hash_type::digest_type> tree_c_store =
@@ -205,7 +202,7 @@ namespace nil {
                             tree_c.erase(config.clone());
                         };
 
-                        if (cached(&t_aux.tree_d_config)) {
+                        if (is_cached(&t_aux.tree_d_config)) {
                             std::size_t tree_d_size = t_aux.tree_d_config.size.context("tree_d config has no size");
                             DiskStore<typename Hash::digest_type> tree_d_store =
                                 DiskStore::new_from_disk(tree_d_size, BINARY_ARITY, &t_aux.tree_d_config)
@@ -222,25 +219,26 @@ namespace nil {
                         std::size_t tree_c_size = t_aux.tree_c_config.size;
                         const auto configs = split_config(t_aux.tree_c_config.clone(), tree_count);
 
-                        if (cached(&t_aux.tree_c_config)) {
+                        if (is_cached(&t_aux.tree_c_config)) {
                             delete_tree_c_store(&t_aux.tree_c_config, tree_c_size);
-                        } else if (cached(configs[0])) {
-                            for (const StoreConfig &config : configs) {
+                        } else if (is_cached(configs[0])) {
+                            for (configs::const_iterator config = configs.begin(); 
+                                config != configs.end(); ++config){
                                 // Trees with sub-trees cannot be instantiated and deleted via the existing tree
                                 // interface since knowledge of how the base trees are split exists outside of merkle
                                 // light.  For now, we manually remove each on disk tree file since we know where they
                                 // are here.
-                                boost::filesystem::path tree_c_path = StoreConfig::data_path(config.path, config.id);
-                                remove_file(tree_c_path);
+                                boost::filesystem::path tree_c_path = StoreConfig::data_path(config->path, config->id);
+                                boost::filesystem::remove(tree_c_path);
                             }
                         }
                         BOOST_LOG_TRIVIAL(trace) << "tree c deleted";
 
                         for (int i = 0; i < t_aux.labels.labels.size(); i++) {
                             StoreConfig cur_config = t_aux.labels.labels[i].clone();
-                            if (cached(cur_config)) {
+                            if (is_cached(cur_config)) {
                                 DiskStore<typename MerkleTreeType::hash_type::digest_type>::delete (cur_config)
-                                    .with_context(|| std::format("labels {}", i));
+                                    .with_context(|| std::format("labels %d", i));
                                 BOOST_LOG_TRIVIAL(trace) << std::format("layer %d deleted", i);
                             }
                         }
@@ -250,6 +248,10 @@ namespace nil {
                     StoreConfig tree_d_config;
                     StoreConfig tree_r_last_config;
                     StoreConfig tree_c_config;
+                private:
+                    bool is_cached (const StoreConfig &config) {
+                        return boost::filesystem::exists(boost::filesystem::path(StoreConfig::data_path(config.path, config.id)));
+                    };
                 };
 
                 template<typename T, typename S>

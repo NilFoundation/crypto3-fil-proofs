@@ -36,7 +36,7 @@ void test_merklepor() {
         private : false,
     };
 
-    const auto data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
     const auto porep_id = [3; 32];
     const auto graph = BucketGraph<typename MerkleTreeType::hash_type> (leaves, BASE_DEGREE, 0, porep_id);
     const auto tree = create_base_merkle_tree::<Tree>(None, graph.size(), data.as_slice());
@@ -111,7 +111,7 @@ void test_merklepor_validates<Tree : MerkleTreeTrait>() {
         private : false,
     };
 
-    const auto data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+    std::vector<std::uint8_t> data = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     const auto porep_id = [99; 32];
 

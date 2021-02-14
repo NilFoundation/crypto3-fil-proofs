@@ -34,7 +34,7 @@ void test_extract_all() {
     const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = 
         <typename MerkleTreeType::hash_type>::Domain::random(rng);
     const std::size_t nodes = 4;
-    const auto data = vec ![2u8; 32 * nodes];
+    const std::vector<auto> data (32 * nodes, 2u8);
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
@@ -59,15 +59,15 @@ void test_extract_all() {
 
     const auto pp : PublicParams<typename MerkleTreeType::hash_type, BucketGraph<typename MerkleTreeType::hash_type>> = DrgPoRep::setup(&sp).expect("setup failed");
 
-    DrgPoRep::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(), replica_path.clone(), )
+    DrgPoRep::replicate(&pp, &replica_id, (mmapped_data).into(), None, config.clone(), replica_path.clone(), )
         .expect("replication failed");
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto decoded_data =
-        DrgPoRep::<typename MerkleTreeType::hash_type, _>::extract_all(&pp, &replica_id, mmapped_data.as_mut(), Some(config.clone()), )
+        DrgPoRep::<typename MerkleTreeType::hash_type, _>::extract_all(&pp, &replica_id, mmapped_data, Some(config.clone()), )
             .unwrap_or_else(| e | { panic !("Failed to extract data from `DrgPoRep`: {}", e); });
 
     BOOST_ASSERT_MSG(data == decoded_data.as_slice(), "failed to extract data");
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
 
     const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
     const std::size_t nodes = 4;
-    const auto data = vec ![2u8; 32 * nodes];
+    const std::vector<auto> data (32 * nodes, 2u8);
 
     // MT for original data is always named tree-d, and it will be
     // referenced later in the process as such.
@@ -117,12 +117,12 @@ BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
 
     const auto pp = DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<typename MerkleTreeType::hash_type>>::setup(&sp).expect("setup failed");
 
-    DrgPoRep::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None, config.clone(), replica_path.clone(), )
+    DrgPoRep::replicate(&pp, &replica_id, (mmapped_data).into(), None, config.clone(), replica_path.clone(), )
         .expect("replication failed");
 
-    auto copied = vec ![0; data.len()];
+    std::vector<auto> copied (data.len(), 0);
     copied.copy_from_slice(&mmapped_data);
-    assert_ne !(data, copied, "replication did not change data");
+    BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     for (i = 0; i < nodes; ++i) {
         const auto decoded_data = DrgPoRep::extract(&pp, &replica_id, &mmapped_data, i, Some(config.clone()))
@@ -157,7 +157,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         const auto expansion_degree = 0;
 
         const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-        const auto data : Vec<u8> = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+        std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
         // MT for original data is always named tree-d, and it will be
         // referenced later in the process as such.
@@ -184,13 +184,13 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
 
         const auto pp = DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<_>>::setup(&sp).expect("setup failed");
 
-        const auto(tau, aux) = DrgPoRep::<typename MerkleTreeType::hash_type, _>::replicate(&pp, &replica_id, (mmapped_data.as_mut()).into(), None,
+        const auto(tau, aux) = DrgPoRep::<typename MerkleTreeType::hash_type, _>::replicate(&pp, &replica_id, (mmapped_data).into(), None,
                                                                config, replica_path.clone(), )
                             .expect("replication failed");
 
-        auto copied = vec ![0; data.len()];
+        std::vector<auto> copied (data.len(), 0);
         copied.copy_from_slice(&mmapped_data);
-        assert_ne !(data, copied, "replication did not change data");
+        BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
         const auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain > {
             replica_id : Some(replica_id),

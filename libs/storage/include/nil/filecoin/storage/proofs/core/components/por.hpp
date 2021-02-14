@@ -257,33 +257,33 @@ namespace nil {
                 }
 
                 
-                const auto value_num = value.allocated(cs.namespace(|| "value")) ? ;
+                const auto value_num = value.allocated(cs.namespace(|| "value"));
                 const auto cur = value_num;
 
                 // Ascend the merkle tree authentication path
 
                 // base tree
-                const auto(cur, base_auth_path_bits) = auth_path.base.synthesize(cs.namespace(|| "base"), cur) ? ;
+                const auto(cur, base_auth_path_bits) = auth_path.base.synthesize(cs.namespace(|| "base"), cur);
 
                 // sub
-                const auto(cur, sub_auth_path_bits) = auth_path.sub.synthesize(cs.namespace(|| "sub"), cur) ? ;
+                const auto(cur, sub_auth_path_bits) = auth_path.sub.synthesize(cs.namespace(|| "sub"), cur);
 
                 // top
-                const auto(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur) ? ;
+                const auto(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur);
 
-                auto auth_path_bits = Vec ();
+                std::vector<auto> auth_path_bits;
                 auth_path_bits.extend(base_auth_path_bits);
                 auth_path_bits.extend(sub_auth_path_bits);
                 auth_path_bits.extend(top_auth_path_bits);
 
-                multipack::pack_into_inputs(cs.namespace(|| "path"), &auth_path_bits) ? ;
+                multipack::pack_into_inputs(cs.namespace(|| "path"), &auth_path_bits);
                 // Validate that the root of the merkle tree that we calculated is the same as the input.
-                const auto rt = root.allocated(cs.namespace(|| "root_value")) ? ;
+                const auto rt = root.allocated(cs.namespace(|| "root_value"));
                 constraint::equal(cs, || "enforce root is correct", &computed_root, &rt);
 
                 if (!priv) {
                     // Expose the root
-                    rt.inputize(cs.namespace(|| "root")) ? ;
+                    rt.inputize(cs.namespace(|| "root"));
                 }
             }
 

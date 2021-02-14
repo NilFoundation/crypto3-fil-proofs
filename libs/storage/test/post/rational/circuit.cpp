@@ -54,14 +54,13 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
 
     const auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
     const auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
-    const auto comm_r_lasts_raw = vec ![ tree1.root(), tree2.root() ];
-    const auto comm_r_lasts : Vec<_> = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
+    const std::vector<auto> comm_r_lasts_raw = { tree1.root(), tree2.root() };
+    std::vector<_> comm_r_lasts = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
 
-    const auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    std::vector<< typename MerkleTreeType::hash_type > ::Domain > comm_cs 
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    const auto comm_rs
-        : Vec<_> = comm_cs.iter()
+    std::vector<_> comm_rs = comm_cs.iter()
                        .zip(comm_r_lasts.iter())
                        .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
                        .collect();
@@ -82,22 +81,14 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
         comm_r_lasts : &comm_r_lasts,
     };
 
-    try {
-        const auto proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs);
-    } catch ("proving failed"){
+    const auto proof = RationalPoSt::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs);
 
-    }
-
-    try {
-        const auto is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof);
-        BOOST_ASSERT (is_valid);
-    } catch("verification failed"){
-
-    }
+    const auto is_valid = RationalPoSt::<Tree>::verify(&pub_params, &pub_inputs, &proof);
+    BOOST_ASSERT (is_valid);
 
     // actual circuit test
 
-    const Vec<_> paths =
+    const std::vector<_> paths =
                     proof.paths()
                         .iter()
                         .map(| p |
@@ -105,7 +96,7 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
                                   .map(| v | {(v .0.iter().copied().map(Into::into).map(Some).collect(), Some(v .1), )})
                                   .collect::<Vec<_>>()})
                         .collect();
-    const Vec<_> leafs = proof.leafs().iter().map(| l | Some((*l).into())).collect();
+    const std::vector<_> leafs = proof.leafs().iter().map(| l | Some((*l).into())).collect();
 
     auto cs = TestConstraintSystem<algebra::curves::bls12<381>>();
 
@@ -114,15 +105,10 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
         paths,
         comm_rs : comm_rs.iter().copied().map(| c | Some(c.into())).collect(),
         comm_cs : comm_cs.into_iter().map(| c | Some(c.into())).collect(),
-        comm_r_lasts : comm_r_lasts.into_iter().map(| c | Some(c.into())).collect(),
-        _t : PhantomData,
+        comm_r_lasts : comm_r_lasts.into_iter().map(| c | Some(c.into())).collect()
     };
 
-    try{
-        instance.synthesize(cs);
-    } catch("failed to synthesize circuit"){
-
-    }
+    instance.synthesize(cs);
 
     BOOST_ASSERT_MSG(cs.is_satisfied(), "constraints not satisfied");
 

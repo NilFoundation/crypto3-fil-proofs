@@ -32,7 +32,7 @@ void drgporep_test_compound() {
 
     const auto nodes = 8;
     const auto degree = BASE_DEGREE;
-    const auto challenges = vec ![ 1, 3 ];
+    const std::vector<auto> challenges = {1, 3};
 
     const auto replica_id : Fr = Fr::random(rng);
     std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
@@ -67,7 +67,7 @@ void drgporep_test_compound() {
 
     const auto data_tree : Option<BinaryMerkleTree<typename MerkleTreeType::hash_type>> = None;
     const auto(tau, aux) = drg::DrgPoRep::<typename MerkleTreeType::hash_type, BucketGraph<_>>::replicate(
-                        &public_params.vanilla_params, &replica_id.into(), (mmapped_data.as_mut()).into(), data_tree,
+                        &public_params.vanilla_params, &replica_id.into(), (mmapped_data).into(), data_tree,
                         config, replica_path.clone(), )
                         .expect("failed to replicate");
 

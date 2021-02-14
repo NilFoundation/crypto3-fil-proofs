@@ -212,8 +212,7 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
             value : Root::Val(Some(proof.data.into())),
             auth_path : proof.proof.as_options().into(),
             root : Root::Val(Some(pub_inputs.commitment.into())),
-            private : false,
-            _tree : PhantomData,
+            private : false
         };
 
         por.synthesize(cs).expect("circuit synthesis failed");
@@ -388,7 +387,7 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
     for (std::size_t i = 0; i < leaves; ++i) {
         // -- Basic Setup
 
-        const auto data : Vec<u8> = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
+        std::vector<std::uint8_t> data = (0..leaves).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
         const auto tree = create_base_merkle_tree<MerkleTreeType>(None, leaves, data.as_slice());
 
@@ -421,8 +420,7 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
             value : Root::Val(Some(proof.data.into())),
             auth_path : proof.proof.as_options().into(),
             root : Root::Val(Some(tree.root().into())),
-            private : true,
-            _tree : PhantomData,
+            private : true
         };
 
         por.synthesize(cs).expect("circuit synthesis failed");
@@ -434,7 +432,7 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_con
         const auto auth_path_bits = challenge_into_auth_path_bits(pub_inputs.challenge, pub_params.leaves);
         const auto packed_auth_path = multipack::compute_multipacking::<algebra::curves::bls12<381>>(&auth_path_bits);
 
-        auto expected_inputs = Vec();
+        std::vector<auto> expected_inputs;
         expected_inputs.extend(packed_auth_path);
 
         BOOST_ASSERT_MSG(cs.get_input(0, "ONE") == Fr::one(), "wrong input 0");

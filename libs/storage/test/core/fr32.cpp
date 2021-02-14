@@ -40,7 +40,7 @@ void bytes_fr_test(const fr32_array &bytes, bool expect_success) {
 
 void bytes_into_frs_into_bytes_test(const fr32 &bytes) {
     auto bytes = bytes.clone();
-    const auto frs = bytes_into_frs(bytes).expect("Failed to convert bytes into a `Vec<Fr>`");
+    const auto frs = bytes_into_frs(bytes).expect("Failed to convert bytes into a `std::vector<Fr>`");
     BOOST_CHECK(frs.len() == 3);
     const auto bytes_back = frs_into_bytes(&frs);
     BOOST_CHECK(bytes.to_vec() == bytes_back);
@@ -89,8 +89,8 @@ BOOST_AUTO_TEST_CASE(test_bytes_into_frs_into_bytes) {
     const auto bytes = b "012345678901234567890123456789--012345678901234567890123456789--012345678901234567890123456789--";
     bytes_into_frs_into_bytes_test(&bytes[..]);
 
-    const auto _short_bytes = b "012345678901234567890123456789--01234567890123456789";
-    // This will panic because _short_bytes is not a multiple of 32 bytes.
+    const auto short_bytes = b "012345678901234567890123456789--01234567890123456789";
+    // This will panic because short_bytes is not a multiple of 32 bytes.
     // bytes_into_frs_into_bytes_test(&_short_bytes[..]);
 }
 

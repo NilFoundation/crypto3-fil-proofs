@@ -73,10 +73,10 @@ void test_rational_post() {
 
     const auto comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
-    const auto comm_cs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    std::vector<< typename MerkleTreeType::hash_type > ::Domain > comm_cs
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    const auto comm_rs : Vec << typename MerkleTreeType::hash_type > ::Domain >
+    std::vector<< typename MerkleTreeType::hash_type > ::Domain > comm_rs
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
               .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
@@ -156,10 +156,10 @@ void test_rational_post_validates_challenge_identity() {
     const auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
     const auto comm_r_lasts = challenges.iter().map(| c | trees.get(&c.sector).root()).collect::<Vec<_>>();
 
-    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_cs
+    const std::vector<< typename MerkleTreeType::hash_type > ::Domain > comm_cs
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_rs
+    const std::vector<< typename MerkleTreeType::hash_type > ::Domain > comm_rs
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
               .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
@@ -183,10 +183,10 @@ void test_rational_post_validates_challenge_identity() {
     const auto challenges = derive_challenges(challenges_count, sector_size, &sectors, &seed, &faults);
     const auto comm_r_lasts = challenges.iter().map(| _c | tree.root()).collect::<Vec<_>>();
 
-    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_cs
+    const std::vector << typename MerkleTreeType::hash_type > ::Domain > comm_cs
         = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
 
-    const Vec << typename MerkleTreeType::hash_type > ::Domain > comm_rs
+    const std::vector << typename MerkleTreeType::hash_type > ::Domain > comm_rs
         = comm_cs.iter()
               .zip(comm_r_lasts.iter())
               .map(| (comm_c, comm_r_last) | {<typename MerkleTreeType::hash_type>::Function::hash2(comm_c, comm_r_last)})
@@ -198,12 +198,7 @@ void test_rational_post_validates_challenge_identity() {
         comm_rs : &comm_rs,
     };
 
-    try {
-        const auto verified =
-            RationalPoSt::<Tree>::verify(&pub_params, &different_pub_inputs, &proof);
-    } catch ("verification failed"){
-
-    }
+    const auto verified = RationalPoSt::<Tree>::verify(&pub_params, &different_pub_inputs, &proof);
 
     // A proof created with a the wrong challenge not be verified!
     BOOST_CHECK(!verified);
@@ -244,7 +239,7 @@ BOOST_AUTO_TEST_CASE(test_derive_challenges_fails_on_all_faulty) {
     faults.insert(SectorId::from(1));
     faults.insert(SectorId::from(2));
 
-    const auto seed = vec ![0u8];
+    const std::vector<auto> seed = {0u8};
 
     BOOST_ASSERT (derive_challenges(10, 1024, &sectors, &seed, &faults).is_err());
 }

@@ -69,8 +69,8 @@ namespace nil {
                         data = unsafe {memmap::MmapOptions ()
                                            .offset(std::size_t(offset))
                                            .len(len)
-                                           .map(self.file.as_ref())
-                                           .context("could not shift mmap}") ? };
+                                           .map(self.file)
+                                           .context("could not shift mmap}")};
                         offset = new_offset;
                     }
 
@@ -106,9 +106,9 @@ namespace nil {
                         std::size_t min_cache_size = (offset + len) * DEGREE * NODE_BYTES;
 
                         const auto file = LockedFile::open_shared_read(path).with_context(
-                            || std::format("could not open path={}", path.display())) ?;
+                            || std::format("could not open path={}", path.display()));
 
-                        const auto actual_len = file.as_ref().metadata().len();
+                        const auto actual_len = file.metadata().len();
                         if (actual_len < min_cache_size) {
                             bail !("corrupted cache: {}, expected at least {}, got {} bytes",
                                    path.display(),
@@ -119,8 +119,8 @@ namespace nil {
                         const auto data = unsafe {memmap::MmapOptions()
                                                .offset(std_uint_64(std::size_t(offset) * DEGREE * NODE_BYTES))
                                                .len(std::size_t(len) * DEGREE * NODE_BYTES)
-                                               .map(file.as_ref())
-                                               .with_context(|| std::format("could not mmap path={}", path.display())) ? };
+                                               .map(file)
+                                               .with_context(|| std::format("could not mmap path={}", path.display()))};
 
                         return {data, file, len, offset};
                     }
@@ -167,14 +167,14 @@ namespace nil {
 
                             auto data =
                                 unsafe {memmap::MmapOptions()
-                                            .map_mut(file.as_ref())
-                                            .with_context(|| std::format("could not mmap path={}", path.display())) ? };
+                                            .map_mut(file)
+                                            .with_context(|| std::format("could not mmap path={}", path.display()))};
 
                             data.par_chunks_mut(DEGREE * NODE_BYTES)
                                 .enumerate()
                                 .try_for_each(| (node, entry) |->Result<()> {
                                     auto parents = [0u32; DEGREE];
-                                    graph.base_graph().parents(node, parents[..BASE_DEGREE]) ? ;
+                                    graph.base_graph().parents(node, parents[..BASE_DEGREE]);
                                     graph.generate_expanded_parents(node, parents[BASE_DEGREE..]);
 
                                     LittleEndian::write_u32_into(&parents, entry);
@@ -232,8 +232,10 @@ namespace nil {
                     hash<FormatHash>(FormatHash::name, acc);
                     hash<FormatHash>(graph.identifier(), acc);
 
-                    for (const auto key : graph.feistel_keys) {
-                        hash<FormatHash>(key, acc);
+                    for (graph.feistel_keys::iterator key = graph.feistel_keys.begin(); 
+                        key != graph.feistel_keys.end(); ++key) {
+                        
+                        hash<FormatHash>(*key, acc);
                     }
 
                     hash<FormatHash>(cache_entries, acc);

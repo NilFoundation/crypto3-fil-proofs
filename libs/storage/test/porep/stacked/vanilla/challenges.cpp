@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(challenge_derivation) {
         for (std::size_t k = 0; k < partitions; ++k) {
             const auto challenges = challenges.derive(leaves, &replica_id, &seed, k as u8);
 
-            for (challenge in challenges) {
+            for (challenges::iterator challenge = challenges.begin(); challenge != challenges.end(); ++challenge) {
                 const auto counter = histogram.entry(challenge).or_insert(0);
                 *counter += 1;
             }
