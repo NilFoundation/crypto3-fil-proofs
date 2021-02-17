@@ -91,8 +91,8 @@ namespace nil {
                             std::vector<std::uint64_t> parents(0, base_degree);
                             graph.base_parents(x, parents);
 
-                            for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent) {
-                                columns.push_back(t_aux.column(*parent));
+                            for (parents::iterator parent_it = parents.begin(); parent_it != parents.end(); ++parent_it) {
+                                columns.push_back(t_aux.column(*parent_it));
                             }
 
                             assert(columns.size() == base_degree);
@@ -107,8 +107,8 @@ namespace nil {
                             std::vector<Column<tree_hash_type>> result;
                             result.reserve(parents.size());
 
-                            for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent){
-                                result.push_back(t_aux.column(*(*parent)));
+                            for (parents::iterator parent_it = parents.begin(); parent_it != parents.end(); ++parent_it){
+                                result.push_back(t_aux.column(*parent_it));
                             }
 
                             return result;
@@ -200,10 +200,10 @@ namespace nil {
 
                                         parents_data.reserve(parents.size());
 
-                                        for (parents::iterator parent = parents.begin(); 
-                                            parent != parent.end(); ++parent){
+                                        for (parents::iterator parent_it = parents.begin(); 
+                                            parent_it != parents.end(); ++parent_it){
 
-                                            parents_data.push_back(t_aux.domain_node_at_layer(layer, *parent));
+                                            parents_data.push_back(t_aux.domain_node_at_layer(layer, *parent_it));
                                         }
                                     } else {
                                         std::vector<auto> parents (graph.degree(), 0);
@@ -212,20 +212,20 @@ namespace nil {
 
                                         parents_data.reserve(parents.size());
 
-                                        for (std::size_t i = 0, parents::iterator parent = parents.begin(); 
-                                            parent != parent.end(); ++i, ++parent){
+                                        for (std::size_t i = 0, parents::iterator parent_it = parents.begin(); 
+                                            parent_it != parents.end(); ++i, ++parent_it){
 
                                             if (i < base_parents_count) {
                                                 // parents data for base parents is from the current
                                                 // layer
-                                                parents_data.push_back(t_aux.domain_node_at_layer(layer, *parent));
+                                                parents_data.push_back(t_aux.domain_node_at_layer(layer, *parent_it));
                                             } else {
                                                 // parents data for exp parents is from the previous
                                                 // layer
-                                                parents_data.push_back(t_aux.domain_node_at_layer(layer - 1, *parent));
+                                                parents_data.push_back(t_aux.domain_node_at_layer(layer - 1, *parent_it));
                                             }
                                         }
-                                    };
+                                    }
 
                                     // repeat parents
                                     std::vector<auto> parents_data_full (TOTAL_PARENTS, Default::default());
@@ -310,7 +310,7 @@ namespace nil {
                         const auto use_cache = settings::SETTINGS.lock().maximize_caching;
                         auto cache = use_cache ? Some(graph.parent_cache()) : None;
 
-                        for (layer in 1.. = layers) {
+                        for (std::size_t layer = 1; layer <= layers; ++layer) {
                             BOOST_LOG_TRIVIAL(info) << std::format("generating layer: %d", layer);
                             if (const auto Some(ref mut cache) = cache) {
                                 cache.reset();
@@ -364,12 +364,16 @@ namespace nil {
                         std::size_t leafs = tree_data.size() / NODE_SIZE;
                         assert(tree_data.size() % NODE_SIZE == 0);
 
+                        std::vector<auto> build_tree_vector;
+                        build_tree_vector.reserve(leafs);
+
+                        for (std::size_t i = 0; i < leafs; ++i){
+                            build_tree_vector.push(get_node::<K>(tree_data, i));
+                        }
+
                         MerkleTree<TreeHash> tree =
-                            MerkleTree::from_par_iter_with_config((0..leafs)
-                                                                      .into_par_iter()
-                                                                      // TODO: proper error handling instead of `unwrap()`
-                                                                      .map(| i | get_node::<K>(tree_data, i)),
-                                                                  config);
+                            MerkleTree::from_par_iter_with_config(build_tree_vector, config);
+
                         return tree;
                     }
 
@@ -444,14 +448,17 @@ namespace nil {
 
                                             // gather all layer data in parallel.
                                             s.spawn(move | _ | {
-                                                for ((layer_index, layer_elements) :
-                                                     layer_data.iter_mut().enumerate()) {
-                                                    const auto store = labels.labels_for_layer(layer_index + 1);
-                                                    const auto start = (i * nodes_count) + node_index;
-                                                    const auto end = start + chunked_nodes_count;
-                                                    const std::vector <typename MerkleTreeType::hash_type::digest_type> elements
-                                                        = store.read_range(std::ops::Range {start, end});
-                                                    layer_elements.extend(elements.into_iter().map(Into::into));
+                                                for (std::size_t layer_index = 0, 
+                                                     layer_data::iterator layer_elements_it = layer_data.begin();
+                                                     layer_elements_it != layer_data.end(); 
+                                                     ++layer_index, ++layer_elements_it) {
+
+                                                        const auto store = labels.labels_for_layer(layer_index + 1);
+                                                        const auto start = (i * nodes_count) + node_index;
+                                                        const auto end = start + chunked_nodes_count;
+                                                        const std::vector <typename MerkleTreeType::hash_type::digest_type> elements
+                                                            = store.read_range(std::ops::Range {start, end});
+                                                        (*layer_elements_it).extend(elements);
                                                 }
                                             });
                                         });
@@ -523,10 +530,10 @@ namespace nil {
                                                           std::vector<auto> buf
                                                           buf.reserve(batch_size * NODE_SIZE);
 
-                                                          for (fr_elements::iterator fr = fr_elements.begin(); 
-                                                            fr != fr_elements.end(); ++fr) {
+                                                          for (fr_elements::iterator fr_it = fr_elements.begin(); 
+                                                            fr_it != fr_elements.end(); ++fr_it) {
 
-                                                              buf.extend(fr_into_bytes(*fr));
+                                                              buf.extend(fr_into_bytes(*fr_it));
                                                           }
                                                           store.write()
                                                               .copy_from_slice(&buf[..], offset + (batch_size * index))
@@ -578,8 +585,8 @@ namespace nil {
                         std::vector<auto> trees;
                         trees.reserve(tree_count);
 
-                        for (std::size_t i = 0, configs::iterator config = configs.begin(); 
-                            config != configs.end(); ++i, ++config) {
+                        for (std::size_t i = 0, configs::iterator config_it = configs.begin(); 
+                            config_it != configs.end(); ++i, ++config_it) {
 
                             std::vector <typename MerkleTreeType::hash_type::digest_type> hashes (nodes_count, 
                                 MerkleTreeType::hash_type::digest_type::default());
@@ -599,23 +606,21 @@ namespace nil {
                                     const auto labels = &labels;
 
                                     s.spawn(move | _ | {
-                                        for (std::size_t j = 0, hashes_chunk::iterator hash = hashes_chunk.begin(); 
-                                            hash != hashes_chunk.end(); ++j, ++hash) {
+                                        for (std::size_t j = 0, hashes_chunk::iterator hash_it = hashes_chunk.begin(); 
+                                            hash_it != hashes_chunk.end(); ++j, ++hash_it) {
 
-                                            const std::vector<> data =
-                                                           (1.. = layers)
-                                                               .map(| layer |
-                                                                    {
-                                                                        const auto store = labels.labels_for_layer(layer);
-                                                                        const typename MerkleTreeType::hash_type::digest_type el =
-                                                                                  store
-                                                                                      .read_at((i * nodes_count) + j +
-                                                                                               chunk * chunk_size);
-                                                                        el.into()
-                                                                    })
-                                                               .collect();
+                                            const std::vector<auto> data;
+                                            data.reserve (layers);
 
-                                            *hash = hash_single_column(data.begin(), data.end());
+                                            for (std::size_t layer = 1; layer <= layers; ++layer){
+                                                const auto store = labels.labels_for_layer(layer);
+                                                const typename MerkleTreeType::hash_type::digest_type el =
+                                                          store.read_at((i * nodes_count) + j +
+                                                                       chunk * chunk_size);
+                                                data.push(el);
+                                            }
+
+                                            (*hash_it) = hash_single_column(data.begin(), data.end());
                                         }
                                     });
                                 }
@@ -623,7 +628,7 @@ namespace nil {
 
                             BOOST_LOG_TRIVIAL(info) << std::format("building base tree_c %d/%d", i + 1, tree_count);
                             trees.push(DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::
-                                           from_par_iter_with_config(hashes.into_par_iter(), (*config).clone()));
+                                           from_par_iter_with_config(hashes.into_par_iter(), (*config_it).clone()));
                         }
 
                         assert(tree_count == trees.len());
@@ -759,8 +764,8 @@ namespace nil {
                             auto start = 0;
                             auto end = size / tree_count;
 
-                            for (std::size_t i = 0, configs::iterator config = configs.begin(); 
-                                config != configs.end(); ++i, ++config) {
+                            for (std::size_t i = 0, configs::iterator config_it = configs.begin(); 
+                                config_it != configs.end(); ++i, ++config_it) {
 
                                 const auto encoded_data = last_layer_labels.read_range(start..end)
                                     .into_par_iter()
@@ -775,7 +780,7 @@ namespace nil {
                                     });
 
                                 BOOST_LOG_TRIVIAL(info) << std::format("building base tree_r_last with CPU %d/%d", i + 1, tree_count);
-                                LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::from_par_iter_with_config(encoded_data, (*config).clone());
+                                LCTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::from_par_iter_with_config(encoded_data, (*config_it).clone());
 
                                 start = end;
                                 end += size / tree_count;
