@@ -31,8 +31,8 @@ template<typename MerkleTreeType>
 void test_extract_all() {
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
-    const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = 
-        <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto replica_id : typename MerkleTreeType::hash_type::digest_type = 
+        typename MerkleTreeType::hash_type::digest_type::random(rng);
     const std::size_t nodes = 4;
     const std::vector<auto> data (32 * nodes, 2u8);
 
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(extract_all_blake2s) {
 BOOST_AUTO_TEST_CASE(test_extract<Tree : MerkleTreeTrait>) {
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
-    const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto replica_id : typename MerkleTreeType::hash_type::digest_type = typename MerkleTreeType::hash_type::digest_type::random(rng);
     const std::size_t nodes = 4;
     const std::vector<auto> data (32 * nodes, 2u8);
 
@@ -156,7 +156,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         const auto degree = BASE_DEGREE;
         const auto expansion_degree = 0;
 
-        const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+        const auto replica_id : typename MerkleTreeType::hash_type::digest_type = typename MerkleTreeType::hash_type::digest_type::random(rng);
         std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
         // MT for original data is always named tree-d, and it will be
@@ -192,7 +192,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         copied.copy_from_slice(&mmapped_data);
         BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
-        const auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain > {
+        const auto pub_inputs = PublicInputs:: <typename MerkleTreeType::hash_type::digest_type > {
             replica_id : Some(replica_id),
             challenges : vec ![ challenge, challenge ],
             tau : Some(tau.clone().into()),
@@ -266,7 +266,7 @@ void prove_verify_aux(std::size_t nodes, std::size_t i, bool use_wrong_challenge
         const auto proof = real_proof;
 
         if use_wrong_challenge {
-            const auto pub_inputs_with_wrong_challenge_for_proof = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain > {
+            const auto pub_inputs_with_wrong_challenge_for_proof = PublicInputs:: <typename MerkleTreeType::hash_type::digest_type > {
             replica_id:
                 Some(replica_id), challenges : vec ![if challenge == 1 { 2 } else {1}], tau : Some(tau.into()),
             };

@@ -38,8 +38,8 @@ void test_election_post() {
 
     PublicParams pub_params = {sector_size, 40, 1};
 
-    const auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto randomness = typename MerkleTreeType::hash_type::digest_type::random(rng);
+    const auto prover_id = typename MerkleTreeType::hash_type::digest_type::random(rng);
 
     std::vector<SectorId> sectors;
     auto trees = BTreeMap();
@@ -60,7 +60,7 @@ void test_election_post() {
     const auto candidate = &candidates[0];
     const auto tree = trees.remove(&candidate.sector_id);
     const auto comm_r_last = tree.root();
-    const auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto comm_c = typename MerkleTreeType::hash_type::digest_type::random(rng);
     const auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
 
     PublicInputs pub_inputs = {randomness, candidate.sector_id, prover_id, comm_r, candidate.partial_ticket, 0};

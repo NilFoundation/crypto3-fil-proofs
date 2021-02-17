@@ -247,7 +247,7 @@ namespace nil {
                     std::uint64_t sector_challenge_index) {
                     Fr randomness_fr = randomness.into();
                     Fr prover_id_fr = prover_id.into();
-                    std::vector<PoseidonDomain> data = {randomness_fr.into(), prover_id_fr.into(),
+                    std::vector<MerkleTreeType::hash_type::digest_type> data = {randomness_fr.into(), prover_id_fr.into(),
                                                         Fr::from(sector_id).into()};
 
                     for (int n = 0; n < pub_params.challenge_count; n++) {
@@ -260,7 +260,7 @@ namespace nil {
                     // pad for md
                     std::size_t arity = PoseidonMDArity;
                     while (data.size() % arity) {
-                        data.push(PoseidonDomain::default());
+                        data.push(MerkleTreeType::hash_type::digest_type::default());
                     }
 
                     Fr partial_ticket = PoseidonFunction::hash_md(&data).into();

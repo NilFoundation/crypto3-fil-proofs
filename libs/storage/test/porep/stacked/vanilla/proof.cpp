@@ -96,14 +96,14 @@ template<typename MerkleTreeType>
 void test_extract_all() {
 
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
-    const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto replica_id : typename MerkleTreeType::hash_type::digest_type = typename MerkleTreeType::hash_type::digest_type::random(rng);
     const std::size_t nodes = 64 * get_base_tree_count::<Tree>();
 
     std::vector<std::uint8_t> data = (0..nodes)
                              .flat_map(| _ |
                                        {
-                                           const auto v : <typename MerkleTreeType::hash_type>::Domain =
-                                                       <typename MerkleTreeType::hash_type>::Domain::random(rng);
+                                           const auto v : typename MerkleTreeType::hash_type::digest_type =
+                                                       typename MerkleTreeType::hash_type::digest_type::random(rng);
                                            v.into_bytes()
                                        })
                              .collect();
@@ -187,7 +187,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
 
     const auto degree = BASE_DEGREE;
     const auto expansion_degree = EXP_DEGREE;
-    const auto replica_id : <typename MerkleTreeType::hash_type>::Domain = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto replica_id : typename MerkleTreeType::hash_type::digest_type = typename MerkleTreeType::hash_type::digest_type::random(rng);
     std::vector<std::uint8_t> data = (0..nodes).flat_map(| _ | fr_into_bytes(&Fr::random(rng))).collect();
 
     // MT for original data is always named tree-d, and it will be
@@ -222,7 +222,7 @@ void test_prove_verify(std::size_t n, const LayerChallenges &challenges) {
     BOOST_ASSERT_MSG (data != copied, "replication did not change data");
 
     const auto seed = rng.gen();
-    const auto pub_inputs = PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain, <Blake2sHasher>::Domain > {
+    const auto pub_inputs = PublicInputs:: <typename MerkleTreeType::hash_type::digest_type, Blake2sHasher::digest_type> {
         replica_id,
         seed,
         tau : Some(tau),

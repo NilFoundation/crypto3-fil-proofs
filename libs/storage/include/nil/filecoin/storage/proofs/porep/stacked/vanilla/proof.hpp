@@ -39,6 +39,9 @@
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/encoding_proof.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/labelling_proof.hpp>
 
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/detail/processing/naive/params.hpp>
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/detail/processing/naive/labelling_proof.hpp>
+
 namespace nil {
     namespace filecoin {
         namespace stacked {
@@ -265,8 +268,8 @@ namespace nil {
                         for ((key, encoded_node_bytes)
                             : last_layer_labels.read_range(0..size).into_iter().zip(data.chunks_mut(NODE_SIZE))) {
 
-                            const auto encoded_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(encoded_node_bytes);
-                            const auto data_node = decode:: << typename MerkleTreeType::hash_type> ::Domain > (key, encoded_node);
+                            const auto encoded_node = MerkleTreeType::hash_type::digest_type::try_from_bytes(encoded_node_bytes);
+                            const auto data_node = decode:: <typename MerkleTreeType::hash_type::digest_type > (key, encoded_node);
 
                             // store result in the data
                             encoded_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&data_node));
@@ -282,7 +285,7 @@ namespace nil {
 
                         const auto layers = layer_challenges.layers();
                         // For now, we require it due to changes in encodings structure.
-                        std::vector<DiskStore << typename MerkleTreeType::hash_type>::Domain >> labels;
+                        std::vector<DiskStore <typename MerkleTreeType::hash_type::digest_type>> labels;
                         labels.reserve(layers);
 
                         std::vector<StoreConfig> label_configs;
@@ -434,7 +437,7 @@ namespace nil {
                                                     const auto store = labels.labels_for_layer(layer_index + 1);
                                                     const auto start = (i * nodes_count) + node_index;
                                                     const auto end = start + chunked_nodes_count;
-                                                    const std::vector << typename MerkleTreeType::hash_type> ::Domain > elements
+                                                    const std::vector <typename MerkleTreeType::hash_type::digest_type> elements
                                                         = store.read_range(std::ops::Range {start, end});
                                                     layer_elements.extend(elements.into_iter().map(Into::into));
                                                 }
@@ -495,7 +498,7 @@ namespace nil {
 
                                     // Persist the base and tree data to disk based using the current store config.
                                     const auto tree_c_store =
-                                        DiskStore:: << typename MerkleTreeType::hash_type> ::Domain >
+                                        DiskStore:: <typename MerkleTreeType::hash_type::digest_type>
                                         ::new_with_config(tree_len, MerkleTreeType::base_arity, config.clone());
 
                                     const auto store = Arc (RwLock(tree_c_store));
@@ -566,8 +569,8 @@ namespace nil {
                         for (std::size_t i = 0, configs::iterator config = configs.begin(); 
                             config != configs.end(); ++i, ++config) {
 
-                            std::vector << typename MerkleTreeType::hash_type > ::Domain > hashes (nodes_count, 
-                                <typename MerkleTreeType::hash_type>::Domain::default());
+                            std::vector <typename MerkleTreeType::hash_type::digest_type> hashes (nodes_count, 
+                                MerkleTreeType::hash_type::digest_type::default());
 
                             rayon::scope(| s | {
                                 const auto n = num_cpus::get();
@@ -592,8 +595,7 @@ namespace nil {
                                                                .map(| layer |
                                                                     {
                                                                         const auto store = labels.labels_for_layer(layer);
-                                                                        const auto el
-                                                                            : <typename MerkleTreeType::hash_type>::Domain =
+                                                                        const typename MerkleTreeType::hash_type::digest_type el =
                                                                                   store
                                                                                       .read_at((i * nodes_count) + j +
                                                                                                chunk * chunk_size);
@@ -660,9 +662,9 @@ namespace nil {
                                                              NODE_SIZE))
                                                     .map(| (key, data_node_bytes) | {
                                                         const auto data_node =
-                                                            <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes);
+                                                            MerkleTreeType::hash_type::digest_type::try_from_bytes(data_node_bytes);
                                                         const auto encoded_node =
-                                                            encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
+                                                            encode:: <typename MerkleTreeType::hash_type::digest_type> (key, data_node);
                                                         data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
 
                                                         encoded_node
@@ -752,9 +754,9 @@ namespace nil {
                                     .into_par_iter()
                                     .zip(data[(start * NODE_SIZE)..(end * NODE_SIZE)].par_chunks_mut(NODE_SIZE))
                                     .map(| (key, data_node_bytes) | {
-                                        const auto data_node = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_node_bytes);
+                                        const auto data_node = MerkleTreeType::hash_type::digest_type::try_from_bytes(data_node_bytes);
 
-                                        const auto encoded_node = encode:: << typename MerkleTreeType::hash_type> ::Domain > (key, data_node);
+                                        const auto encoded_node = encode:: <typename MerkleTreeType::hash_type::digest_type> (key, data_node);
                                         data_node_bytes.copy_from_slice(AsRef::<[u8]>::as_ref(&encoded_node));
 
                                         encoded_node
@@ -892,7 +894,7 @@ namespace nil {
                         data.drop_data();
 
                         // comm_r = H(comm_c || comm_r_last)
-                        typename <typename MerkleTreeType::hash_type>::Domain comm_r =
+                        typename MerkleTreeType::hash_type::digest_type comm_r =
                                          <typename MerkleTreeType::hash_type>::Function::hash2(&tree_c_root, &tree_r_last_root);
 
                         return std::make_tuple(Tau<typename MerkleTreeType::hash_type::digest_type, 

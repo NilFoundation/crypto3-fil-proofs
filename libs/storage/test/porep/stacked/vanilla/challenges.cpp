@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(challenge_derivation) {
     const auto challenges = LayerChallenges(layers, n);
     const std::size_t leaves = 1 << 30;
     const auto rng = thread_rng();
-    const PedersenDomain replica_id = PedersenDomain::random(rng);
+    const Pedersen::digest_type replica_id = Pedersen::digest_type::random(rng);
     const auto seed : [u8; 32] = rng.gen();
     const std::size_t partitions = 5;
     const std::size_t total_challenges = partitions * n;
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(challenge_partition_equivalence) {
     const std::size_t n = 40;
     const std::size_t leaves = 1 << 30;
     const auto rng = thread_rng();
-    const PedersenDomain replica_id  = PedersenDomain::random(rng);
+    const Pedersen::digest_type replica_id  = Pedersen::digest_type::random(rng);
     const auto seed : [u8; 32] = rng.gen();
     const std::size_t partitions = 5;
     const std::size_t layers = 100;

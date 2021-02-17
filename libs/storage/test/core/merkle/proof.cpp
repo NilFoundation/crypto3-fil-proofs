@@ -52,55 +52,55 @@ void merklepath() {
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_poseidon_2) {
-    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore << PoseidonHasher>::Domain>, 2, 0, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore <PoseidonHasher::digest_type>, 2, 0, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_poseidon_4) {
-    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore << PoseidonHasher>::Domain>, 4, 0, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore <PoseidonHasher::digest_type>, 4, 0, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_poseidon_8) {
-    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore << PoseidonHasher>::Domain>, 8, 0, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore <PoseidonHasher::digest_type>, 8, 0, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_poseidon_8_2) {
-    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore << PoseidonHasher>::Domain>, 8, 2, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore <PoseidonHasher::digest_type>, 8, 2, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_poseidon_8_4) {
-    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore << PoseidonHasher>::Domain>, 8, 4, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore <PoseidonHasher::digest_type>, 8, 4, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_poseidon_8_4_2) {
-    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore << PoseidonHasher>::Domain>, 8, 4, 2, >, > ();
+    merklepath::<MerkleTreeWrapper<PoseidonHasher, DiskStore <PoseidonHasher::digest_type>, 8, 4, 2, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_sha256_2) {
-    merklepath::<MerkleTreeWrapper<Sha256Hasher, DiskStore << Sha256Hasher>::Domain>, 2, 0, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<Sha256Hasher, DiskStore <Sha256Hasher::digest_type>, 2, 0, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_sha256_4) {
-    merklepath::<MerkleTreeWrapper<Sha256Hasher, DiskStore << Sha256Hasher>::Domain>, 4, 0, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<Sha256Hasher, DiskStore <Sha256Hasher::digest_type>, 4, 0, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_sha256_2_4) {
-    merklepath::<MerkleTreeWrapper<Sha256Hasher, DiskStore << Sha256Hasher>::Domain>, 2, 4, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<Sha256Hasher, DiskStore <Sha256Hasher::digest_type>, 2, 4, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_sha256_top_2_4_2) {
-    merklepath::<MerkleTreeWrapper<Sha256Hasher, DiskStore << Sha256Hasher>::Domain>, 2, 4, 2, >, > ();
+    merklepath::<MerkleTreeWrapper<Sha256Hasher, DiskStore <Sha256Hasher::digest_type>, 2, 4, 2, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_blake2s_2) {
-    merklepath::<MerkleTreeWrapper<Blake2sHasher, DiskStore << Blake2sHasher>::Domain>, 2, 0, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<Blake2sHasher, DiskStore <Blake2sHasher::digest_type>, 2, 0, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_blake2s_4) {
-    merklepath::<MerkleTreeWrapper<Blake2sHasher, DiskStore << Blake2sHasher>::Domain>, 4, 0, 0, >, > ();
+    merklepath::<MerkleTreeWrapper<Blake2sHasher, DiskStore <Blake2sHasher::digest_type>, 4, 0, 0, >, > ();
 }
 
 BOOST_AUTO_TEST_CASE(merklepath_blake2s_8_4_2) {
-    merklepath::<MerkleTreeWrapper<Blake2sHasher, DiskStore << Blake2sHasher>::Domain>, 8, 4, 2, >, > ();
+    merklepath::<MerkleTreeWrapper<Blake2sHasher, DiskStore <Blake2sHasher::digest_type>, 8, 4, 2, >, > ();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

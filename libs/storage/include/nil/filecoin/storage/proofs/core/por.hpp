@@ -53,9 +53,9 @@ namespace nil {
             bool priv;
         };
 
-        template<typename Domain>
+        template<typename DigestType>
         struct public_inputs {
-            typedef Domain domain_type;
+            typedef DigestType domain_type;
 
             domain_type commitment;
             std::size_t challenge;

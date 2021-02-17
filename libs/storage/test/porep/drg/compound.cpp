@@ -71,7 +71,7 @@ void drgporep_test_compound() {
                         config, replica_path.clone(), )
                         .expect("failed to replicate");
 
-    const auto public_inputs = drg::PublicInputs:: << typename MerkleTreeType::hash_type> ::Domain > {
+    const auto public_inputs = drg::PublicInputs:: <typename MerkleTreeType::hash_type::digest_type > {
         replica_id : Some(replica_id.into()),
         challenges,
         tau : Some(tau),

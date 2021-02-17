@@ -50,13 +50,13 @@ namespace nil {
                     BinaryLCMerkleTree<Hash> tree_r;
                 };
 
-                template<typename Domain>
+                template<typename DigestType>
                 struct PublicInputs {
                     typedef std::size_t challenge_type;
 
-                    Domain replica_id;
+                    DigestType replica_id;
                     std::vector<challenge_type> challenges;
-                    Tau<Domain> tau;
+                    Tau<DigestType> tau;
                 };
 
                 template<typename Hash, template<typename> class BinaryMerkleTree,
@@ -324,7 +324,7 @@ namespace nil {
                             auto start = data_at_node_offset(node);
                             auto end = start + NODE_SIZE;
 
-                            auto node_data = <H>::Domain::try_from_bytes(&data[start..end]);
+                            auto node_data = H::digest_type::try_from_bytes(&data[start..end]);
                             auto encoded = H::sloth_encode(key, &node_data);
 
                             encoded.write_bytes(data[start..end]);
@@ -368,7 +368,7 @@ namespace nil {
                     std::vector<std::uint8_t> parents(graph.degree());
                     graph.parents(v, parents);
                     const auto key = graph.create_key(replica_id, v, &parents, &data, exp_parents_data);
-                    const auto node_data = <H>::Domain::try_from_bytes(&data_at_node(data, v));
+                    const auto node_data = H::digest_type::try_from_bytes(&data_at_node(data, v));
 
                     return encode::decode(*key, node_data);
                 }

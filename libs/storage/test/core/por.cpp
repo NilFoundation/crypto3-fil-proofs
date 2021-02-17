@@ -47,7 +47,7 @@ void test_merklepor() {
     };
 
     const auto leaf =
-        <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        typename MerkleTreeType::hash_type::digest_type::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     const auto priv_inputs = PrivateInputs(leaf, &tree);
@@ -59,7 +59,7 @@ void test_merklepor() {
     BOOST_ASSERT(is_valid);
 }
 
-type TestTree<H, U> = MerkleTreeWrapper<H, DiskStore << H>::Domain >, U, 0, 0> ;
+type TestTree<H, U> = MerkleTreeWrapper<H, DiskStore <H::digest_type>, U, 0, 0> ;
 
 BOOST_AUTO_TEST_CASE(merklepor_pedersen_binary) {
     test_merklepor<TestTree<PedersenHasher, 2>>();
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(merklepor_blake2s_quad) {
 DataProof<Proof> make_bogus_proof<Proof : BasicMerkleProof>(rng
                                               : XorShiftRng, proof
                                               : DataProof<Proof>) {
-    const auto bogus_leaf = <Proof::Hasher>::Domain::random(rng);
+    const auto bogus_leaf = Proof::Hasher::digest_type::random(rng);
     proof.proof.break_me(bogus_leaf);
     return proof;
 }
@@ -124,7 +124,7 @@ void test_merklepor_validates<Tree : MerkleTreeTrait>() {
     };
 
     const auto leaf =
-        <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        typename MerkleTreeType::hash_type::digest_type::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     const auto priv_inputs = PrivateInputs::<Tree> (leaf, &tree);
@@ -197,7 +197,7 @@ void test_merklepor_validates_challenge_identity() {
     };
 
     const auto leaf =
-        <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
+        typename MerkleTreeType::hash_type::digest_type::try_from_bytes(data_at_node(data.as_slice(), pub_inputs.challenge), )
             ;
 
     const auto priv_inputs = PrivateInputs::<Tree> (leaf, &tree);

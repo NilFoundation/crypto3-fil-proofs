@@ -256,7 +256,7 @@ namespace nil {
                         const auto root = Root::from_allocated::<CS>(root.clone());
                         const auto leaf = Root::from_allocated::<CS>(leaf.clone());
 
-                        PoRCircuitMerkleTreeWrapper<H, DiskStore<H::Domain>, U, V, W> >
+                        PoRCircuitMerkleTreeWrapper<H, DiskStore<H::digest_type>, U, V, W> >
                             ::synthesize(cs, leaf, path, root, true);
                     }
 

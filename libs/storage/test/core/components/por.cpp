@@ -25,11 +25,11 @@
 
 BOOST_AUTO_TEST_SUITE(por_component_test_suite)
 
-type TestTree<H, A> = MerkleTreeWrapper<H, VecStore << H>::Domain >, A, 0, 0 > ;
+type TestTree<H, A> = MerkleTreeWrapper<H, VecStore <H::digest_type>, A, 0, 0 > ;
 
-type TestTree2<H, A, B> = MerkleTreeWrapper<H, VecStore << H>::Domain >, A, B, 0 > ;
+type TestTree2<H, A, B> = MerkleTreeWrapper<H, VecStore <H::digest_type>, A, B, 0 > ;
 
-type TestTree3<H, A, B, C> = MerkleTreeWrapper<H, VecStore << H>::Domain >, A, B, C > ;
+type TestTree3<H, A, B, C> = MerkleTreeWrapper<H, VecStore <H::digest_type>, A, B, C > ;
 
 BOOST_AUTO_TEST_CASE(por_test_compound_poseidon_base_8) {
     por_compound<TestTree<PoseidonHasher, 8>>();
@@ -187,12 +187,12 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
             leaves,
             private : false,
         };
-        const auto pub_inputs = por::PublicInputs:: << typename MerkleTreeType::hash_type > ::Domain > {
+        const auto pub_inputs = por::PublicInputs:: <typename MerkleTreeType::hash_type::digest_type > {
             challenge : i,
             commitment : Some(tree.root()),
         };
         const auto leaf = data_at_node(data.as_slice(), pub_inputs.challenge);
-        const auto leaf_element = <typename MerkleTreeType::hash_type>::Domain::try_from_bytes(leaf);
+        const auto leaf_element = typename MerkleTreeType::hash_type::digest_type::try_from_bytes(leaf);
         const auto priv_inputs = por::PrivateInputs::<ResTree<MerkleTreeType>>(leaf_element, &tree);
         const auto p = tree.gen_proof(i);
         BOOST_ASSERT(p.verify());

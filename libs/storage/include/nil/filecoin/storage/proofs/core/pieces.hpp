@@ -107,7 +107,7 @@ namespace nil {
 
             BinaryMerkleTree<Hash> tree = BinaryMerkleTree<Hash>::try_from_iter((0..parts).map(| _ | {
                 source.read_exact(buf);
-                <H::Domain as Domain>::try_from_bytes(&buf)
+                H::digest_type::try_from_bytes(&buf)
             }));
 
             std::array<std::uint32_t, NODE_SIZE> comm_p_bytes;

@@ -57,8 +57,8 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
     const std::vector<auto> comm_r_lasts_raw = { tree1.root(), tree2.root() };
     std::vector<_> comm_r_lasts = challenges.iter().map(| c | comm_r_lasts_raw[u64::from(c.sector) as usize]).collect();
 
-    std::vector<< typename MerkleTreeType::hash_type > ::Domain > comm_cs 
-        = challenges.iter().map(| _c | <typename MerkleTreeType::hash_type>::Domain::random(rng)).collect();
+    std::vector<typename MerkleTreeType::hash_type::digest_type > comm_cs 
+        = challenges.iter().map(| _c | typename MerkleTreeType::hash_type::digest_type::random(rng)).collect();
 
     std::vector<_> comm_rs = comm_cs.iter()
                        .zip(comm_r_lasts.iter())

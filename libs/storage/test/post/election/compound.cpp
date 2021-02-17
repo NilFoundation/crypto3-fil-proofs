@@ -35,8 +35,8 @@ void election_post_test_compound() {
 
     std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
     std::uint64_t sector_size = (leaves * NODE_SIZE);
-    const auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto randomness = typename MerkleTreeType::hash_type::digest_type::random(rng);
+    const auto prover_id = typename MerkleTreeType::hash_type::digest_type::random(rng);
 
     compound_proof::SetupParams setup_params =
         {election::SetupParams {sector_size, 20, 1}, partitions : None, priority : true};
@@ -63,7 +63,7 @@ void election_post_test_compound() {
     const auto candidate = &candidates[0];
     const auto tree = trees.remove(&candidate.sector_id);
     const auto comm_r_last = tree.root();
-    const auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto comm_c = typename MerkleTreeType::hash_type::digest_type::random(rng);
     const auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
 
     election::PublicInputs pub_inputs = {randomness, candidate.sector_id,      prover_id,

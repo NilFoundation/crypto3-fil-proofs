@@ -34,8 +34,8 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
     std::size_t sector_size = leaves * NODE_SIZE;
 
-    const auto randomness = <typename MerkleTreeType::hash_type>::Domain::random(rng);
-    const auto prover_id = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto randomness = typename MerkleTreeType::hash_type::digest_type::random(rng);
+    const auto prover_id = typename MerkleTreeType::hash_type::digest_type::random(rng);
 
     election::PublicParams pub_params = {sector_size, 20, 1};
 
@@ -58,7 +58,7 @@ void test_election_post_circuit(std::size_t expected_constraints) {
     const auto candidate = &candidates[0];
     const auto tree = trees.remove(&candidate.sector_id);
     const auto comm_r_last = tree.root();
-    const auto comm_c = <typename MerkleTreeType::hash_type>::Domain::random(rng);
+    const auto comm_c = typename MerkleTreeType::hash_type::digest_type::random(rng);
     const auto comm_r = <typename MerkleTreeType::hash_type>::Function::hash2(&comm_c, &comm_r_last);
 
     const auto pub_inputs = election::PublicInputs {
