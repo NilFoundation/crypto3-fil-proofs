@@ -1,0 +1,1379 @@
+[33mcommit ee3ff2c72217218a9b158d70763bb545317b06f2[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: 5a92d4f 43fdda9
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Feb 14 22:57:10 2021 +0300
+
+    Merge branch 'master' of github.com:nilfoundation/cpp-fil-proofs
+
+[33mcommit 5a92d4f516a1f512fc1f89b506096ea824f29f8c[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Feb 14 22:56:56 2021 +0300
+
+    Submodules updated.
+
+[33mcommit 43fdda9b0557f59669cf66942cb93e0f85ab3c36[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sun Feb 14 20:29:55 2021 +0300
+
+    Minor vanilla/params.hpp changes
+
+[33mcommit db921cc7ea4ace3c876bdb2ed22b77a96aca99a6[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sun Feb 14 19:23:27 2021 +0300
+
+    Misprints in fors fixed
+
+[33mcommit fb57c9586c9a3eff5bf21fb642d2f9bb5a04c600[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sun Feb 14 16:01:20 2021 +0300
+
+    More fors changed
+
+[33mcommit 1592a0bd33d4b7d6501422b01c7cece4cdd05f39[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sun Feb 14 03:57:38 2021 +0300
+
+    More vanilla/proof.hpp refactoring
+
+[33mcommit f03fcdb1d9a495e36a8f56c1df0da681f2da2a26[m
+Merge: 119ba6c d1dca21
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sun Feb 14 00:37:02 2021 +0300
+
+    Merge branch 'master' of github.com:NilFoundation/crypto3-fil-proofs
+
+[33mcommit 119ba6ceb086df39dd2bf389c3f7740ee9f9dc0c[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sun Feb 14 00:36:36 2021 +0300
+
+    Minor vectors-related refactoring
+
+[33mcommit d1dca21ce476f3090fcd46c7c200985ad2bf17fd[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Feb 13 15:06:26 2021 +0300
+
+    Submodules updated.
+
+[33mcommit 901160e1fe6530c834747ab92006d9592f0e040d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Feb 13 15:01:41 2021 +0300
+
+    Submodules updated.
+
+[33mcommit 961f9f04014f25ec0632c2d772cae9515069c2f6[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Feb 13 14:45:25 2021 +0300
+
+    Submodules updated.
+
+[33mcommit a35af0ec04923a6a61fd25a21eea03997c629974[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Feb 13 14:40:40 2021 +0300
+
+    Submodules updated.
+
+[33mcommit 51c11e34a53fd671d90b04a60d37dce2550f8ef5[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Feb 13 14:35:54 2021 +0300
+
+    Submodules updated.
+
+[33mcommit 7ca8ed645994f5bdfec61d0a3b4c4acdb486baa2[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sat Feb 13 01:55:06 2021 +0300
+
+    Calls to ::new() as constructors removed
+
+[33mcommit 1e34b7ac01ce108c4ca137bd79babe3d7ee6bd0a[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Fri Feb 12 22:04:44 2021 +0300
+
+    More asserts fixed
+
+[33mcommit 8e28f98fcc874f17c144d774358bfb55cabaf6a6[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Fri Feb 12 20:43:46 2021 +0300
+
+    Minor proof.hpp reformatting
+
+[33mcommit 04ef14186b422e96b3f99e949f071e8c02647ec9[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Fri Feb 12 03:44:46 2021 +0300
+
+    Some profiling artifacts removed
+
+[33mcommit 6aeaa33b361be9f51af32212162c5aed88f9d81a[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Thu Feb 11 16:30:15 2021 +0300
+
+    Boost.Logv2 usage introduced
+
+[33mcommit a37a5b7969ecb72bb886fb09c5bd2a2751594433[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Wed Feb 10 03:10:25 2021 +0300
+
+    Minor refactoring
+
+[33mcommit 930a1176e97540ebccaeaf4076be1db185f29f20[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Feb 3 18:53:26 2021 +0300
+
+    Submodules updated
+
+[33mcommit f2c2a0efd81055b2284981c69a32cf9d21124336[m
+Merge: d13fe82 426ace9
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jan 28 07:51:38 2021 +0300
+
+    Merge branch '1-merkle-tree-refactoring'
+
+[33mcommit 426ace92cc7f46cae3683cd0343054e93b5a8a24[m[33m ([m[1;31morigin/1-merkle-tree-refactoring[m[33m)[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jan 27 09:49:36 2021 +0300
+
+    Merkle tree implementation updated #1
+
+[33mcommit 5232d1ef43e12e506310f1e1dd89e7a1ec07ad6b[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jan 27 09:20:41 2021 +0300
+
+    MerkleTree implementation updated #1
+
+[33mcommit d13fe82cadaa588d5648b1c1888573016c05129a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jan 27 08:15:04 2021 +0300
+
+    Copyright notice updated.
+
+[33mcommit 4670b389f04423ee5bad22249c8ab23ae765840d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jan 25 13:57:56 2021 +0300
+
+    Submodules updated
+
+[33mcommit 64350bb4811e66fc617840e69dd147820ee819db[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jan 22 10:38:11 2021 +0300
+
+    Submodules updated
+
+[33mcommit 130f6112b12295256140a8c5580a2aee16cfd9e4[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jan 19 07:56:29 2021 +0300
+
+    Minor changes. Submodules updated.
+
+[33mcommit 48d85363b95e0cc203f51952d50c553893939569[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jan 4 02:57:51 2021 +0300
+
+    Minor build configuration updates.
+
+[33mcommit 194edb8e7fbb2fe856af0ef81b10ef87e65d585a[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sat Jan 2 19:23:47 2021 +0300
+
+    Minor refactoring
+
+[33mcommit 9266ba9e4b29bcaef4cde50c3a7388f95f167986[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Sat Jan 2 17:09:18 2021 +0300
+
+    Minor refactoring
+
+[33mcommit 9a217f365975844bf925762af3b4fe08f4ddda64[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Wed Dec 30 21:51:14 2020 +0300
+
+    Minor refactoring
+
+[33mcommit feaedc66b62c4cfbdf38c7376e7d34b28b685678[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Wed Dec 30 20:18:53 2020 +0300
+
+    Minor refactoring
+
+[33mcommit 7003305db605059bf0291544780437af9edeab61[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Wed Dec 30 15:13:45 2020 +0300
+
+    Minor refactoring
+
+[33mcommit 47f49e05ab7dfe6045e9e1185ad251ea21b5a03b[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Mon Dec 28 12:58:27 2020 +0300
+
+    naive implementation of Merkle tree added
+
+[33mcommit 1ad89e297ea226873fce1c5d7a0a916459a95386[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Dec 27 14:45:45 2020 +0300
+
+    Submodules updated
+
+[33mcommit 7eb866d80f5e844340d8a46e013dd66c70c86a94[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Fri Dec 25 18:16:40 2020 +0300
+
+    btree removed from filecoin submodule
+
+[33mcommit 914c4e1f1629cc0b0f53436ba56c0a40057e8dc2[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Dec 22 15:59:18 2020 +0300
+
+    Submodules updated
+
+[33mcommit 59d4d709ae7c837a0f1b8fd9f325df873d47ec91[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Tue Dec 22 13:21:49 2020 +0300
+
+    Minor refactoring
+
+[33mcommit a6c163daee5e093a692cf6d7a5df69ed36116410[m
+Author: nkaskov <mail.nikita.kaskov@gmail.com>
+Date:   Mon Dec 21 12:02:44 2020 +0300
+
+    Components-related changes
+
+[33mcommit 40999f5ca3110647231ab2cfa38fc152f782a0e3[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Dec 19 18:45:10 2020 +0300
+
+    Submodules updated
+
+[33mcommit e17a396928bb47bf0b2590b4778cf304f5559dea[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Dec 14 08:49:06 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 1e548d82e33f7cce7b8652d231937d8d55ce5224[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Dec 14 08:48:15 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 663a6735daa08acb3bf11c007ad48ebbfab2e06a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Dec 10 10:04:56 2020 +0300
+
+    Submodules updated
+
+[33mcommit 53a67284da544eedcc472f0ab43cf320e17d2188[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Dec 6 03:18:24 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 962ce485c77aa663e8cc3fc46af8b911692492ea[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Nov 22 01:59:41 2020 +0300
+
+    Submodules updated.
+
+[33mcommit f29b462a4d07c4cb743670dcefd6bfcd4fa7d78c[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Nov 22 01:57:48 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 717dd333fef713653b3cfc52e3614126744e6bbe[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Nov 11 01:36:42 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 5e05fb6dc28b64b48d53d35c03439b738c4052ba[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Nov 10 13:26:33 2020 +0300
+
+    Submodules updated
+
+[33mcommit f5e78ef440bbcdc622b6401105ceba581c02dc11[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Nov 8 12:19:36 2020 +0300
+
+    Submodules updated
+
+[33mcommit f96d480a3a4c2f55ad63753248ff280ecb13390f[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Nov 7 11:43:22 2020 +0300
+
+    Submodules updated
+
+[33mcommit dbf894aa9de3d5cc34f7e5b9e82115bcd5640fa1[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Nov 5 09:13:03 2020 +0300
+
+    Submodules updated
+
+[33mcommit ab4a2b4a8e771d880306d8988d391b779773fa80[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Oct 29 00:26:19 2020 +0300
+
+    Submodules updated
+
+[33mcommit 4d6e47b21b808a58c7be4065f7abc5ce0ebfea8e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Oct 28 04:08:19 2020 +0300
+
+    Submodules updated.
+
+[33mcommit fb28d0150d6a62d542faaa38891c90ca2b7eb093[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Oct 28 04:05:28 2020 +0300
+
+    Submodules updated
+
+[33mcommit f1a6b003b1da802740ffdd6d4172668c9158c100[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Oct 25 04:47:43 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 45e3ac823664ff03377c1eaf1b1bccb8387ca2dd[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Oct 20 01:32:58 2020 +0300
+
+    Submodules updated
+
+[33mcommit 7b3990473d76fb51128e46c0b18f9c3af7454389[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Oct 17 21:17:09 2020 +0300
+
+    Submodules updated
+
+[33mcommit 5b0977ac6f3bdeb0a2983f229ff6d25308d12ce0[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Oct 12 14:07:03 2020 +0300
+
+    Submodules updated.
+
+[33mcommit db6001c858d2a99131fe834002bf046b3c8b4df4[m
+Merge: 9750493 c9005bb
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Oct 12 05:39:30 2020 +0300
+
+    Merge branch 'master' of github.com:nilfoundation/cpp-fil-proofs into master
+
+[33mcommit 97504936a02457d3eef87a30215f3967bf924c6e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Oct 12 05:39:15 2020 +0300
+
+    Submodules updated.
+
+[33mcommit c9005bbd502a82665b2a63e18268cc320fe90b60[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Oct 9 01:43:44 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 23b3cdc983f090aa55d52f43016c31930f45e35f[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Oct 3 22:32:48 2020 +0300
+
+    Submodules updated
+
+[33mcommit 7f8279c171bb63c58e6b430653fea2094e9f4cd7[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Oct 3 02:14:22 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 4b7f8b4afa42d891e9ba3545053e63b8daafac9b[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Sep 24 22:05:50 2020 +0300
+
+    Submodules updated
+
+[33mcommit 984c22d7deb882ce06985a6a81a0c375763f9c01[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Sep 24 04:14:45 2020 +0300
+
+    Submodules updated
+
+[33mcommit dc3b7a6e313109c58b47d428acb481c40d6f5b8f[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Sep 22 23:25:54 2020 +0300
+
+    Submodules updated
+
+[33mcommit ee970dfa3abb93b9cc81848ca6c5296a0a944a94[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Sep 22 01:45:25 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 5080adf69cd8bd73f0ce979de4e024ce81c32500[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Sep 21 03:05:34 2020 +0300
+
+    Submodules updated
+
+[33mcommit 8634c47b600b1ce7f2a507be12cff8f80213d216[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Sep 19 01:51:45 2020 +0300
+
+    Submodules updated
+
+[33mcommit 37641d0b9e120c07bca3b3c47e1f7942a60e3217[m
+Merge: 932a5fc dc13509
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Sep 17 01:49:15 2020 +0300
+
+    Merge branch 'master' of github.com:nilfoundation/cpp-fil-proofs into master
+
+[33mcommit 932a5fc6d3797dc31bac6e95228b011996f9ccc0[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Sep 17 01:49:05 2020 +0300
+
+    Submodules updated
+
+[33mcommit dc13509a1085046dd91af8065001076b17df20c6[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Sep 13 14:44:21 2020 +0300
+
+    Submodules updated
+
+[33mcommit 431b1236f4ba01343040d0cdc117592a80acfaf9[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Sep 12 03:12:51 2020 +0300
+
+    Submodules updated.
+
+[33mcommit f4224c2a3ab6c3ae29adf67561a46004ea253a84[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Sep 10 21:02:29 2020 +0300
+
+    Submodules updated
+
+[33mcommit c01c0216b753e0f9aebb8ff538364eab7ba42f45[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Sep 8 23:02:22 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 24d7a5e20caa751edd6a7b8f4ee7c038f0410ed3[m
+Merge: 0327581 9d47169
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Sep 6 03:48:38 2020 +0300
+
+    Merge branch 'master' of github.com:nilfoundation/cpp-fil-proofs into master
+
+[33mcommit 0327581010bd0689553b78228cc15cab12031c03[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Sep 6 03:48:12 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 9d471693bc594e828b4f7dbdf57259d09e93ae38[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Sep 4 11:04:57 2020 +0300
+
+    Submodules updated.
+
+[33mcommit d1daf48d1d96740a860ff754d86b23e19d518ee8[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Sep 3 17:02:04 2020 +0300
+
+    Submodules updated
+
+[33mcommit 7961ff92b1e82d59dc3f02bf58f4f0e18bf9baf6[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Sep 2 00:55:50 2020 +0300
+
+    Submodules updated
+
+[33mcommit 1fde6bf4bcdf678bab8a03b0dfaf3ef254e317f9[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Sep 1 01:25:51 2020 +0300
+
+    Submodules updated
+
+[33mcommit 06fecd18dc8f5aeaab3657563c67baa91f2c90ac[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 30 02:27:53 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 2cfbfc8fab6ad0c82d1df596f671ec161c549941[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Aug 28 16:22:17 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 3fe6495a0233e107b37072cd152649bead7a663e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Aug 27 20:06:07 2020 +0300
+
+    Submodules updated
+
+[33mcommit 60145527ebd1086699e34784e8fe0c46a25bab81[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Aug 27 15:51:07 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 255e9d2d25ec6a971969ae65ffe8cfc0e43c8b6d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Aug 27 14:00:33 2020 +0300
+
+    Submodules updated
+
+[33mcommit 0e8ae1063e0c62c3bd3838ea08525472992a6f0e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Aug 27 03:09:44 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 7d18e2437e4d363a449f0ce404bf38b4861c987f[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Aug 26 15:43:21 2020 +0300
+
+    Submodules updated
+
+[33mcommit 10d6046b6580bc039a3f6444027cb90a911e704f[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Aug 26 13:48:09 2020 +0300
+
+    Submodules updated
+
+[33mcommit ef5877e7f274bc6bb46df8eea8a8e1dc6993cbf8[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Aug 25 15:40:19 2020 +0300
+
+    Submodules updated
+
+[33mcommit afb8f5ab92dc3a4199cfef907f97b7ac706ae6b2[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Aug 25 13:51:54 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 161e6539f833317f57ebac6cde8c59b8f4dba144[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 24 20:55:39 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 43d2ea5225cdc27f35dbdafaf029a46f07f72b23[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 24 18:25:56 2020 +0300
+
+    Submodules updated
+
+[33mcommit d51bd6685b463c6f06c8609c6c3f0c7081d5b3fd[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 24 03:56:01 2020 +0300
+
+    Submodules updated
+
+[33mcommit aa991f910cafb329bd5908148107b79aa5cb8605[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 24 03:54:05 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 8e103359be938903da1aa48118ef88e8bdc066ed[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 24 03:48:10 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 239759207c2f5b7b9ce3624b54bb9cf4d380b43e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 24 03:47:18 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 2dce2d27560e46a85b385dea7278d6de90ae1490[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 24 03:26:57 2020 +0300
+
+    Random-required message authentication library submoduled.
+
+[33mcommit defe41d66a1d0ab6bb46a1a9772d6e2244365e7a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 24 03:25:00 2020 +0300
+
+    Submodules updated. Configuration implementation updated.
+
+[33mcommit e611f0887b26988e68f6237fc033a00861511b2d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 23 17:56:53 2020 +0300
+
+    DRGraph implementaiton updated.
+
+[33mcommit a770c4772abdf318742a929dc06a631b60609cef[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 23 17:31:29 2020 +0300
+
+    Submodules updated
+
+[33mcommit e80e65af30f0de4111a81a6487aa0639246eb830[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 23 04:08:48 2020 +0300
+
+    Submodules updated
+
+[33mcommit a3b6c87f11660afdb3b9605fe5e0865b10efed9a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 23 03:59:09 2020 +0300
+
+    Implementaiton updated. Submodules updated.
+
+[33mcommit fdbd2876781247c1c98ff0e54e6d19fc864c3375[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Aug 22 05:00:04 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 1864957911b38afd8c84f1d8a2806ace50e6dacd[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Aug 22 04:53:21 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 4d5cc9e5fc88f3450c14c3783bf4813320307305[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Aug 21 21:05:22 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 833b5d7f2623f0fdf9cb7fee4f2e1df3f821b7ff[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Aug 21 18:03:24 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 42d0b0b622e183901131e91f15a0dbd7eb94337b[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Aug 21 12:21:05 2020 +0300
+
+    Submodules updated
+
+[33mcommit 19a124a27aa12f90ea34d84f5e061465c2f56a02[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Aug 20 05:26:44 2020 +0300
+
+    Implementation updates.
+
+[33mcommit a73fef4e8a1c1bfe8043029079768a56cad1f947[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Aug 19 20:53:39 2020 +0300
+
+    Implementation updated.
+
+[33mcommit e7769c6e4f00d8c4ea6205a3dd26eaa9ec4df116[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Aug 19 18:56:50 2020 +0300
+
+    Submodules updated.
+
+[33mcommit a44860c2d78bbf94a06a2dd305a817fecb9edb97[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Aug 19 18:25:04 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 17a32b223a0101554cc54c5aa2f66ad42cdc0d68[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Aug 18 15:27:43 2020 +0300
+
+    Submodules updated
+
+[33mcommit 02a8920a34ee10f6cdfc479dbe9dbe96921071be[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Aug 18 03:23:44 2020 +0300
+
+    More implementation updates.
+
+[33mcommit e99bcd002a0dcaaffe5b31c635f5a09335954d02[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 17 22:38:01 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 2c1c796082c48e50a74e31f893df647f4e69adda[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 17 22:04:40 2020 +0300
+
+    More ZK library integrations done.
+
+[33mcommit 805b49df8fb544589b485fc8c3fb5d939dd90c73[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 17 04:41:07 2020 +0300
+
+    Submodules updated.
+
+[33mcommit fa842049ed6f06cf2e56159b1ca70a74c2dcee41[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 17 04:40:15 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 1ce99ca2b25837a9bc4ef4268b0bbfa82c329ebe[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 17 03:04:47 2020 +0300
+
+    Submodules updated.
+
+[33mcommit d8d26e04ca236e0cb1230da5d7d805b87d84a196[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 17 01:51:39 2020 +0300
+
+    Submodules updated.
+
+[33mcommit b3b4f4a5f3b3f644da24f1b262689beae5f04738[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 16 16:28:03 2020 +0300
+
+    Submodules updated.
+
+[33mcommit dba24e5b6e4da035af847b0c1a627b654ab03457[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 16 03:05:53 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 95c956f6002c4765f5e5b1be646af49fd24cec97[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Aug 15 02:15:16 2020 +0300
+
+    Submodules updated.
+
+[33mcommit ca1466720ab565d83d85494a0c31523a635881b1[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Aug 15 01:58:02 2020 +0300
+
+    Explicit BLS12-381 curve usage introduced.
+
+[33mcommit 977615c7064cf8168a16b16aadcb2157b0d8ac7b[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Aug 12 03:35:27 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 6abbf45d9ae6bc0310ecd0f9069a0b6decaff6b8[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Aug 11 04:27:03 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 7f6a4e9a2a6508c2d36e9a7fa158b390fa22604e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Aug 11 03:51:46 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 5bce7565f18e579b173949c1adf20d6a544aae98[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Aug 11 03:49:48 2020 +0300
+
+    Implementation udpated. FFT module reverted.
+
+[33mcommit 27a5cc0e78fe8df3b44ec372fbc0d71f7b03bd76[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 10 03:17:18 2020 +0300
+
+    Submodules updated.
+
+[33mcommit f7d44840648f7485e3e33459ee1cbacc56addfb2[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Aug 10 03:04:46 2020 +0300
+
+    Implementation updated.
+
+[33mcommit d368a5f9dae92d6620f2b96c847bace53c3e89a4[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 9 15:42:33 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 54ca8979204916a2f528a42300b9bf02ec25a2a1[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 9 01:14:41 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 1042128ea0709c888d9d64ba14b896c498f30d6c[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 2 22:29:37 2020 +0300
+
+    Implementation updated.
+
+[33mcommit fb64f9a93ae39c15b1e666cd8980304511180459[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Aug 2 18:51:23 2020 +0300
+
+    Submodules updated. Implementaiton updated.
+
+[33mcommit ea8081f871758f3bda0f526aa7cce684f59592ad[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Aug 1 03:36:04 2020 +0300
+
+    Redundant submodules removed. Implementation updated.
+
+[33mcommit 3ad9163eb6292d4e110e439aa737c6e3ae98f4e8[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 31 03:10:32 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 03eec36a328c0fe5a33dd0d5030217d869d4eb62[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jul 30 00:48:16 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 9a09b956d84f9109fb1839c23847b49b054667cf[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 29 14:25:34 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 02d1d889162faf78fea9b43ce7356fb659804d1f[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 29 00:50:43 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 5d37b4a360f39da3f8279c6cbe9c1dd7df4b9433[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 27 19:31:19 2020 +0300
+
+    Submodules updated.
+
+[33mcommit f3bd7916384aad86648eed4abb690874e7c183dc[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 27 18:30:21 2020 +0300
+
+    CUDA-related submodules introduced.
+
+[33mcommit d23a1c164b6e48ddcc891a602ff83e776a17b552[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 27 14:21:53 2020 +0300
+
+    Submodules updated. Build configuration updated.
+
+[33mcommit 51539770d9c8a223f3e28b4f584c9580586f93ef[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 27 02:24:18 2020 +0300
+
+    Submodules updated
+
+[33mcommit 2b1865edf3635c9bd61a248d14920a372df15b9e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 25 01:07:22 2020 +0300
+
+    Submodules updated.
+
+[33mcommit c32292585386ed0f9e9680a62a7c11ac18473680[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 25 01:07:05 2020 +0300
+
+    Redundant submodules removed. Submodules updated.
+
+[33mcommit 61262172ae148276865507fd5227e8d1e80f44f7[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 25 01:00:39 2020 +0300
+
+    Submodules updated
+
+[33mcommit faaaa51c890032bb692cdc73482cf3212fcd459a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 25 00:57:07 2020 +0300
+
+    Submodules updated.
+
+[33mcommit d490500ca622a1998b68b77cf51d57ad53e7eeac[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 24 23:47:28 2020 +0300
+
+    Build configuration updates.
+
+[33mcommit 64f57d520c25137b1a48fb031df21b21ec2d6d90[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jul 23 22:30:59 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 897f5d14cddc40b1271af886a7afcc9a759a74d2[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 22 22:48:38 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 462c02e89e5600018c8de7df32b9f7489fc47b3c[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 22 22:23:19 2020 +0300
+
+    Outdated submodules removed.
+
+[33mcommit 549a4fb5df5ebfbb5a2d0df3e7a02e6bef1deaa2[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 22 01:18:24 2020 +0300
+
+    Implementation updated.
+
+[33mcommit bc80501acb91e7b72faac5bdf3d75e9887ff3f83[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jul 21 23:30:31 2020 +0300
+
+    Minor implmenentation updates.
+
+[33mcommit de3b3552d24ea70b822c7a9a7ecb24a36fe72f15[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jul 21 15:34:24 2020 +0300
+
+    More implementation updates.
+
+[33mcommit a1825eade9e09604f88a90482c9854e93e0964e9[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jul 21 14:48:02 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 5655e97619a1c8051bdb1f5bdca573d584cb0930[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jul 21 01:10:44 2020 +0300
+
+    Implementation updated.
+
+[33mcommit ee8777df12ac8c739ecf121f508ada246271faa9[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 20 18:02:05 2020 +0300
+
+    Initial README implementation started.
+
+[33mcommit b925bf9467109177c2bc7ba9c157cc64c0c6d12d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 20 15:37:20 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 6f4a6ad4d40c53f49129aa544c043e372a2b26cb[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 20 15:31:48 2020 +0300
+
+    Missing submodules introduced. Implementation updated.
+
+[33mcommit 8a36f630fe9a9114dec61811d757ac08c0cf1e11[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 20 15:18:19 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 69c10469deff044e15720c0391c87ead58b00206[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 20 15:04:46 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 31d33735fced793c57a45747c706f289023be143[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jul 19 23:30:11 2020 +0300
+
+    API implementaiton updated.
+
+[33mcommit 94484b313fb7b3a10d640bfeadcba856fee40008[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jul 19 18:55:42 2020 +0300
+
+    Implementation updated.
+
+[33mcommit c0c5afdc5b4a1ac71a9c33b76c73949bc7e2b1b0[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jul 19 00:23:40 2020 +0300
+
+    More implementation updates.
+
+[33mcommit f6ed55f5e9201003b41e7c9e38d4046aa7347d19[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jul 19 00:05:10 2020 +0300
+
+    Implementation updated.
+
+[33mcommit a2500f14b2f7ac60a9c705a2d795b9d1fd398c3d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 17 23:25:51 2020 +0300
+
+    Implementation updated.
+
+[33mcommit b5be857362e218084bb7513dc38dd3f6a34ee894[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 17 23:17:54 2020 +0300
+
+    API implementation updated.
+
+[33mcommit 03d8cbe83e64e403728baa9a4dd638867dce053c[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 17 21:34:33 2020 +0300
+
+    Implementation updated.
+
+[33mcommit a3a1f211a79085127029cc62405de03fbfbd9f3e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 15 23:58:05 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 35b13e9c043b1ceaf81ce47ae7e74adc550f7afb[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 15 15:20:41 2020 +0300
+
+    API implementation updated.
+
+[33mcommit a98c7d6099c600c8b23fbc3bf328b288c1857202[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jul 14 22:23:25 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 1c80fcaf231cd0b75b9004ca64d02e10d036503a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Mon Jul 13 13:08:38 2020 +0300
+
+    Implementation updates.
+
+[33mcommit 759800996aeafed58e54857817e66d7e2749957b[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jul 12 16:39:47 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 0dd95508e70c70fd76a07539db50c0265246afcc[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jul 12 14:45:04 2020 +0300
+
+    Minor changes.
+
+[33mcommit b0eb603f5d64e3dd8b319cb3f8a94564397273dd[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jul 12 14:40:13 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 22e82046428884297124ba7f069cfa4abd4923a9[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 11 22:39:08 2020 +0300
+
+    More implementation changes.
+
+[33mcommit 043133bdc81d06735020fe981671b6467eb29603[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 11 22:14:12 2020 +0300
+
+    Tests implementation updated.
+
+[33mcommit 3d8eafc9e5885b95682c952ce0b4489e0263986d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 11 21:37:57 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 6e07065b3a6ee042385b86424632ee59e7bf8087[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 11 20:00:30 2020 +0300
+
+    Implementation updated.
+
+[33mcommit bc51b585636bda8beff74f38ab7302efbfe0d1bd[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 11 12:26:48 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 743d59b2e1eec983df5307459db4b430b31aa9cc[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 11 00:37:23 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 188268e054dc603d6581e4688470b7244198369e[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 10 23:50:24 2020 +0300
+
+    Implementation updated.
+
+[33mcommit e0ea1bf3a02e8f70ef305ca6f4b4a725368c121a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 10 23:28:13 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 7d22e8e1128a8ae230c400c573b8f8e028fdd8ff[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 10 19:39:50 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 53613fc3ec0ca0078f5b1ea690751f2a5a4d2c70[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 10 17:04:15 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 70043d6e6dee9e66cce0f33801d8e833b3926156[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 8 22:15:18 2020 +0300
+
+    More implementation updated.
+
+[33mcommit c42957f652c0aca2197b494454358469c8056eed[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 8 22:09:21 2020 +0300
+
+    More implementation updates.
+
+[33mcommit a4e2fe862abd9fd2938c4073491bc63f26f89cf5[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 8 21:55:20 2020 +0300
+
+    More implementation updates.
+
+[33mcommit eff980c515f2da36f124472c2342f5e227d4d7c6[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jul 8 17:58:44 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 4c356b02bf55076ca8f740de11c3ed515efa3fbf[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 4 21:09:24 2020 +0300
+
+    Submodules updated. Implementation updated.
+
+[33mcommit 768b117eb75e1c1608d90693deb74a527c393d19[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jul 4 12:30:06 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 9a70ea242aa486daa1ff9c2d0ca0dcb38266415f[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 3 23:15:29 2020 +0300
+
+    Minor hashing usage updates.
+
+[33mcommit a7f001aaac1d51a8e6ce6a03b274e2904430872a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 3 23:03:55 2020 +0300
+
+    More implementation updates.
+
+[33mcommit b85c886d556f9f7772d79f1adb3881e5734397cb[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 3 22:32:57 2020 +0300
+
+    Implementation updated.
+
+[33mcommit d8c31c13f7e01d8f96ed40cbceea084d36254191[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 3 19:51:18 2020 +0300
+
+    More proofs implementation updates.
+
+[33mcommit c0188ac55ee1574a63be6a03b988f64115fa8f41[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 3 19:39:00 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 7de6c4ff62784d8e35fffdd08c43052df1a394f0[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 3 18:17:38 2020 +0300
+
+    More implementation updates.
+
+[33mcommit e416a346b0cd018eb76ef35bd14cf58aa89ece1a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jul 3 13:06:49 2020 +0300
+
+    More implementation updates.
+
+[33mcommit d3ea0f0dea32b197746110968d8cc3fd2bbea3ce[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jul 2 22:53:24 2020 +0300
+
+    Proof tests updated.
+
+[33mcommit 65dbdf3f2651814bebab9b2c56ce5439006a789a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jul 2 22:45:55 2020 +0300
+
+    More hashing updates.
+
+[33mcommit 19c32855c6924312696bc20c265c804ec20abdc8[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jul 2 22:19:55 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 364cf7332f7aca6afd5b7b553cc8d25380006e79[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jun 30 22:47:34 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 4b53fdafafc0935f37b6f9a8ac409a777a30e839[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jun 28 22:23:16 2020 +0300
+
+    More implementation updates.
+
+[33mcommit 99af5561861fa9a1da8b7d3646459d0410418258[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jun 26 22:34:01 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 4b07fce4bd62cf976ce46c9c6b97d28b1cd18611[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jun 25 19:04:37 2020 +0300
+
+    Submodules updated.
+
+[33mcommit a8b7f484c214dd38df884f5741e9aa8d1ae02027[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jun 25 19:03:37 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 33df2d17dd5513f65329c91df7e0b84a0b802efc[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jun 25 16:15:37 2020 +0300
+
+    License updated.
+
+[33mcommit 980063cdf5a8ee2f4c4384eb4aca8d2477e2bfd0[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jun 25 16:14:15 2020 +0300
+
+    Implemnetation updated.
+
+[33mcommit 4341258990af97692b2ba8c4a3e71caff0ffff35[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jun 24 21:47:41 2020 +0300
+
+    Implementation updated.
+
+[33mcommit b3d7747dfcded9b3a9f5888abfe510e56a36a1a6[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jun 24 14:09:43 2020 +0300
+
+    Submodules updated. Unused Rust implementation parts removed.
+
+[33mcommit c8d8c5a29ca984c8388a57c9ba8f589fa9b508ec[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jun 24 13:49:15 2020 +0300
+
+    Implementation updated.
+
+[33mcommit e7f97dcda7e14be0410541361d3ab0d6ab9d21cc[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jun 21 20:49:49 2020 +0300
+
+    More implementation updates done.
+
+[33mcommit de5889fa7195cfe388ae2115a9b23e2dcd3df54d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jun 21 11:28:10 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 53d70df2facb6f8827a530743291c8a6405f1b08[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jun 20 15:54:36 2020 +0300
+
+    Implementation updated.
+
+[33mcommit fd0644175b1b3b8648f8f0181d7577fa635a0681[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Fri Jun 19 21:02:55 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 8ebea1daee2d6a2f9defa585c8144bbeb5d2635b[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Thu Jun 18 16:01:23 2020 +0300
+
+    Implementation updated.
+
+[33mcommit 283b7a9ce8e33c9eefbc87bd3f40f7b499604e40[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jun 17 02:52:27 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 9f0fd73e5f0c6aa28f314c767270ce20d45066ed[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Wed Jun 17 02:51:50 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 4d17c38131a124e40d3ed140afc8ebf10c98563a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jun 16 13:19:48 2020 +0300
+
+    .gitmodules updated.
+
+[33mcommit 06b9e2e5fa36cd9845716a9bbab8caeb26840e61[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jun 16 13:16:36 2020 +0300
+
+    Submodules updated.
+
+[33mcommit cfb7e617dbf00ae0eed586f9a9a53c5fb6cf2718[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jun 16 13:15:53 2020 +0300
+
+    Implementation updated. Submodules updated.
+
+[33mcommit 08b49e0ed6be1f910b9fd2a1b885af3c36459dfe[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jun 16 10:20:06 2020 +0300
+
+    Initial implementation done.
+
+[33mcommit f1df5b2de10ac3cdebe764747bf3033d3f078af9[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Tue Jun 16 02:07:19 2020 +0300
+
+    Submodules introduced. Proofs libraries port started.
+
+[33mcommit 0fc742d4b601dbb6155396f93b81ddcd58375e1d[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jun 14 04:21:34 2020 +0300
+
+    Submodules updated.
+
+[33mcommit ea52c5d2fb9ecc1f95e7c081506b71055c0d51e3[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jun 14 04:14:46 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 003d3a44af5bc83e6e17b94c3c63965bdc398871[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jun 14 03:49:27 2020 +0300
+
+    Submodules updated.
+
+[33mcommit edae2f4ea19b7312bdcdb5091af0a977155d929a[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sun Jun 14 03:31:15 2020 +0300
+
+    Submodules updated.
+
+[33mcommit 1cfbd2227441c8459811d34a8fd0b5d32572732b[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jun 13 07:01:30 2020 +0300
+
+    Build configuration updated.
+
+[33mcommit ceeed0b8fa11b63f7d9884b4d6edd9b914cd9954[m
+Author: Mikhail Komarov <nemo@nil.foundation>
+Date:   Sat Jun 13 05:51:39 2020 +0300
+
+    Initial commit.

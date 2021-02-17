@@ -1,8 +1,9 @@
 //---------------------------------------------------------------------------//
 //  MIT License
 //
-//  Copyright (c) 2020 Mikhail Komarov <nemo@nil.foundation>
-//  Copyright (c) 2020 Wukong Moscow Algorithm Lab
+//  Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
+//  Copyright (c) 2020-2021 Nikita Kaskov <nemo@nil.foundation>
+//
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +30,6 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/assert.hpp>
 #include <boost/log/trivial.hpp>
-#include <boost/iterator/zip_iterator.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/column.hpp>
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
@@ -115,58 +115,60 @@ namespace nil {
                             std::vector<std::size_t> challenges = pub_inputs.challenges(layer_challenges, graph_size, Some(k));
 
                             // Stacked commitment specifics
-                            for (std::size_t challenge_index = 0, challenges::iterator challenge = challenges.begin(); 
-                                 challenge != challenges.end(); ++challenge_index, ++challenge) {
+                            for (std::size_t challenge_index = 0, challenges::iterator challenge_it = challenges.begin(); 
+                                 challenge_it != challenges.end(); ++challenge_index, ++challenge_it) {
 
-                                BOOST_LOG_TRIVIAL(trace) << std::format(" challenge %d (%d)", *challenge, challenge_index);
-                                BOOST_ASSERT_MSG(*challenge < graph.size(), "Invalid challenge");
-                                BOOST_ASSERT_MSG(*challenge > 0, "Invalid challenge");
+                                BOOST_LOG_TRIVIAL(trace) << std::format(" challenge %d (%d)", *challenge_it, challenge_index);
+                                BOOST_ASSERT_MSG(*challenge_it < graph.size(), "Invalid challenge");
+                                BOOST_ASSERT_MSG(*challenge_it > 0, "Invalid challenge");
 
                                 // Initial data layer openings (c_X in Comm_D)
-                                auto comm_d_proof = t_aux.tree_d.gen_proof(*challenge);
-                                BOOST_ASSERT(comm_d_proof.validate(*challenge));
+                                auto comm_d_proof = t_aux.tree_d.gen_proof(*challenge_it);
+                                BOOST_ASSERT(comm_d_proof.validate(*challenge_it));
 
                                 // Stacked replica column openings
-                                auto rcp = {
-                                    auto(c_x, drg_parents, exp_parents) = {
-                                        assert_eq !(p_aux.comm_c, t_aux.tree_c.root());
-                                        auto tree_c = &t_aux.tree_c;
+                                BOOST_ASSERT(p_aux.comm_c == t_aux.tree_c.root());
+                                auto tree_c = &t_aux.tree_c;
 
-                                        // All labels in C_X
-                                        BOOST_LOG_TRIVIAL(trace) << "  c_x";
-                                        auto c_x = t_aux.column(std::uint32_t(*challenge)).into_proof(tree_c);
+                                // All labels in C_X
+                                BOOST_LOG_TRIVIAL(trace) << "  c_x";
+                                auto c_x = t_aux.column(std::uint32_t(*challenge_it)).into_proof(tree_c);
 
-                                        // All labels in the DRG parents.
-                                        BOOST_LOG_TRIVIAL(trace) << "  drg_parents";
-                                        auto drg_parents =
-                                            get_drg_parents_columns(*challenge).into_iter()
-                                                                                    .map(| column | column.into_proof(tree_c))
-                                                                                    .collect::<Result<_>>();
+                                // All labels in the DRG parents.
+                                BOOST_LOG_TRIVIAL(trace) << "  drg_parents";
+                                std::vector<auto> drg_parents;
+                                drg_parents.reserve();
 
-                                        // Labels for the expander parents
-                                        BOOST_LOG_TRIVIAL(trace) << "  exp_parents";
-                                        auto exp_parents =
-                                            get_exp_parents_columns(*challenge).into_iter()
-                                                                                    .map(| column | column.into_proof(tree_c))
-                                                                                    .collect::<Result<_>>();
+                                std::vector<auto> drg_parents_columns = get_drg_parents_columns(*challenge_it);
 
-                                        (c_x, drg_parents, exp_parents)
-                                    };
+                                for (drg_parents_columns::iterator column_it = drg_parents_columns.begin();
+                                    column_it != drg_parents_columns.end(); ++column_it){
+                                    drg_parents.push((*column_it).into_proof(tree_c));
+                                }
 
-                                    ReplicaColumnProof {
-                                        c_x, drg_parents, exp_parents,
-                                    }
-                                };
+                                // Labels for the expander parents
+                                BOOST_LOG_TRIVIAL(trace) << "  exp_parents";
+                                std::vector<auto> exp_parents;
+                                exp_parents.reserve();
+
+                                std::vector<auto> exp_parents_columns = get_exp_parents_columns(*challenge_it);
+
+                                for (exp_parents_columns::iterator column_it = exp_parents_columns.begin();
+                                    column_it != exp_parents_columns.end(); ++column_it){
+                                    exp_parents.push((*column_it).into_proof(tree_c));
+                                }
+
+                                ReplicaColumnProof rcp = {c_x, drg_parents, exp_parents};
 
                                 // Final replica layer openings
                                 BOOST_LOG_TRIVIAL(trace) << "final replica layer openings";
 
                                 auto comm_r_last_proof = t_aux.tree_r_last.gen_cached_proof(
-                                    *challenge,
+                                    *challenge_it,
                                     Some(t_aux.tree_r_last_config_rows_to_discard),
                                 );
 
-                                BOOST_ASSERT(comm_r_last_proof.validate(*challenge));
+                                BOOST_ASSERT(comm_r_last_proof.validate(*challenge_it));
 
                                 // Labeling Proofs Layer 1..l
                                 std::vector<auto> labeling_proofs;
@@ -179,7 +181,7 @@ namespace nil {
 
                                     if (layer == 1) {
                                         std::vector<auto> parents (graph.base_graph().degree(), 0);
-                                        graph.base_parents(*challenge, parents);
+                                        graph.base_parents(*challenge_it, parents);
 
                                         parents_data.reserve(parents.size());
 
@@ -190,7 +192,7 @@ namespace nil {
                                         }
                                     } else {
                                         std::vector<auto> parents (graph.degree(), 0);
-                                        graph.parents(*challenge, parents);
+                                        graph.parents(*challenge_it, parents);
                                         auto base_parents_count = graph.base_graph().degree();
 
                                         parents_data.reserve(parents.size());
@@ -216,19 +218,20 @@ namespace nil {
                                         chunk.copy_from_slice(&parents_data[..chunk.size()]);
                                     }
 
-                                    const auto proof = LabelingProof::<typename MerkleTreeType::hash_type> (std::uint32_t(layer), 
-                                        std::uint64_t(*challenge), parents_data_full.clone());
+                                    const LabelingProof<typename MerkleTreeType::hash_type> labeling_proof (std::uint32_t(layer), 
+                                        std::uint64_t(*challenge_it), parents_data_full.clone());
 
                                     const auto labeled_node = rcp.c_x.get_node_at_layer(layer);
-                                    BOOST_ASSERT_MSG(proof.verify(&pub_inputs.replica_id, &labeled_node),
+                                    BOOST_ASSERT_MSG(LabelingProof_naive_verify(labeling_proof, &pub_inputs.replica_id, 
+                                                                                &labeled_node),
                                              std::format("Invalid encoding proof generated at layer {}", layer));
                                     BOOST_LOG_TRIVIAL(trace) << std::format("Valid encoding proof generated at layer %d", layer);
 
-                                    labeling_proofs.push(proof);
+                                    labeling_proofs.push(labeling_proof);
 
                                     if (layer == layers) {
                                         encoding_proof =
-                                            Some(EncodingProof (std::uint32_t(layer), std::uint64_t(*challenge), parents_data_full));
+                                            Some(EncodingProof (std::uint32_t(layer), std::uint64_t(*challenge_it), parents_data_full));
                                     }
                                 }
 

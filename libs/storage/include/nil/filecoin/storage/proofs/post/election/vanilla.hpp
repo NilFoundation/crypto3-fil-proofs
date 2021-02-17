@@ -1,8 +1,9 @@
 //---------------------------------------------------------------------------//
 //  MIT License
 //
-//  Copyright (c) 2020 Mikhail Komarov <nemo@nil.foundation>
-//  Copyright (c) 2020 Wukong Moscow Algorithm Lab
+//  Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
+//  Copyright (c) 2020-2021 Nikita Kaskov <nemo@nil.foundation>
+//
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -48,15 +49,12 @@ namespace nil {
 
                 struct PublicParams : public parameter_set_metadata {
                     virtual std::string identifier() const override {
-                        return "ElectionPoSt::PublicParams{{sector_size: " + sector_size() +
+                        return "ElectionPoSt::PublicParams{{sector_size: " + sector_size +
                                ", count: " + challenge_count + ", nodes: " + challenged_nodes + "}}";
-                    }
-                    virtual size_t sector_size() const override {
-                        return ssize;
                     }
 
                     /// Size of the sector in bytes.
-                    std::uint64_t ssize;
+                    std::uint64_t sector_size;
                     std::size_t challenge_count;
                     std::size_t challenged_nodes;
                 };

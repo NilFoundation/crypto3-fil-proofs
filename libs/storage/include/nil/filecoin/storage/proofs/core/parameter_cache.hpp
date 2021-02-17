@@ -1,8 +1,9 @@
 //---------------------------------------------------------------------------//
 //  MIT License
 //
-//  Copyright (c) 2020 Mikhail Komarov <nemo@nil.foundation>
-//  Copyright (c) 2020 Wukong Moscow Algorithm Lab
+//  Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
+//  Copyright (c) 2020-2021 Nikita Kaskov <nemo@nil.foundation>
+//
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -147,7 +148,7 @@ namespace nil {
             virtual std::string cache_prefix() const = 0;
 
             cache_entry_metadata cache_meta(const P &pub_params) {
-                return {pub_params.sector_size()};
+                return {pub_params.graph.sector_size()};
             }
 
             virtual std::string cache_identifier(const P &pub_params) {

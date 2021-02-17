@@ -1,8 +1,9 @@
 //---------------------------------------------------------------------------//
 //  MIT License
 //
-//  Copyright (c) 2020 Mikhail Komarov <nemo@nil.foundation>
-//  Copyright (c) 2020 Wukong Moscow Algorithm Lab
+//  Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
+//  Copyright (c) 2020-2021 Nikita Kaskov <nemo@nil.foundation>
+//
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -33,31 +34,14 @@ namespace nil {
     namespace filecoin {
         namespace stacked {
             namespace vanilla {
-                template<typename Hash>
+
+                /*************************  LabelingProof  ***********************************/
+
+                template<typename ParentsHash>
                 struct LabelingProof {
-                    typedef Hash hash_type;
+                    typedef ParentsHash parents_hash_type;
 
-                    template<typename LabelHash = hashes::sha2<256>>
-                    typename Hash::digest_type create_label(const typename Hash::digest_type &replica_id) {
-                        using namespace nil::crypto3;
-
-                        accumulator_set<LabelHash> acc;
-
-                        hash<LabelHash>(replica_id, acc);
-                        hash<LabelHash>({layer_index}, acc);
-                        hash<LabelHash>({node}, acc);
-                        hash<LabelHash>(parents, acc);
-
-                        return accumulators::extract::hash<LabelHash>(acc);
-                    }
-
-                    bool verify(const typename Hash::digest_type &replica_id,
-                                const typename Hash::digest_type &expected_label) {
-                        typename Hash::digest_type label = create_label(replica_id);
-                        return expected_label == label;
-                    }
-
-                    typename Hash::digest_type parents;
+                    std::vector<typename parents_hash_type::digest_type> parents;
                     std::uint32_t layer_index;
                     std::uint64_t node;
                 };
