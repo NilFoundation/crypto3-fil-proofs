@@ -37,36 +37,40 @@ namespace nil {
         namespace stacked {
             namespace vanilla {
                 namespace detail {
+                    namespace processing {
+                        namespace naive {
 
-                    /*************************  LabelingProof naive processing  ***********************************/
+                            /*************************  LabelingProof naive processing  ***********************************/
 
-                    template<ParentsHash, typename LabelHash = hashes::sha2<256>>
-                        typename ParentsHash::digest_type LabelingProof_naive_create_label(
-                            template<ParentsHash> LabelingProof &labeling_proof, 
-                            const typename ParentsHash::digest_type &replica_id) {
+                            template<ParentsHash, typename LabelHash = hashes::sha2<256>>
+                                typename ParentsHash::digest_type LabelingProof_create_label(
+                                    template<ParentsHash> LabelingProof &labeling_proof, 
+                                    const typename ParentsHash::digest_type &replica_id) {
 
-                        using namespace nil::crypto3;
+                                using namespace nil::crypto3;
 
-                        accumulator_set<LabelHash> acc;
+                                accumulator_set<LabelHash> acc;
 
-                        hash<LabelHash>(replica_id, acc);
-                        hash<LabelHash>(labeling_proof.layer_index, acc);
-                        hash<LabelHash>(labeling_proof.node, acc);
-                        hash<LabelHash>(labeling_proof.parents, acc);
+                                hash<LabelHash>(replica_id, acc);
+                                hash<LabelHash>(labeling_proof.layer_index, acc);
+                                hash<LabelHash>(labeling_proof.node, acc);
+                                hash<LabelHash>(labeling_proof.parents, acc);
 
-                        return accumulators::extract::hash<LabelHash>(acc);
-                    }
+                                return accumulators::extract::hash<LabelHash>(acc);
+                            }
 
-                    template<typename ParentsHash>
-                    bool LabelingProof_naive_verify(template<ParentsHash> LabelingProof &labeling_proof, 
-                                                    const typename ParentsHash::digest_type &replica_id,
-                                                    const typename ParentsHash::digest_type &expected_label) {
+                            template<typename ParentsHash>
+                            bool LabelingProof_verify(template<ParentsHash> LabelingProof &labeling_proof, 
+                                                            const typename ParentsHash::digest_type &replica_id,
+                                                            const typename ParentsHash::digest_type &expected_label) {
 
-                        typename ParentsHash::digest_type label = 
-                            LabelingProof_naive_create_label(labeling_proof, replica_id);
-                        return (expected_label == label);
-                    }
+                                typename ParentsHash::digest_type label = 
+                                    naive::LabelingProof_create_label(labeling_proof, replica_id);
+                                return (expected_label == label);
+                            }
 
+                        }    // namespace naive
+                    }    // namespace processing
                 }    // namespace detail
             }    // namespace vanilla
         }        // namespace stacked

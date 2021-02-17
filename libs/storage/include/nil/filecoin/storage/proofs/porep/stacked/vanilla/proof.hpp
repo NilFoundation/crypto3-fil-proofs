@@ -51,6 +51,14 @@ namespace nil {
                 template<typename MerkleTreeType, typename Hash>
                 struct StackedDrg {
                     typedef MerkleTreeType tree_type;
+
+                    template <typename Hash>
+                    using merkle_proof_type = merkletree::MerkleProof<
+                        merkletree::MerkleTree<typename Hash>::Hasher, 
+                        merkletree::MerkleTree<typename Hash>::Arity, 
+                        merkletree::MerkleTree<typename Hash>::SubTreeArity, 
+                        merkletree::MerkleTree<typename Hash>::TopTreeArity>;
+
                     typedef Hash hash_type;
 
                     typedef typename tree_type::hash_type tree_hash_type;
@@ -126,7 +134,9 @@ namespace nil {
                                 BOOST_ASSERT_MSG(*challenge_it > 0, "Invalid challenge");
 
                                 // Initial data layer openings (c_X in Comm_D)
-                                auto comm_d_proof = t_aux.tree_d.gen_proof(*challenge_it);
+                                merkle_proof_type<auto> comm_d_proof 
+                                    = merkletree::processing::naive::MerkleTree_gen_proof(t_aux.tree_d, *challenge_it);
+
                                 BOOST_ASSERT(comm_d_proof.validate(*challenge_it));
 
                                 // Stacked replica column openings
@@ -166,10 +176,12 @@ namespace nil {
                                 // Final replica layer openings
                                 BOOST_LOG_TRIVIAL(trace) << "final replica layer openings";
 
-                                auto comm_r_last_proof = t_aux.tree_r_last.gen_cached_proof(
-                                    *challenge_it,
-                                    Some(t_aux.tree_r_last_config_rows_to_discard),
-                                );
+                                merkle_proof_type<auto> comm_r_last_proof 
+                                    = merkletree::processing::naive::MerkleTree_gen_cached_proof(
+                                        t_aux.tree_r_last,
+                                        *challenge_it,
+                                        Some(t_aux.tree_r_last_config_rows_to_discard),
+                                    );
 
                                 BOOST_ASSERT(comm_r_last_proof.validate(*challenge_it));
 

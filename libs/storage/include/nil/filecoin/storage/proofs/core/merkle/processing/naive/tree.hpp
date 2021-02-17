@@ -44,28 +44,50 @@
 
 namespace nil {
     namespace filecoin {
+        namespace merkletree {
+            namespace processing {
+                namespace naive {
 
-        template<typename Hash>
-        Proof<> gen_proof(MerkleTree<typename Hash> merkle_tree, std::usize i) {
-            Proof<> proof = merkle_tree.inner.gen_proof(i)?;
 
-            BOOST_ASSERT(proof.validate::<Hash>());
+                    template<typename Hash>
+                    MerkleProof<MerkleTree<typename Hash>::Hasher, 
+                                MerkleTree<typename Hash>::Arity, 
+                                MerkleTree<typename Hash>::SubTreeArity, 
+                                MerkleTree<typename Hash>::TopTreeArity> MerkleTree_gen_proof(MerkleTree<typename Hash> &merkle_tree, std::usize i) {
+                        
+                        MerkleProof<MerkleTree<typename Hash>::Hasher, 
+                                    MerkleTree<typename Hash>::Arity, 
+                                    MerkleTree<typename Hash>::SubTreeArity, 
+                                    MerkleTree<typename Hash>::TopTreeArity> proof 
+                                    = merkle_tree.inner.gen_proof(i);
 
-            MerkleProof::try_from_proof(proof)
-        }
+                        BOOST_ASSERT(proof.validate::<Hash>());
 
-        template<typename Hash>
-        Proof<> gen_cached_proof(MerkleTree<typename Hash> merkle_tree, std::usize i, Option<usize> rows_to_discard) {
-            if (rows_to_discard.is_some() && rows_to_discard == 0) {
-                return gen_proof(merkle_tree, i);
-            }
+                        MerkleProof::try_from_proof(proof)
+                    }
 
-            Proof<> proof = merkle_tree.inner.gen_cached_proof(i, rows_to_discard)?;
+                    template<typename Hash>
+                    MerkleProof<MerkleTree<typename Hash>::Hasher, 
+                                MerkleTree<typename Hash>::Arity, 
+                                MerkleTree<typename Hash>::SubTreeArity, 
+                                MerkleTree<typename Hash>::TopTreeArity> proof MerkleTree_gen_cached_proof(MerkleTree<typename Hash> &merkle_tree, std::usize i, Option<usize> rows_to_discard) {
+                        if (rows_to_discard.is_some() && rows_to_discard == 0) {
+                            return gen_proof(merkle_tree, i);
+                        }
 
-            BOOST_ASSERT(proof.validate::<Hash>());
+                        MerkleProof<MerkleTree<typename Hash>::Hasher, 
+                                    MerkleTree<typename Hash>::Arity, 
+                                    MerkleTree<typename Hash>::SubTreeArity, 
+                                    MerkleTree<typename Hash>::TopTreeArity> proof 
+                                    = merkle_tree.inner.gen_cached_proof(i, rows_to_discard)?;
 
-            MerkleProof::try_from_proof(proof)
-        }
+                        BOOST_ASSERT(proof.validate::<Hash>());
+
+                        MerkleProof::try_from_proof(proof)
+                    }
+                }    // namespace naive
+            }    // namespace processing
+        }    // namespace merkletree
     }    // namespace filecoin
 }    // namespace nil
 
