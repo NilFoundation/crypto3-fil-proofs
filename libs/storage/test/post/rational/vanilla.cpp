@@ -46,8 +46,9 @@ void test_rational_post() {
     const auto temp_dir = tempfile::tempdir();
     const auto temp_path = temp_dir.path();
 
-    const auto(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
-    const auto(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+    auto data1, data2, tree1, tree2;
+    const std::tie(data1, tree1) = merkletree::generate_tree<Tree>(rng, leaves, Some(temp_path.to_path_buf()));
+    const std::tie(data2, tree2) = merkletree::generate_tree<Tree>(rng, leaves, Some(temp_path.to_path_buf()));
 
     const auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
     auto faults = OrderedSectorSet();
@@ -142,7 +143,8 @@ void test_rational_post_validates_challenge_identity() {
     const auto temp_dir = tempfile::tempdir();
     const auto temp_path = temp_dir.path();
 
-    const auto(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+    auto data, tree;
+    const std::tie(data, tree) = merkletree::generate_tree<Tree>(rng, leaves, Some(temp_path.to_path_buf()));
     const auto seed = (0..leaves).map(| _ | rng.gen()).collect::<Vec<u8>>();
     auto faults = OrderedSectorSet();
     faults.insert(1.into());

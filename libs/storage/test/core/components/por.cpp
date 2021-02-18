@@ -177,7 +177,8 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
     const std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
 
     // -- Basic Setup
-    const auto(data, tree) = generate_tree::<Tree, _>(rng, leaves, None);
+    auto data, tree;
+    const std::tie(data, tree) = merkletree::generate_tree<Tree>(rng, leaves, None);
 
     for (std::size_t i = 0; i < leaves; ++i) {
         // println!("challenge: {}, ({})", i, leaves);
@@ -187,7 +188,7 @@ void test_por_circuit<Tree: static + MerkleTreeTrait>(std::uint num_inputs, std:
             leaves,
             private : false,
         };
-        const auto pub_inputs = por::PublicInputs:: <typename MerkleTreeType::hash_type::digest_type > {
+        const auto pub_inputs = por::PublicInputs:: <typename MerkleTreeType::hash_type::digest_type> {
             challenge : i,
             commitment : Some(tree.root()),
         };
@@ -291,7 +292,8 @@ void private_por_test_compound < Tree: static + MerkleTreeTrait>() {
     const std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
 
     // -- Basic Setup
-    const auto(data, tree) = generate_tree::<Tree, _>(rng, leaves, None);
+    auto data, tree;
+    const std::tie(data, tree) = merkletree::generate_tree<Tree>(rng, leaves, None);
 
     for (std::size_t i = 0; i < 3; ++i) {
         const auto public_inputs = por::PublicInputs {

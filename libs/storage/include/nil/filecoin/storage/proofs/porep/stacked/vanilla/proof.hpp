@@ -351,9 +351,9 @@ namespace nil {
 
                         BOOST_ASSERT_MSG(labels.len() == layers, "Invalid amount of layers encoded expected");
 
-                        return ((LabelsCache::<Tree> {labels}, Labels::<Tree> {
-                            labels : label_configs
-                        }))
+                        return (LabelsCache::<Tree> {labels}, Labels::<Tree> {
+                            .labels = label_configs
+                        });
                     }
 
                     template<typename TreeHash>
@@ -371,29 +371,26 @@ namespace nil {
                             build_tree_vector.push(get_node::<K>(tree_data, i));
                         }
 
-                        MerkleTree<TreeHash> tree =
-                            MerkleTree::from_par_iter_with_config(build_tree_vector, config);
-
-                        return tree;
+                        return MerkleTree::from_par_iter_with_config(build_tree_vector, config);
                     }
 
-                    template<typename ColumnArity = PoseidonArity, typename TreeArity = PoseidonArity>
-                    DiskTree<tree_hash_type, typename tree_type::Arity, typename tree_type::SubTreeArity,
-                             typename tree_type::TopTreeArity>
+                    template<typename MerkleTreeType>
+                    DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 
+                             MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
                         generate_tree_c(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                         const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
                         if (settings ::SETTINGS.lock().use_gpu_column_builder) {
-                            generate_tree_c_gpu::<ColumnArity, TreeArity>(layers, nodes_count, tree_count, configs,
-                                                                                labels)
+                            return generate_tree_c_gpu<MerkleTreeType>(layers, nodes_count, tree_count, configs,
+                                                                                labels);
                         } else {
-                            generate_tree_c_cpu::<ColumnArity, TreeArity>(layers, nodes_count, tree_count, configs,
-                                                                                labels)
+                            return generate_tree_c_cpu<MerkleTreeType>(layers, nodes_count, tree_count, configs,
+                                                                                labels);
                         }
                     }
 
-                    template<typename ColumnArity = PoseidonArity, typename TreeArity = PoseidonArity>
-                    DiskTree<tree_hash_type, typename tree_type::Arity, typename tree_type::SubTreeArity,
-                             typename tree_type::TopTreeArity>
+                    template<typename MerkleTreeType>
+                    DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 
+                             MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
                         generate_tree_c_gpu(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                             const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
                         BOOST_LOG_TRIVIAL(info) << "generating tree c using the GPU";
@@ -568,14 +565,14 @@ namespace nil {
                             });
                         });
 
-                        create_disk_tree::<
-                            DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>, >(
+                        return create_disk_tree<DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 
+                                                         MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>(
                             configs[0].size, &configs);
                     }
 
-                    template<typename ColumnArity = PoseidonArity, typename TreeArity = PoseidonArity>
-                    DiskTree<tree_hash_type, typename tree_type::Arity, typename tree_type::SubTreeArity,
-                             typename tree_type::TopTreeArity>
+                    template<typename MerkleTreeType>
+                    DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 
+                             MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
                         generate_tree_c_cpu(std::size_t layers, std::size_t nodes_count, std::size_t tree_count,
                                             const std::vector<StoreConfig> &configs, const LabelsCache<tree_type> &labels) {
                         BOOST_LOG_TRIVIAL(info) << "generating tree c using the CPU";
@@ -627,13 +624,14 @@ namespace nil {
                             });
 
                             BOOST_LOG_TRIVIAL(info) << std::format("building base tree_c %d/%d", i + 1, tree_count);
-                            trees.push(DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 0, 0>::
+                            trees.push(DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 
+                                                MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>::
                                            from_par_iter_with_config(hashes.into_par_iter(), (*config_it).clone()));
                         }
 
-                        assert(tree_count == trees.len());
-                        create_disk_tree::<
-                            DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>, >(
+                        BOOST_ASSERT(tree_count == trees.len());
+                        return create_disk_tree<DiskTree<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity, 
+                                                         MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>>(
                             configs[0].size, &configs);
                     }
 

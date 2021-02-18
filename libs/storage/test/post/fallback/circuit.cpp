@@ -52,7 +52,8 @@ void test_fallback_post_circuit(std::size_t expected_constraints) {
 
     for (std::size_t i = 0; i < 5; i++) {
         sectors.push(i.into());
-        const auto(_data, tree) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+        auto data, tree;
+        const std::tie(data, tree) = merkletree::generate_tree<Tree>(rng, leaves, Some(temp_path.to_path_buf()));
         trees.insert(i.into(), tree);
     }
 

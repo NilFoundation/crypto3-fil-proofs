@@ -38,7 +38,8 @@ void merklepath() {
     std::size_t nodes = 64 * get_base_tree_count<MerkleTreeType>();
 
     auto rng = rand::thread_rng();
-    const auto(data, tree) = generate_tree<MerkleTreeType>(rng, nodes, None);
+    auto data, tree;
+    const std::tie(data, tree) = merkletree::generate_tree<MerkleTreeType>(rng, nodes, None);
 
     for (std::size_t i = 0; i < nodes; i++) {
         const auto proof = tree.gen_proof(i);
