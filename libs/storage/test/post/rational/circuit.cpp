@@ -23,6 +23,8 @@
 
 #include <nil/filecoin/storage/proofs/post/rational/circuit.hpp>
 
+#include "../../core/merkle/generate_tree.hpp"
+
 using namespace nil::filecoin;
 
 BOOST_AUTO_TEST_SUITE(post_rational_circuit_test_suite)
@@ -44,8 +46,8 @@ void test_rational_post_circuit(std::size_t expected_constraints) {
     const auto temp_dir = tempfile::tempdir();
     const auto temp_path = temp_dir.path();
 
-    const auto(_data1, tree1) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
-    const auto(_data2, tree2) = generate_tree::<Tree, _>(rng, leaves, Some(temp_path.to_path_buf()));
+    const auto(_data1, tree1) = merkltree::generate_tree<Tree>(rng, leaves, Some(temp_path.to_path_buf()));
+    const auto(_data2, tree2) = merkletree::generate_tree<Tree>(rng, leaves, Some(temp_path.to_path_buf()));
 
     const auto faults = OrderedSectorSet();
     auto sectors = OrderedSectorSet();

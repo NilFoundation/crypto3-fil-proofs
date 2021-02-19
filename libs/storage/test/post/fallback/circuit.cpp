@@ -23,6 +23,8 @@
 
 #include <nil/filecoin/storage/proofs/post/fallback/circuit.hpp>
 
+#include "../../core/merkle/generate_tree.hpp"
+
 using namespace nil::filecoin;
 
 BOOST_AUTO_TEST_SUITE(post_fallback_circuit_test_suite)

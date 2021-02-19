@@ -28,6 +28,8 @@
 
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 
+#include "./generate_tree.hpp"
+
 using namespace nil::filecoin;
 
 BOOST_AUTO_TEST_SUITE(merkle_proof_test_suite)

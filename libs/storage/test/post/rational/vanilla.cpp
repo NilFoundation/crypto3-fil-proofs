@@ -25,6 +25,8 @@
 
 #include <nil/filecoin/storage/proofs/post/rational/vanilla.hpp>
 
+#include "../../core/merkle/generate_tree.hpp"
+
 using namespace nil::filecoin;
 
 BOOST_AUTO_TEST_SUITE(post_rational_vanilla_test_suite)

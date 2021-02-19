@@ -23,6 +23,8 @@
 
 #include <nil/filecoin/storage/proofs/core/components/por.hpp>
 
+#include "../merkle/generate_tree.hpp"
+
 BOOST_AUTO_TEST_SUITE(por_component_test_suite)
 
 type TestTree<H, A> = MerkleTreeWrapper<H, VecStore <H::digest_type>, A, 0, 0 > ;

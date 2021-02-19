@@ -25,6 +25,8 @@
 
 #include <nil/filecoin/storage/proofs/post/fallback/compound.hpp>
 
+#include "../../core/merkle/generate_tree.hpp"
+
 using namespace nil::filecoin;
 
 BOOST_AUTO_TEST_SUITE(post_fallback_compound_test_suite)
