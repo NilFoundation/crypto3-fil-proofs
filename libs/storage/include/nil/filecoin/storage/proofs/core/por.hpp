@@ -41,8 +41,7 @@ namespace nil {
         /// The parameters shared between the prover and verifier.
         struct public_params : public parameter_set_metadata {
             virtual std::string identifier() const override {
-                return "merklepor::PublicParams{{leaves: {}; private: {}}}" + std::to_string(leaves) +
-                       std::to_string(priv);
+                return std::format("merklepor::PublicParams{{leaves: %d; private: %b}}", leaves, priv);
             }
             virtual size_t sector_size() const override {
                 return 0;

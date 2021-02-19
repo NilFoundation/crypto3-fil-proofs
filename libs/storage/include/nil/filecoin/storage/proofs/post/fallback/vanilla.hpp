@@ -39,6 +39,9 @@ namespace nil {
     namespace filecoin {
         namespace post {
             namespace fallback {
+
+                /*************************  SetupParams  ***********************************/
+
                 struct SetupParams {
                     /// Size of the sector in bytes.
                     std::uint64_t sector_size;
@@ -48,34 +51,39 @@ namespace nil {
                     std::size_t sector_count;
                 };
 
+                /*************************  PublicParams  ***********************************/
+
                 struct PublicParams : public parameter_set_metadata {
                     virtual std::string identifier() const override {
                         return std::string("FallbackPoSt::PublicParams{{sector_size: ") +
                                std::to_string(sector_size()) + ", challenge_count: " + std::to_string(challenge_count) +
                                " , sector_count: " + std::to_string(sector_count) + "}}";
                     }
-                    virtual size_t sector_size() const override {
-                        return ssize;
-                    }
 
                     /// Size of the sector in bytes.
-                    std::uint64_t ssize;
+                    std::uint64_t sector_size;
                     /// Number of challenges per sector.
                     std::size_t challenge_count;
                     /// Number of challenged sectors.
                     std::size_t sector_count;
                 };
 
+                /*************************  ChallengeRequirements  ***********************************/
+
                 struct ChallengeRequirements {
                     /// The sum of challenges across all challenged sectors. (even across partitions)
                     std::size_t minimum_challenge_count;
                 };
+
+                /*************************  PublicSector  ***********************************/
 
                 template<typename Domain>
                 struct PublicSector {
                     sector_id_type id;
                     Domain comm_r;
                 };
+
+                /*************************  PublicInputs  ***********************************/
 
                 template<typename Domain>
                 struct PublicInputs {
@@ -86,6 +94,8 @@ namespace nil {
                     std::size_t k;
                 };
 
+                /*************************  PrivateSector  ***********************************/
+
                 template<typename MerkleTreeType>
                 struct PrivateSector {
                     MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity,
@@ -95,10 +105,14 @@ namespace nil {
                     typename MerkleTreeType::hash_type::digest_type comm_r_last;
                 };
 
+                /*************************  PrivateInputs  ***********************************/
+
                 template<typename MerkleTreeType>
                 struct PrivateInputs {
                     std::vector<PrivateSector<MerkleTreeType>> sectors;
                 };
+
+                /*************************  SectorProof  ***********************************/
 
                 template<typename MerkleProofType>
                 struct SectorProof {
@@ -131,10 +145,14 @@ namespace nil {
                     typename MerkleProofType::hash_type::digest_type comm_r_last;
                 };
 
+                /*************************  Proof  ***********************************/
+
                 template<typename MerkleProofType>
                 struct Proof {
                     std::vector<SectorProof<MerkleProofType>> sectors;
                 };
+
+                /*************************  FallbackPoSt  ***********************************/
 
                 template<typename MerkleTreeType>
                 class FallbackPoSt
@@ -164,6 +182,7 @@ namespace nil {
                                                                  const public_inputs_type &pub_inputs,
                                                                  const private_inputs_type &priv_inputs,
                                                                  std::size_t partition_count) {
+
                         BOOST_ASSERT_MSG(priv_inputs.sectors.size() == pub_inputs.sectors.size(), 
                             "inconsistent number of private and public sectors");
 
@@ -333,14 +352,20 @@ namespace nil {
                     }
                 };
 
+                /*************************  ???  ***********************************/
+
                 template<typename Domain>
                 std::vector<std::uint64_t> generate_sector_challenges(Domain randomness, std::size_t challenge_count,
                                                                       std::uint64_t sector_set_len, Domain prover_id) {
-                    (0..challenge_count)
-                        .map(| n | generate_sector_challenge(randomness, n, sector_set_len, prover_id))
-                        .collect();
-                }
 
+                    std::vector<std::uint64_t> result;
+                    result.reserve(challenge_count);
+
+                    for (std::size_t n = 0; n < challenge_count; ++n){
+                        result.push(generate_sector_challenge(randomness, n, sector_set_len, prover_id));
+                    }
+                }
+                
                 /// Generate a single sector challenge.
                 template<typename Domain, typename ChallengeHash = crypto3::hashes::sha2<256>>
                 std::uint64_t generate_sector_challenge(Domain randomness, std::size_t n, std::uint64_t sector_set_len,
