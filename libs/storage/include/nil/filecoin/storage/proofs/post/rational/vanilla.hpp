@@ -88,24 +88,30 @@ namespace nil {
                     std::vector<typename MerkleTreeType::hash_type::digest_type> comm_r_lasts;
                 };
 
-                template<typename MerkleProofType>
+                template<typename MerkleTreeType>
                 struct Proof {
                     std::vector<typename MerkleTreeType::hash_type::digest_type> leafs() {
-                        return inclusion_proofs.iter().map(MerkleProof::leaf).collect();
+                        return std::accumulate(inclusion_proofs.begin(), inclusion_proofs.end(),
+                                               std::vector<typename MerkleTreeType::hash_type::digest_type>(),
+                                               [&](auto &val, const auto &itr) { val.emplace_back(itr.leaf()); });
                     }
 
                     std::vector<typename MerkleTreeType::hash_type::digest_type> commitments() {
-                        return inclusion_proofs.iter().map(MerkleProof::root).collect();
+                        return std::accumulate(inclusion_proofs.begin(), inclusion_proofs.end(),
+                                               std::vector<typename MerkleTreeType::hash_type::digest_type>(),
+                                               [&](auto &val, const auto &itr) { val.emplace_back(itr.root()); });
                     }
 
                     std::vector<std::vector<
                         std::pair<std::vector<typename MerkleTreeType::hash_type::digest_type>, std::size_t>>>
                         paths() {
-                        return inclusion_proofs.iter().map(MerkleProof::path).collect();
+                        return std::accumulate(inclusion_proofs.begin(), inclusion_proofs.end(),
+                                               std::vector<typename MerkleTreeType::hash_type::digest_type>(),
+                                               [&](auto &val, const auto &itr) { val.emplace_back(itr.path()); });
                     }
 
-                    std::vector<MerkleProof<typename MerkleProofType::hash_type, MerkleProofType::Arity,
-                                            MerkleProofType::SubTreeArity, MerkleProofType::TopTreeArity>>
+                    std::vector<MerkleProof<typename MerkleTreeType::hash_type, MerkleTreeType::Arity,
+                                            MerkleTreeType::SubTreeArity, MerkleTreeType::TopTreeArity>>
                         inclusion_proofs;
                     std::vector<typename MerkleTreeType::hash_type::digest_type> comm_cs;
                 };
@@ -135,30 +141,29 @@ namespace nil {
                     virtual proof_type prove(const public_params_type &params,
                                              const public_inputs_type &inputs,
                                              const private_inputs_type &pinputs) override {
-                        BOOST_ASSERT_MSG(inputs.challenges.size() == inputs.comm_rs.size(), "mismatched challenges and comm_rs");
-                        BOOST_ASSERT_MSG(inputs.challenges.size() == pinputs.comm_cs.size(), "mismatched challenges and comm_cs");
-                        BOOST_ASSERT_MSG(pub_inputs.challenges.size() == priv_inputs.comm_r_lasts.size(), 
-                            "mismatched challenges and comm_r_lasts");
-                        const auto challenges = pub_inputs.challenges;
+                        BOOST_ASSERT_MSG(inputs.challenges.size() == inputs.comm_rs.size(),
+                                         "mismatched challenges and comm_rs");
+                        BOOST_ASSERT_MSG(inputs.challenges.size() == pinputs.comm_cs.size(),
+                                         "mismatched challenges and comm_cs");
+                        BOOST_ASSERT_MSG(inputs.challenges.size() == pinputs.comm_r_lasts.size(),
+                                         "mismatched challenges and comm_r_lasts");
+                        const auto challenges = inputs.challenges;
 
-                        const auto proofs =
-                            challenges.iter()
-                                .zip(priv_inputs.comm_r_lasts.iter())
-                                .map(| (challenge, comm_r_last) |
-                                     {
-                                         const auto challenged_leaf = challenge.leaf;
+                        std::vector<proof_type> proofs(challenges.size());
 
-                                         if const auto
-                                             Some(tree) = priv_inputs.trees.get(&challenge.sector) {
-                                                 ensure !(comm_r_last == &tree.root(), Error::InvalidCommitment);
+                        for (int i = 0; i < challenges.size() && i < pinputs.comm_r_lasts.size(); i++) {
+                            const auto challenged_leaf = challenges[i].leaf;
 
-                                                 tree.gen_cached_proof(challenged_leaf as usize, None)
-                                             }
-                                         else {
-                                             bail !(Error::MalformedInput);
-                                         }
-                                     })
-                                .collect::<Result<Vec<_>>>();
+                            auto tree = pinputs.trees[challenges[i].sector];
+
+                            if (tree) {
+                                assert(pinputs.comm_r_lasts[i] == tree.root());
+
+                                proofs.emplace_back(tree.gen_cached_proof(challenged_leaf, None));
+                            } else {
+                                throw Error::MalformedInput;
+                            }
+                        }
 
                         return {proofs, pinputs.comm_cs.to_vec()};
                     }
@@ -172,34 +177,32 @@ namespace nil {
                         assert(challenges.size() == pr.inclusion_proofs.size());
 
                         // validate each proof
-                        for ((((merkle_proof, challenge), comm_r), comm_c) : proof.inclusion_proofs.iter()
-                                                                                 .zip(challenges.iter())
-                                                                                 .zip(pub_inputs.comm_rs.iter())
-                                                                                 .zip(proof.comm_cs.iter())) {
-                            const auto challenged_leaf = challenge.leaf;
+                        for (int i = 0; i < pr.inclusion_proofs.size() && i < challenges.size() &&
+                                        i < pub_inputs.comm_rs.size() && i < pr.comm_cs.size();
+                             i++) {
+                            const auto challenged_leaf = challenges[i].leaf();
 
                             // verify that H(Comm_c || Comm_r_last) == Comm_R
                             // comm_r_last is the root of the proof
-                            const auto comm_r_last = merkle_proof.root();
+                            const auto comm_r_last = pr.inclusion_proofs[i].root();
 
                             if (AsRef::<[u8]>::as_ref(&<typename MerkleTreeType::hash_type>::Function::hash2(
-                                    comm_c, &comm_r_last, )) != AsRef::<[u8]>::as_ref(&comm_r)) {
+                                    pr.comm_cs[i], &comm_r_last, )) != AsRef::<[u8]>::as_ref(pub_inputs.comm_rs[i])) {
                                 return false;
                             }
 
                             // validate the path length
                             const auto expected_path_length =
-                                merkle_proof.expected_len(pub_params.sector_size as usize / NODE_SIZE);
+                                pr.inclusion_proofs[i].expected_len(pub_params.sector_size / NODE_SIZE);
 
-                            if (expected_path_length != merkle_proof.path().size()) {
+                            if (expected_path_length != pr.inclusion_proofs[i].path().size()) {
                                 return false;
                             }
 
-                            if (!merkle_proof.validate(challenged_leaf)) {
+                            if (!pr.inclusion_proofs[i].validate(challenged_leaf)) {
                                 return false;
                             }
                         }
-
                         return true;
                     }
                 };
@@ -207,11 +210,10 @@ namespace nil {
                 Challenge derive_challenge(const std::vector<std::uint8_t> &seed, std::uint64_t n,
                                            std::uint64_t attempt, std::uin64_t sector_size,
                                            const ordered_sector_set &sectors) {
-                    auto data = seed.to_vec();
-                    data.extend_from_slice(&n.to_le_bytes()[..]);
-                    data.extend_from_slice(&attempt.to_le_bytes()[..]);
+                    seed.extend_from_slice(&n.to_le_bytes()[..]);
+                    seed.extend_from_slice(&attempt.to_le_bytes()[..]);
 
-                    const auto hash = blake2b_simd::blake2b(&data);
+                    const auto hash = blake2b_simd::blake2b(seed);
                     const auto challenge_bytes = hash.as_bytes();
                     const auto sector_challenge = LittleEndian::read_u64(&challenge_bytes[..8]);
                     const auto leaf_challenge = LittleEndian::read_u64(&challenge_bytes[8..16]);
@@ -227,27 +229,24 @@ namespace nil {
                                                          const ordered_sector_set &sectors,
                                                          const std::vector<std::uint8_t> &seed,
                                                          const ordered_sector_set &faults) {
-                    (0..challenge_count)
-                        .map(| n |
-                             {
-                                 auto attempt = 0;
-                                 auto attempted_sectors = HashSet();
-                                 while (true) {
-                                     const auto c = derive_challenge(seed, std::uint64_t(n), attempt, sector_size, sectors);
+                    for (int i = 0; i < challenge_count; i++) {
+                        auto attempt = 0;
+                        unordered_sector_set attempted_sectors;
+                        while (true) {
+                            const auto c = derive_challenge(seed, i, attempt, sector_size, sectors);
 
-                                     // check for faulty sector
-                                     if (!faults.contains(&c.sector)) {
-                                         // valid challenge, not found
-                                         return c;
-                                     } else {
-                                         attempt += 1;
-                                         attempted_sectors.insert(c.sector);
+                            // check for faulty sector
+                            if (!faults.contains(c.sector)) {
+                                // valid challenge, not found
+                                return {c};
+                            } else {
+                                attempt += 1;
+                                attempted_sectors.insert(c.sector);
 
-                                         BOOST_ASSERT_MSG(attempted_sectors.size() < sectors.size(), "all sectors are faulty");
-                                     }
-                                 }
-                             })
-                        .collect();
+                                BOOST_ASSERT_MSG(attempted_sectors.size() < sectors.size(), "all sectors are faulty");
+                            }
+                        }
+                    }
                 }
             }    // namespace rational
         }        // namespace post
