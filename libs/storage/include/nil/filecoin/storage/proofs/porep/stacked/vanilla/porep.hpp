@@ -65,10 +65,10 @@ namespace nil {
                                                           const store_config &config) = 0;
 
             virtual std::vector<std::uint8_t> extract(const public_params_type &pub_params,
-                                                          const typename H::digest_type &replica_id,
-                                                          const std::vector<std::uint8_t> &replica,
-                                                          std::size_t node,
-                                                          const store_config &config) = 0;
+                                                      const typename H::digest_type &replica_id,
+                                                      const std::vector<std::uint8_t> &replica,
+                                                      std::size_t node,
+                                                      const store_config &config) = 0;
         };
     }    // namespace filecoin
 }    // namespace nil

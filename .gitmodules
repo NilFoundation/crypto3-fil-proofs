@@ -82,3 +82,6 @@
 [submodule "libs/actor/opencl"]
 	path = libs/actor/opencl
 	url = git@github.com:nilfoundation/actor-opencl.git
+[submodule "libs/crypto/multiprecision"]
+	path = libs/crypto/multiprecision
+	url = git@github.com:nilfoundation/crypto3-multiprecision.git

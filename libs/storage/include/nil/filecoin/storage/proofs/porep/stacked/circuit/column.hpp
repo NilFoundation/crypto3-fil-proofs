@@ -27,6 +27,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_HPP
 
+#include <format>
+
 #include <nil/crypto3/zk/snark/relations/constraint_satisfaction_problems/r1cs.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
@@ -38,13 +40,15 @@ namespace nil {
                 template<template<typename> class AllocatedNumber>
                 struct AllocatedColumn {
                     template<template<typename> class ConstraintSystem>
-                    AllocatedNumber<algebra::curves::bls12<381>> hash(const ConstraintSystem<algebra::curves::bls12<381>> &cs) {
+                    AllocatedNumber<crypto3::algebra::curves::bls12<381>>
+                        hash(const ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
                         hash_single_column(cs, rows);
                     }
 
-                    AllocatedNumber<algebra::curves::bls12<381>> get_value(std::size_t layer) {
+                    AllocatedNumber<crypto3::algebra::curves::bls12<381>> get_value(std::size_t layer) {
                         BOOST_ASSERT_MSG(layer > 0, "layers are 1 indexed");
-                        BOOST_ASSERT_MSG(layer <= self.rows.len(), std::format("layer {} out of range: 1..={}", layer, rows.size()));
+                        BOOST_ASSERT_MSG(layer <= rows.len(),
+                                         std::format("layer {} out of range: 1..={}", layer, rows.size()));
                         return rows[layer - 1];
                     }
 
@@ -68,12 +72,12 @@ namespace nil {
                         const auto Self {rows} = self;
 
                         const auto rows = rows.into_iter()
-                                       .enumerate()
-                                       .map(| (i, val) |
-                                            {num::AllocatedNumber::alloc(
-                                                cs.namespace(|| std::format("column_num_row_{}", i)),
-                                                || {val.ok_or_else(|| SynthesisError::AssignmentMissing)})})
-                                       .collect::<Result<Vec<_>, _>>();
+                                              .enumerate()
+                                              .map(| (i, val) |
+                                                   {num::AllocatedNumber::alloc(
+                                                       cs.namespace(|| std::format("column_num_row_{}", i)),
+                                                       || {val.ok_or_else(|| SynthesisError::AssignmentMissing)})})
+                                              .collect::<Result<Vec<_>, _>>();
 
                         return {rows};
                     }

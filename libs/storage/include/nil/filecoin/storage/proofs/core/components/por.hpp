@@ -59,7 +59,8 @@ namespace nil {
                     return std::make_pair(cur, std::vector<bool>());
                 }
 
-                BOOST_ASSERT_MSG(std::ceil(std::log2(arity)) == std::floor(std::log2(arity)), "arity must be a power of two");
+                BOOST_ASSERT_MSG(std::ceil(std::log2(arity)) == std::floor(std::log2(arity)),
+                                 "arity must be a power of two");
                 std::size_t index_bit_count = arity.trailing_zeros();
 
                 std::vector<bool> auth_path_bits(path.size());
@@ -71,8 +72,8 @@ namespace nil {
             }
 
             template<template<typename> class ConstraintSystem>
-            std::pair<AllocatedNumber<algebra::curves::bls12<381>>, std::vector<bool>>
-                synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
+            std::pair<AllocatedNumber<crypto3::algebra::curves::bls12<381>>, std::vector<bool>>
+                synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs,
                            crypto3::zk::snark::blueprint_variable<algebra::curves::bls12<381>> &cur) {
 
                 std::size_t arity = BaseArity;
@@ -83,7 +84,8 @@ namespace nil {
                     return std::make_pair(cur, std::vector<bool>());
                 }
 
-                BOOST_ASSERT_MSG(std::ceil(std::log2(arity)) == std::floor(std::log2(arity)), "arity must be a power of two");
+                BOOST_ASSERT_MSG(std::ceil(std::log2(arity)) == std::floor(std::log2(arity)),
+                                 "arity must be a power of two");
                 std::size_t index_bit_count = arity.trailing_zeros();
 
                 std::vector<bool> auth_path_bits(path.size());
@@ -99,7 +101,7 @@ namespace nil {
 
                     for (int i = 0; i < index_bit_count; i++) {
                         const auto bit = AllocatedBit::alloc(cs.namespace(|| std::format("index bit {}", i)),
-                                                      {optional_index.map(| index | ((index >> i) & 1) == 1)});
+                                                             {optional_index.map(| index | ((index >> i) & 1) == 1)});
 
                         index_bits.push_back(bit);
                     }
@@ -107,13 +109,14 @@ namespace nil {
                     auth_path_bits.extend_from_slice(&index_bits);
 
                     // Witness the authentication path elements adjacent at this depth.
-                    const auto path_hash_nums = path_hashes.iter()
-                                             .enumerate()
-                                             .map(| (i, elt) |
-                                                  {num::AllocatedNumber::alloc(
-                                                      cs.namespace(|| std::format("path element {}", i)),
-                                                      || {elt.ok_or_else(|| SynthesisError::AssignmentMissing)})})
-                                             .collect::<Result<Vec<_>, _>>();
+                    const auto path_hash_nums =
+                        path_hashes.iter()
+                            .enumerate()
+                            .map(| (i, elt) |
+                                 {num::AllocatedNumber::alloc(
+                                     cs.namespace(|| std::format("path element {}", i)),
+                                     || {elt.ok_or_else(|| SynthesisError::AssignmentMissing)})})
+                            .collect::<Result<Vec<_>, _>>();
 
                     const auto inserted = insert(cs, &cur, &index_bits, &path_hash_nums);
 
@@ -159,13 +162,13 @@ namespace nil {
                 auto opts = base_opts.split_off(len - x);
 
                 const auto base = base_opts.into_iter()
-                               .map(| (hashes, index) | PathElement {
-                                   hashes,
-                                   index,
-                                   _a : Default::default(),
-                                   _h : Default::default(),
-                               })
-                               .collect();
+                                      .map(| (hashes, index) | PathElement {
+                                          hashes,
+                                          index,
+                                          _a : Default::default(),
+                                          _h : Default::default(),
+                                      })
+                                      .collect();
 
                 const auto top = if has_top {
                     const auto(hashes, index) = opts.pop();
@@ -176,7 +179,7 @@ namespace nil {
                         _h : Default::default(),
                     }]
                 }
-                else {Vec ()};
+                else {Vec()};
 
                 const auto sub = if has_sub {
                     const auto(hashes, index) = opts.pop();
@@ -187,7 +190,7 @@ namespace nil {
                         _h : Default::default(),
                     }]
                 }
-                else {Vec ()};
+                else {Vec()};
 
                 assert(opts.is_empty());
 
@@ -207,8 +210,8 @@ namespace nil {
             constexpr static const std::size_t sub_arity = MerkleTreeType::arity;
             constexpr static const std::size_t top_arity = MerkleTreeType::arity;
 
-            using auth_path_type = AuthPath<typename MerkleTreeType::hash_type, 
-                base_arity, sub_tree_arity, top_tree_arity, field_type>;
+            using auth_path_type =
+                AuthPath<typename MerkleTreeType::hash_type, base_arity, sub_tree_arity, top_tree_arity, field_type>;
 
             void generate_r1cs_constraints() {
                 // base tree
@@ -257,7 +260,6 @@ namespace nil {
                     BOOST_ASSERT_MSG(1 == top_arity.count_ones(), "top tree arity must be power of two");
                 }
 
-                
                 const auto value_num = value.allocated(cs.namespace(|| "value"));
                 const auto cur = value_num;
 
@@ -290,8 +292,7 @@ namespace nil {
 
             template<template<typename> class ConstraintSystem>
             void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
-                            const root<algebra::curves::bls12<381>> &value,
-                            auth_path_type &auth_path,
+                            const root<algebra::curves::bls12<381>> &value, auth_path_type &auth_path,
                             root<algebra::curves::bls12<381>> root, bool priv) {
                 this->value = value;
                 this->auth_path = auth_path;
@@ -313,4 +314,4 @@ namespace nil {
     }    // namespace filecoin
 }    // namespace nil
 
-#endif // FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
+#endif    // FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP

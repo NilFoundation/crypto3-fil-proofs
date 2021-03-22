@@ -27,6 +27,8 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_DRG_VANILLA_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_DRG_VANILLA_HPP
 
+#include <format>
+
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 
@@ -102,7 +104,7 @@ namespace nil {
                         return proof.proves_challenge(challenge);
                     }
 
-                    MerkleProof<Hash, PoseidonArity> proof;
+                    merkletree::MerkleProof<Hash, PoseidonArity> proof;
                     typename Hash::digest_type data;
                 };
 
@@ -170,23 +172,24 @@ namespace nil {
                             std::size_t challenge = inputs.challenges[i] % params.graph.size();
                             BOOST_ASSERT_MSG(challenge != 0, "cannot prove the first node");
 
-                            const auto tree_d = &priv_inputs.tree_d;
-                            const auto tree_r = &priv_inputs.tree_r;
-                            const auto tree_r_config_rows_to_discard = priv_inputs.tree_r_config_rows_to_discard;
+                            const auto tree_d = pinputs.tree_d;
+                            const auto tree_r = pinputs.tree_r;
+                            const auto tree_r_config_rows_to_discard = pinputs.tree_r_config_rows_to_discard;
 
                             const auto data = tree_r.read_at(challenge);
-                            const auto tree_proof = tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard));
+                            const auto tree_proof =
+                                tree_r.gen_cached_proof(challenge, Some(tree_r_config_rows_to_discard));
                             replica_nodes.emplace_back(tree_proof, data);
 
-                            std::vector<auto> parents (pub_params.graph.degree(), 0);
-                            pub_params.graph.parents(challenge, parents);
+                            std::vector<auto> parents(params.graph.degree(), 0);
+                            params.graph.parents(challenge, parents);
                             std::vector<auto> replica_parentsi;
                             replica_parentsi.reserve(parents.len());
 
                             for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent) {
                                 replica_parentsi.push_back((*parent, {
-                                    const auto proof =
-                                        tree_r.gen_cached_proof(std::size_t(*parent), Some(tree_r_config_rows_to_discard));
+                                    const auto proof = tree_r.gen_cached_proof(std::size_t(*parent),
+                                                                               Some(tree_r_config_rows_to_discard));
                                     DataProof {
                                         proof, data : tree_r.read_at(std::size_t(*parent))
                                     }
@@ -197,13 +200,9 @@ namespace nil {
 
                             const auto node_proof = generate_proof(tree_d, challenge);
 
-                            const auto extracted = decode_domain_block::<H>(
-                                &pub_inputs.replica_id.context("missing replica_id"),
-                                    tree_r,
-                                    challenge,
-                                    tree_r.read_at(challenge),
-                                    &parents,
-                            );
+                            const auto extracted =
+                                decode_domain_block<Hash>(&pub_inputs.replica_id.context("missing replica_id"), tree_r,
+                                                          challenge, tree_r.read_at(challenge), &parents, );
                             data_nodes.emplace_back(extracted, node_proof);
                         }
 
@@ -213,7 +212,7 @@ namespace nil {
                     virtual bool verify(const public_params_type &pub_params,
                                         const public_inputs_type &pub_inputs,
                                         const proof_type &pr) override {
-                        auto hasher = Sha256 ();
+                        auto hasher = Sha256();
 
                         for (int i = 0; i < pub_inputs.challenges.size(); i++) {
                             // This was verify_proof_meta.
@@ -229,48 +228,48 @@ namespace nil {
                                 return false;
                             }
 
-                            std::vector<auto> expected_parents (pub_params.graph.degree(), 0);
+                            std::vector<auto> expected_parents(pub_params.graph.degree(), 0);
                             pub_params.graph.parents(pub_inputs.challenges[i], expected_parents);
                             if (proof.replica_parents[i].size() != expected_parents.size()) {
                                 std::cout << std::format(
-                                    "proof parents were not the same length as in public parameters: "
-                                    "{} != {}",
-                                    proof.replica_parents[i].size(),
-                                    expected_parents.size()) << std::endl;
+                                                 "proof parents were not the same length as in public parameters: "
+                                                 "{} != {}",
+                                                 proof.replica_parents[i].size(),
+                                                 expected_parents.size())
+                                          << std::endl;
                                 return false;
                             }
 
-                            const auto parents_as_expected = proof.replica_parents[i]
-                                                          .iter()
-                                                          .zip(&expected_parents)
-                                                          .all(| (actual, expected) | actual .0 == *expected);
+                            bool parents_as_expected = false;
+                            for (int i = 0; i < proof.replica_parents.size() && i < expected_parents.size(); i++) {
+                                parents_as_expected = (std::get<0>(proof.replica_parents[i]) == expected_parents[i]);
+                            }
 
                             if (!parents_as_expected) {
-                                std::cout << std::format("proof parents were not those provided in public parameters") << std::endl;
+                                std::cout << std::format("proof parents were not those provided in public parameters")
+                                          << std::endl;
                                 return false;
                             }
                         }
 
                         const auto challenge = pub_inputs.challenges[i] % pub_params.graph.size();
-                        ensure !(challenge != 0, "cannot prove the first node");
+                        BOOST_ASSERT_MSG(challenge != 0, "cannot prove the first node");
 
                         if (!proof.replica_nodes[i].proof.validate(challenge)) {
                             return false;
                         }
 
-                        for ((parent_node, p) : proof.replica_parents[i]) {
-                            if (!p.proof.validate(*parent_node)) {
+                        for (const auto &iter : proof.replica_parents[i]) {
+                            if (!std::get<1>(iter).proof.validate(std::get<0>(iter)) {
                                 return false;
                             }
                         }
 
                         const auto prover_bytes = pub_inputs.replica_id.context("missing replica_id");
-                        hasher.input(AsRef::<[u8]>::as_ref(&prover_bytes));
+                        hasher.input(prover_bytes);
 
-                        for (proof.replica_parents[i]::iterator p = proof.replica_parents[i].begin(); 
-                            p != proof.replica_parents[i].end(); ++p) {
-                            
-                            hasher.input(AsRef::<[u8]>::as_ref(*p .1.data));
+                        for (const auto &p : proof.replica_parents[i]) {
+                            hasher.input(std::get<1>(p).data));
                         }
 
                         const auto hash = hasher.result_reset();
@@ -288,25 +287,25 @@ namespace nil {
                         }
 
                         return true;
-                    }    // namespace vanilla
+                    }
 
                     virtual std::tuple<Tau<Hash::digest_type>, ProverAux<Hash, Graph, Graph>>
                         replicate(const public_params_type &pub_params,
-                                  const Hash::digest_type &replica_id,
+                                  const typename Hash::digest_type &replica_id,
                                   const Data &data,
                                   const StoreConfig &config,
                                   const boost::filesystem::path &replica_path,
                                   const BinaryMerkleTree<G> &data_tree = BinaryMerkleTree<G>()) override {
-                        use storage_proofs_core::cache_key::CacheKey;
+                        using storage_proofs_core::cache_key::CacheKey;
 
                         auto tree_d;
                         switch (data_tree) {
-                            case Some(tree): 
+                            case Some(tree):
                                 tree_d = tree;
                                 break;
                             case None:
-                                tree_d = create_base_merkle_tree<BinaryMerkleTree<Hash>>(
-                                                              Some(config.clone()), pp.graph.size(), data);
+                                tree_d = create_base_merkle_tree<BinaryMerkleTree<Hash>>(Some(config.clone()),
+                                                                                         pp.graph.size(), data);
                         };
 
                         const auto graph = &pp.graph;
@@ -317,7 +316,7 @@ namespace nil {
                         // we can always get each parent's encodings with a simple lookup --
                         // since we will already have encoded the parent earlier in the traversal.
 
-                        std::vector<auto> parents (graph.degree(), 0);
+                        std::vector<auto> parents(graph.degree(), 0);
                         for (int node = 0; node < graph.size(); node++) {
                             graph.parents(node, parents);
                             auto key = graph.create_key(replica_id, node, &parents, data, None);
@@ -336,8 +335,9 @@ namespace nil {
                         };
                         const auto tree_r_last_config =
                             StoreConfig::from_config(&config, cache_key::CommRLastTree.to_string(), None);
-                        const auto tree_r = create_base_lcmerkle_tree::<H, <BinaryLCMerkleTree<H> as MerkleTreeTrait>::Arity>(
-                            tree_r_last_config, pp.graph.size(), &data, &replica_config);
+                        const auto tree_r =
+                            create_base_lcmerkle_tree::<H, <BinaryLCMerkleTree<H> as MerkleTreeTrait>::Arity>(
+                                tree_r_last_config, pp.graph.size(), &data, &replica_config);
 
                         const auto comm_d = tree_d.root();
                         const auto comm_r = tree_r.root();
@@ -379,14 +379,12 @@ namespace nil {
                            const std::vector<std::uint8_t> &data,
                            const std::vector<std::uint8_t> &exp_parents_data = std::vector<std::uint8_t>()) {
                     // TODO: proper error handling
-                    const auto result = (0..graph.size())
-                                     .into_par_iter()
-                                     .flat_map(| i |
-                                               {decode_block<Hash, Graph>(graph, replica_id, data, exp_parents_data, i)
-
-                                                    .into_bytes()})
-                                     .collect();
-
+                    std::vector<std::uint8_t> result;
+                    for (int i = 0; i < graph.size(); i++) {
+                        std::vector<uint8_t> decoded =
+                            decode_block<Hash, Graph>(graph, replica_id, data, exp_parents_data, i);
+                        result.insert(result.end(), decoded.begin(), decoded.end());
+                    }
                     return result;
                 }
 

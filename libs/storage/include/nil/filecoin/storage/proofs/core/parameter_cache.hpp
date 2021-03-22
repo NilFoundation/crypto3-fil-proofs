@@ -118,17 +118,18 @@ namespace nil {
                                      });
         }
 
-        crypto3::zk::snark::r1cs_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
+        crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
             read_cached_verifying_key(const boost::filesystem::path &cache_entry_path) {
             with_exclusive_read_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                return r1cs_ppzksnark_verification_key<algebra::curves::bls12<381>>::read(file);
+                return crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<
+                    crypto3::algebra::curves::bls12<381>>::read(file);
             });
         }
 
-        crypto3::zk::snark::r1cs_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
+        crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
             write_cached_verifying_key(
                 const boost::filesystem::path &cache_entry_path,
-                const crypto3::zk::snark::r1cs_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
+                const crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
                     &value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);

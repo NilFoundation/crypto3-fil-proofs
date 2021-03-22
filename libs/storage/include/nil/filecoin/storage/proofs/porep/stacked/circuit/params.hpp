@@ -50,22 +50,25 @@ namespace nil {
                     /// Proof for a single challenge.
                     template<typename MerkleTreeType, typename Hash>
                     struct Proof {
-                        Proof(const PublicParams<MerkleTreeType> &params) {
-                        comm_d_path:
-                            AuthPath::blank(params.graph.size()), data_leaf : None,
-                                                                              challenge : None,
-                                                                                          comm_r_last_path
-                                : AuthPath::blank(params.graph.size()),
-                                  comm_c_path : AuthPath::blank(params.graph.size()),
-                                                drg_parents_proofs
-                                : vec ![ColumnProof::empty(params); params.graph.base_graph().degree()],
-                                  exp_parents_proofs
-                                : vec ![ColumnProof::empty(params); params.graph.expansion_degree()]
+                        Proof(const PublicParams<MerkleTreeType> &params) :
+                            comm_d_path(AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                                 MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>(
+                                params.graph.size())),
+                            comm_r_last_path(AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                                      MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>(
+                                params.graph.size())),
+                            comm_c_path(AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
+                                                 MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>(
+                                params.graph.size())),
+                            drg_parents_proofs(std::vector<TreeColumnProof<MerkleTreeType>>(
+                                ColumnProof(params), params.graph.base_graph().degree())),
+                            exp_parents_proofs(std::vector<TreeColumnProof<MerkleTreeType>>(
+                                ColumnProof(params), params.graph.expansion_degree())) {
                         }
 
                         Proof(const vanilla::Proof<MerkleTreeType, Hash> &vanilla_proof) {
-                            const auto VanillaProof {comm_d_proofs, comm_r_last_proof, replica_column_proofs, labeling_proofs,
-                                              ..} = vanilla_proof;
+                            const auto VanillaProof {comm_d_proofs, comm_r_last_proof, replica_column_proofs,
+                                                     labeling_proofs, ..} = vanilla_proof;
                             const auto VanillaReplicaColumnProof {
                                 c_x,
                                 drg_parents,
@@ -87,11 +90,14 @@ namespace nil {
                         }
 
                         /// Circuit synthesis.
-                        void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs, std::size_t layers, AllocatedNumber<algebra::curves::bls12<381>> &comm_d,
-                                        AllocatedNumber<algebra::curves::bls12<381>> &comm_c, AllocatedNumber<algebra::curves::bls12<381>> &comm_r_last,
+                        void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs,
+                                        std::size_t layers,
+                                        AllocatedNumber<crypto3::algebra::curves::bls12<381>> &comm_d,
+                                        AllocatedNumber<crypto3::algebra::curves::bls12<381>> &comm_c,
+                                        AllocatedNumber<crypto3::algebra::curves::bls12<381>> &comm_r_last,
                                         const std::vector<bool> &replica_id) {
                             const auto Proof {comm_d_path, data_leaf,          challenge,          comm_r_last_path,
-                                       comm_c_path, drg_parents_proofs, exp_parents_proofs, ..} = self;
+                                              comm_c_path, drg_parents_proofs, exp_parents_proofs, ..} = self;
 
                             assert(!drg_parents_proofs.empty());
                             assert(!exp_parents_proofs.empty());
@@ -104,8 +110,7 @@ namespace nil {
                                 || {data_leaf.ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                             // enforce inclusion of the data leaf in the tree D
-                            enforce_inclusion(cs.namespace(|| "comm_d_inclusion"), comm_d_path, comm_d,
-                                              &data_leaf_num);
+                            enforce_inclusion(cs.namespace(|| "comm_d_inclusion"), comm_d_path, comm_d, &data_leaf_num);
 
                             // -- verify replica column openings
 
@@ -113,15 +118,16 @@ namespace nil {
                             std::vector<auto> drg_parents;
                             drg_parents.reserve(layers);
 
-                            for ( std::size_t i = 0, drg_parents_proofs::iterator parent = drg_parents_proofs.begin(); 
-                                parent != drg_parents_proofs.end(); ++i, ++parent ) {
+                            for (std::size_t i = 0, drg_parents_proofs::iterator parent = drg_parents_proofs.begin();
+                                 parent != drg_parents_proofs.end(); ++i, ++parent) {
 
                                 const auto(parent_col, inclusion_path) =
                                     (*parent).alloc(cs.namespace(|| std::format("drg_parent_%d_num", i)));
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
-                                const auto val = parent_col.hash(cs.namespace(|| std::format("drg_parent_%d_constraint", i)));
+                                const auto val =
+                                    parent_col.hash(cs.namespace(|| std::format("drg_parent_%d_constraint", i)));
                                 // enforce inclusion of the column hash in the tree C
                                 enforce_inclusion(cs.namespace(|| std::format("drg_parent_%d_inclusion", i)),
                                                   inclusion_path, comm_c, &val);
@@ -131,15 +137,16 @@ namespace nil {
                             // Private Inputs for the Expander parent nodes.
                             std::vector<auto> exp_parents;
 
-                            for ( std::size_t i = 0, exp_parents_proofs::iterator parent = exp_parents_proofs.begin(); 
-                                parent != exp_parents_proofs.end(); ++i, ++parent ) {
+                            for (std::size_t i = 0, exp_parents_proofs::iterator parent = exp_parents_proofs.begin();
+                                 parent != exp_parents_proofs.end(); ++i, ++parent) {
 
                                 const auto(parent_col, inclusion_path) =
                                     (*parent).alloc(cs.namespace(|| std::format("exp_parent_%d_num", i)));
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
-                                const auto val = parent_col.hash(cs.namespace(|| std::format("exp_parent_%d_constraint", i)));
+                                const auto val =
+                                    parent_col.hash(cs.namespace(|| std::format("exp_parent_%d_constraint", i)));
                                 // enforce inclusion of the column hash in the tree C
                                 enforce_inclusion(cs.namespace(|| std::format("exp_parent_%d_inclusion", i)),
                                                   inclusion_path, comm_c, &val);
@@ -164,8 +171,9 @@ namespace nil {
                                 std::vector<auto> parents;
 
                                 // all layers have drg parents
-                                for (drg_parents::iterator parent_col = drg_parents.begin(); 
-                                    parent_col != drg_parents.end(); ++parent_col) {
+                                for (drg_parents::iterator parent_col = drg_parents.begin();
+                                     parent_col != drg_parents.end();
+                                     ++parent_col) {
 
                                     const auto parent_val_num = (*parent_col).get_value(layer);
                                     const auto parent_val_bits = reverse_bit_numbering(parent_val_num.to_bits_le(
@@ -175,9 +183,10 @@ namespace nil {
 
                                 // the first layer does not contain expander parents
                                 if (layer > 1) {
-                                    for (exp_parents::iterator parent_col = exp_parents.begin(); 
-                                        parent_col != exp_parents.end(); ++parent_col) {
-                                        
+                                    for (exp_parents::iterator parent_col = exp_parents.begin();
+                                         parent_col != exp_parents.end();
+                                         ++parent_col) {
+
                                         // subtract 1 from the layer index, as the exp parents, are shifted by one,
                                         // as they do not store a value for the first layer
                                         const auto parent_val_num = (*parent_col).get_value(layer - 1);
@@ -203,8 +212,8 @@ namespace nil {
                                 };
 
                                 // Reconstruct the label
-                                const auto label = create_label(cs.namespace(|| "create_label"), replica_id, expanded_parents,
-                                                         layer_num, challenge_num.clone());
+                                const auto label = create_label(cs.namespace(|| "create_label"), replica_id,
+                                                                expanded_parents, layer_num, challenge_num.clone());
                                 column_labels.push(label);
                             }
 
@@ -225,8 +234,7 @@ namespace nil {
                                 hash_single_column(cs.namespace(|| "c_x_column_hash"), &column_labels);
 
                             // enforce inclusion of the column hash in the tree C
-                            enforce_inclusion(cs.namespace(|| "c_x_inclusion"), comm_c_path, comm_c,
-                                              &column_hash);
+                            enforce_inclusion(cs.namespace(|| "c_x_inclusion"), comm_c_path, comm_c, &column_hash);
                         }
 
                         /// Inclusion path for the challenged data node in tree D.

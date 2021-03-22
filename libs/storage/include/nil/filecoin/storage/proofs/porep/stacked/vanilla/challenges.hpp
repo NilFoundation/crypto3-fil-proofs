@@ -30,7 +30,7 @@
 #include <vector>
 #include <string>
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include <nil/crypto3/multiprecision/cpp_int.hpp>
 
 #include <nil/crypto3/detail/pack_numeric.hpp>
 
@@ -75,8 +75,8 @@ namespace nil {
                                 crypto3::accumulators::extract::hash<ChallengeHasher>(acc);
 
                             boost::endian::native_to_little_inplace(hash);
-                            boost::multiprecision::cpp_int big_challenge;
-                            boost::multiprecision::import_bits(big_challenge, hash);
+                            crypto3::multiprecision::cpp_int big_challenge;
+                            crypto3::multiprecision::import_bits(big_challenge, hash);
 
                             result.push_back(static_cast<std::size_t>(big_challenge % (leaves - 1)) + 1);
                         }

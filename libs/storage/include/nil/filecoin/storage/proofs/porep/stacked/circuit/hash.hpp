@@ -27,6 +27,10 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_HASH_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_HASH_HPP
 
+#include <nil/crypto3/algebra/curves/bls12.hpp>
+
+#include <nil/crypto3/hash/poseidon.hpp>
+
 #include <nil/filecoin/storage/proofs/core/components/variables.hpp>
 
 namespace nil {
@@ -36,14 +40,14 @@ namespace nil {
                 namespace circuit {
                     /// Hash a list of bits.
                     template<template<typename> class ConstraintSystem>
-                    AllocatedNumber<algebra::curves::bls12<381>>
-                        hash_single_column(ConstraintSystem<algebra::curves::bls12<381>> &cs,
-                                           std::vector<AllocatedNumber<algebra::curves::bls12<381>>> &column) {
+                    AllocatedNumber<crypto3::algebra::curves::bls12<381>>
+                        hash_single_column(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs,
+                                           std::vector<AllocatedNumber<crypto3::algebra::curves::bls12<381>>> &column) {
                         if (column.size() == 2) {
-                            poseidon_hash<ConstraintSystem, algebra::curves::bls12<381>, 2>(
+                            poseidon_hash<ConstraintSystem, crypto3::algebra::curves::bls12<381>, 2>(
                                 cs, column, POSEIDON_CONSTANTS_2);
                         } else if (column.size() == 11) {
-                            poseidon_hash<ConstraintSystem, algebra::curves::bls12<381>, 11>(
+                            poseidon_hash<ConstraintSystem, crypto3::algebra::curves::bls12<381>, 11>(
                                 cs, column, POSEIDON_CONSTANTS_11);
                         } else {
                             throw "unsupported column size: " + column.size();

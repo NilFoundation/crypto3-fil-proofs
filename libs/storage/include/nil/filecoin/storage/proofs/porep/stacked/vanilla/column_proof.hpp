@@ -62,14 +62,15 @@ namespace nil {
                 };
 
                 /// Create a column proof for this column.
-                template<template<typename = typename hash_type::digest_type> class StoreType,
-                         template<typename = hash_type,
-                                  typename = StoreType<typename hash_type::digest_type> class MerkleTreeType>
-                         ColumnProof make_proof(const Column &columnself, tree_c
-                                                : &Tree, )
-                             ->Result<ColumnProof<MerkleTreeType::Proof>> {
-                    const auto inclusion_proof = generate_proof(tree_c, std::size_t(self.index()));
-                    ColumnProof::<MerkleTreeType::Proof>::from_column(self, inclusion_proof)
+                template<typename Hash,
+                         template<typename = typename Hash::digest_type>
+                         class StoreType,
+                         template<typename = Hash, typename = StoreType<typename Hash::digest_type>>
+                         class MerkleTreeType>
+                ColumnProof<typename MerkleTreeType::proof_type> make_proof(const Column &column,
+                                                                            const MerkleTreeType &tree_c) {
+                    const auto inclusion_proof = generate_proof(tree_c, std::size_t(column.index()));
+                    return ColumnProof<typename MerkleTreeType<Hash>::proof_type>(column, inclusion_proof);
                 }
             }    // namespace vanilla
         }        // namespace stacked

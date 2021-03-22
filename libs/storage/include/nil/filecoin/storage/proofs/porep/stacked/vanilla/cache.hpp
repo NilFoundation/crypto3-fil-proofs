@@ -67,7 +67,7 @@ namespace nil {
                         std::size_t offset = new_offset * DEGREE * NODE_BYTES;
                         std::size_t len = len * DEGREE * NODE_BYTES;
 
-                        data = unsafe {memmap::MmapOptions ()
+                        data = unsafe {memmap::MmapOptions()
                                            .offset(std::size_t(offset))
                                            .len(len)
                                            .map(self.file)
@@ -117,11 +117,12 @@ namespace nil {
                                    actual_len);
                         }
 
-                        const auto data = unsafe {memmap::MmapOptions()
-                                               .offset(std_uint_64(std::size_t(offset) * DEGREE * NODE_BYTES))
-                                               .len(std::size_t(len) * DEGREE * NODE_BYTES)
-                                               .map(file)
-                                               .with_context(|| std::format("could not mmap path={}", path.display()))};
+                        const auto data =
+                            unsafe {memmap::MmapOptions()
+                                        .offset(std_uint_64(std::size_t(offset) * DEGREE * NODE_BYTES))
+                                        .len(std::size_t(len) * DEGREE * NODE_BYTES)
+                                        .map(file)
+                                        .with_context(|| std::format("could not mmap path={}", path.display()))};
 
                         return {data, file, len, offset};
                     }
@@ -166,10 +167,8 @@ namespace nil {
                             std::size_t cache_size = cache_entries * NODE_BYTES * DEGREE;
                             file.set_len(cache_size);
 
-                            auto data =
-                                unsafe {memmap::MmapOptions()
-                                            .map_mut(file)
-                                            .with_context(|| std::format("could not mmap path={}", path.display()))};
+                            auto data = unsafe {memmap::MmapOptions().map_mut(file).with_context(
+                                || std::format("could not mmap path={}", path.display()))};
 
                             data.par_chunks_mut(DEGREE * NODE_BYTES)
                                 .enumerate()
@@ -233,9 +232,9 @@ namespace nil {
                     hash<FormatHash>(FormatHash::name, acc);
                     hash<FormatHash>(graph.identifier(), acc);
 
-                    for (graph.feistel_keys::iterator key = graph.feistel_keys.begin(); 
-                        key != graph.feistel_keys.end(); ++key) {
-                        
+                    for (graph.feistel_keys::iterator key = graph.feistel_keys.begin(); key != graph.feistel_keys.end();
+                         ++key) {
+
                         hash<FormatHash>(*key, acc);
                     }
 
@@ -243,8 +242,7 @@ namespace nil {
 
                     typename FormatHash::digest_type h = accumulators::extract::hash<FormatHash>(acc);
                     return boost::filesystem::path(parent_cache_dir_name() + "v" + std::to_string(VERSION) +
-                                                   "-sdr-parent-" +
-                                                   encode<codec::hex>(h) + ".cache");
+                                                   "-sdr-parent-" + encode<codec::hex>(h) + ".cache");
                 }
             }    // namespace vanilla
         }        // namespace stacked

@@ -38,7 +38,7 @@ namespace nil {
                 struct EncodingProof {
                     typedef Hash hash_type;
 
-                    template<typename KeyHash = hashes::sha2<256>>
+                    template<typename KeyHash = crypto3::hashes::sha2<256>>
                     typename hash_type::digest_type create_key(const typename hash_type::digest_type &replica_id) {
                         using namespace nil::crypto3;
 
@@ -58,8 +58,8 @@ namespace nil {
                                 const typename VerifyingHash::digest_type &decoded_node) {
                         const auto key = create_key(replica_id);
 
-                        const auto fr : Fr = (*decoded_node).into();
-                        const auto encoded_node = encode(key, fr.into());
+                        const auto fr(decoded_node);
+                        const auto encoded_node = encode(key, fr);
 
                         return exp_encoded_node == encoded_node;
                     }

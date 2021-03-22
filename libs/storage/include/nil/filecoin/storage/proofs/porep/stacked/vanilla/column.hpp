@@ -29,6 +29,8 @@
 
 #include <vector>
 
+#include <boost/assert.hpp>
+
 namespace nil {
     namespace filecoin {
         namespace stacked {

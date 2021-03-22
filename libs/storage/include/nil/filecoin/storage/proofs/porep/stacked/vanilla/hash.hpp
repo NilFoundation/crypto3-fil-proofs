@@ -27,21 +27,26 @@
 #ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_HASH_HPP
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_HASH_HPP
 
+#include <algorithm>
+#include <format>
+
+#include <nil/crypto3/hash/poseidon.hpp>
+
 namespace nil {
     namespace filecoin {
         template<typename FrInputIterator>
         Fr hash_single_column(FrInputIterator column_first, FrInputIterator column_last) {
             if (std::distance(column_first, column_last) == 2) {
-                //call to round constants generator for 2 and hash than
-                auto hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_2);
+                // call to round constants generator for 2 and hash than
+                auto hasher = Poseidon::new_with_preimage(column, POSEIDON_CONSTANTS_2);
                 return hasher.hash();
             } else if (std::distance(column_first, column_last) == 11) {
-                //call to round constants generator for 11 and hash than
-                auto hasher = Poseidon::new_with_preimage(column, &*POSEIDON_CONSTANTS_11);
+                // call to round constants generator for 11 and hash than
+                auto hasher = Poseidon::new_with_preimage(column, POSEIDON_CONSTANTS_11);
                 return hasher.hash();
             } else {
-                BOOST_ASSERT_MSG(std::distance(column_first, column_last), 
-                    std::format("unsupported column size: %d", std::distance(column_first, column_last)));
+                BOOST_ASSERT_MSG(std::distance(column_first, column_last),
+                                 std::format("unsupported column size: %d", std::distance(column_first, column_last)));
             }
         }
     }    // namespace filecoin
