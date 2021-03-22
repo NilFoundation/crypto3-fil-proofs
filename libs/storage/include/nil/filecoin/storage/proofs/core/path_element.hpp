@@ -34,7 +34,7 @@
 namespace nil {
     namespace filecoin {
         template<typename Hash, std::size_t BaseArity,
-                 typename FieldType = algebra::curves::bls12<381>::scalar_field_type>
+                 typename FieldType = typename crypto3::algebra::curves::bls12<381>::scalar_field_type>
         struct PathElement {
             typedef Hash hash_type;
             typedef FieldType field_type;

@@ -30,6 +30,8 @@
 #include <cstdint>
 #include <cmath>
 
+#include <boost/assert.hpp>
+
 #include <nil/filecoin/storage/proofs/core/fr32.hpp>
 #include <nil/filecoin/storage/proofs/core/utilities.hpp>
 
@@ -43,7 +45,7 @@ namespace nil {
                 // If tree is not 'full', then pos 0 will have subtree_capacity greater than size of tree.
                 std::size_t cursor = pos + std::ceil(std::log2(total));
 
-                while (cursor & 1 == 0) {
+                while ((cursor & 1) == 0) {
                     capacity *= 2;
                     cursor >>= 1;
                 }

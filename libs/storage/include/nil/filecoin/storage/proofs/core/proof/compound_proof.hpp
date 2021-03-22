@@ -83,17 +83,17 @@ namespace nil {
                 return pp.partitions == -1 ? 1 : (!pp.partitions ? -1 : pp.partitions);
             }
 
-            virtual multi_proof<crypto::zk::snark::groth16::mapped_parameters<algebra::curves::bls12<381>>>
+            virtual multi_proof<crypto3::zk::snark::groth16::mapped_parameters<crypto3::algebra::curves::bls12<381>>>
                 prove(const public_params_type &pp, const public_inputs_type &pub_in,
                       const private_inputs_type &priv_in,
-                      const groth16::mapped_parameters<algebra::curves::bls12<381>> &groth_parameters) {
+                      const groth16::mapped_parameters<crypto3::algebra::curves::bls12<381>> &groth_parameters) {
                 std::size_t pc = partition_count(pp);
 
                 BOOST_ASSERT_MSG(pc > 0, "There must be partitions");
             }
 
             virtual bool verify(const public_params_type &pp, const public_inputs_type &pi,
-                                const groth16::mapped_parameters<algebra::curves::bls12<381>> &mproof,
+                                const groth16::mapped_parameters<crypto3::algebra::curves::bls12<381>> &mproof,
                                 const requirements_type &requirements) {
                 BOOST_ASSERT_MSG(mproof.circuit_proofs.size() == partition_count(pp), "Inconsistent inputs");
             }
@@ -101,13 +101,16 @@ namespace nil {
             template<typename PublicInputsIterator, typename MultiProofIterator>
             bool verify(const public_params_type &pp, PublicInputsIterator pifirst, PublicInputsIterator pilast,
                         MultiProofIterator mpfirst, MultiProofIterator mplast, const requirements_type &requirements) {
-                BOOST_ASSERT_MSG(std::distance(pifirst, pilast) == std::distance(mpfirst, mplast), "Inconsistent inputs");
-                BOOST_ASSERT_MSG(std::accumulate(
-                            mpfirst, mplast, true,
-                            [&](typename std::iterator_traits<MultiProofIterator>::value_type c,
-                                const typename std::iterator_traits<MultiProofIterator>::value_type &v) -> bool {
-                                return std::move(c) * (v.circuit_proofs.size() == partition_count(pp));
-                            }), "Inconsistent inputs");
+                BOOST_ASSERT_MSG(std::distance(pifirst, pilast) == std::distance(mpfirst, mplast),
+                                 "Inconsistent inputs");
+                BOOST_ASSERT_MSG(
+                    std::accumulate(
+                        mpfirst, mplast, true,
+                        [&](typename std::iterator_traits<MultiProofIterator>::value_type c,
+                            const typename std::iterator_traits<MultiProofIterator>::value_type &v) -> bool {
+                            return std::move(c) * (v.circuit_proofs.size() == partition_count(pp));
+                        }),
+                    "Inconsistent inputs");
                 BOOST_ASSERT_MSG(std::distance(pifirst, pilast), "Cannot verify empty proofs");
             }
 
@@ -119,14 +122,14 @@ namespace nil {
              * @tparam ProofIterator
              */
             template<typename ProofIterator>
-            std::enable_if<
-                std::is_same<typename std::iterator_traits<ProofIterator>::value_type, proof_type>::value,
-                crypto3::zk::snark::r1cs_ppzksnark_proof<typename algebra::curves::bls12<381>::scalar_field_type>>::type
+            std::enable_if<std::is_same<typename std::iterator_traits<ProofIterator>::value_type, proof_type>::value,
+                           crypto3::zk::snark::r1cs_ppzksnark_proof<
+                               typename crypto3::algebra::curves::bls12<381>::scalar_field_type>>::type
                 circuit_proofs(const public_inputs_type &pub_in, ProofIterator vanilla_proof_first,
                                ProofIterator vanilla_proof_last, const public_params_type &pp,
                                const groth16::mapped_params<algebra::curves::bls12<381>> &groth_params, bool priority) {
-                BOOST_ASSERT_MSG(std::distance(vanilla_proof_first, vanilla_proof_last), 
-                    "Cannot create a circuit proof over missing vanilla proofs");
+                BOOST_ASSERT_MSG(std::distance(vanilla_proof_first, vanilla_proof_last),
+                                 "Cannot create a circuit proof over missing vanilla proofs");
             }
 
             /*!
@@ -154,12 +157,12 @@ namespace nil {
              * @param partition_k
              * @return
              */
-            virtual Circuit<algebra::curves::bls12<381>>
+            virtual Circuit<crypto3::algebra::curves::bls12<381>>
                 circuit(const public_inputs_type &public_inputs,
                         const ComponentsPrivateInputs &components_private_inputs, const proof_type &vanilla_proof,
                         const public_params_type &public_param, std::size_t partition_k) = 0;
 
-            virtual Circuit<algebra::curves::bls12<381>> blank_circuit(const public_params_type &pp) = 0;
+            virtual Circuit<crypto3::algebra::curves::bls12<381>> blank_circuit(const public_params_type &pp) = 0;
 
             /*!
              * @brief If the rng option argument is set, parameters will be
@@ -173,8 +176,8 @@ namespace nil {
              * @return
              */
             template<typename UniformRandomGenerator, template<typename> class Groth16MappedParams>
-            virtual Groth16MappedParams<algebra::curves::bls12<381>> groth_params(UniformRandomGenerator &rng,
-                                                                                  const public_params_type &pp) {
+            virtual Groth16MappedParams<crypto3::algebra::curves::bls12<381>>
+                groth_params(UniformRandomGenerator &rng, const public_params_type &pp) {
                 return get_groth_params(rng, blank_circuit(pp), pp);
             }
 
@@ -190,8 +193,8 @@ namespace nil {
              * @return
              */
             template<typename UniformRandomGenerator>
-            virtual crypto3::zk::snark::r1cs_ppzksnark_verification_key<
-                typename algebra::curves::bls12<381>::scalar_field_type>
+            virtual crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<
+                typename crypto3::algebra::curves::bls12<381>::scalar_field_type>
                 verifying_key(UniformRandomGenerator &rng, const public_params_type &pp) {
                 return get_verifying_key(rng, blank_circuit(pp), pp);
             }

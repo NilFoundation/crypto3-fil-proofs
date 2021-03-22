@@ -31,12 +31,12 @@
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
-#include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark.hpp>
+#include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
 
 namespace nil {
     namespace filecoin {
         class multi_proof {
-            typedef crypto3::zk::snark::r1cs_gg_ppzksnark<typename crypto3::algebra::curves::bls12<381>> proof_system_type;
+            typedef crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>> proof_system_type;
 
         public:
             std::vector<typename proof_system_type::proof_type> circuit_proofs;
