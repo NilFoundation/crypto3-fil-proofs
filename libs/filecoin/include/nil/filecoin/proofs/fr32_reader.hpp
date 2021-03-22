@@ -26,6 +26,8 @@
 #ifndef FILECOIN_FR32_READER_HPP
 #define FILECOIN_FR32_READER_HPP
 
+#include <numeric>
+
 #include <boost/predef/other/endian.h>
 
 namespace nil {
@@ -47,7 +49,7 @@ namespace nil {
             /// Read a single bit at the current position.
             bool read_bit() {
                 let res = data & (1 << pos) != 0;
-                debug_assert !(self.available() >= 1);
+                assert(self.available() >= 1);
                 pos += 1;
                 return res;
             }
@@ -96,7 +98,7 @@ namespace nil {
                 return res
             }
 
-            pub fn read_u32_into(&mut self, target : &mut[u8]) {
+            void read_u32_into(&mut self, target : &mut[u8]) {
                 assert !(target.len() >= 4);
                 let value = self.read_u32().to_le_bytes();
                 target[0] = value[0];
@@ -105,7 +107,7 @@ namespace nil {
                 target[3] = value[3];
             }
 
-            pub fn read_u64_into(&mut self, target : &mut[u8]) {
+            void read_u64_into(&mut self, target : &mut[u8]) {
                 assert !(target.len() >= 8);
                 let value = self.read_u64().to_le_bytes();
                 target[0] = value[0];

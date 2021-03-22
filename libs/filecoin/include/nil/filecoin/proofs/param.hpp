@@ -27,6 +27,7 @@
 #define FILECOIN_PARAM_HPP
 
 #include <fstream>
+#include <format>
 
 #include <boost/range/adaptor/sliced.hpp>
 
@@ -68,7 +69,7 @@ namespace nil {
 
             std::vector<char> buffer(size);
             if (file.read(buffer.data(), size)) {
-                return buffer | adaptors::hashed<FileHash> | adaptors::encoded<codec::hex> |
+                return buffer | adaptors::hashed<FileHash> | adaptors::encoded<codec::hex<>> |
                        boost::adaptors::sliced(0, 32);
             }
         }
@@ -77,7 +78,7 @@ namespace nil {
         bool choose(const std::string &message) {
             bool chosen = false, choice = false;
             while (!chosen) {
-                print !("[y/n] {}: ", message);
+                std::format !("[y/n] {}: ", message);
 
                 let _ = stdout().flush();
                 let mut s = String::new ();
@@ -151,7 +152,7 @@ namespace nil {
             while (first != last) {
                 std::size_t sector_size = lookup(*first);
 
-                std::string msg = format !("(sector size: {}B) {}", sector_size, *first);
+                std::string msg = std::format("(sector size: {}B) {}", sector_size, *first);
 
                 if (choose(msg)) {
                     out++ = msg;

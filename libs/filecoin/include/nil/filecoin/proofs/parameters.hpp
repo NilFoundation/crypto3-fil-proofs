@@ -80,10 +80,8 @@ namespace nil {
 
         stacked::vanilla::SetupParams setup_params(padded_bytes_amount sector_bytes, std::size_t partitions,
                                                    const std::array<std::uint8_t, 32> &porep_id) {
-            let layer_challenges =
-                select_challenges(partitions,
-                                  *POREP_MINIMUM_CHALLENGES.read().get(sector_bytes),
-                                  *LAYERS.read().get(sector_bytes));
+            stacked::vanilla::LayerChallenges layer_challenges = select_challenges(
+                partitions, *POREP_MINIMUM_CHALLENGES.read().get(sector_bytes), *LAYERS.read().get(sector_bytes));
             assert(("sector_bytes must be a multiple of 32", !sector_bytes % 32));
 
             return stacked::vanilla::SetupParams {(sector_bytes / 32), DRG_DEGREE, EXP_DEGREE, porep_id,
@@ -96,7 +94,7 @@ namespace nil {
             stacked::vanilla::LayerChallenges guess = {layers, count};
             while (partitions * guess.challenges_count_all() < minimum_total_challenges) {
                 count += 1;
-                guess = {layers, count}
+                guess = {layers, count};
             }
             return guess;
         }

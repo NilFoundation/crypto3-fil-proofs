@@ -26,6 +26,8 @@
 #ifndef FILECOIN_FR32_HPP
 #define FILECOIN_FR32_HPP
 
+#include <cassert>
+
 #include <boost/endian/arithmetic.hpp>
 
 namespace nil {
@@ -63,7 +65,7 @@ namespace nil {
 
             std::size_t bits;
             std::size_t bytes;
-        }
+        };
 
         /*!
          * @brief PaddingMap represents a mapping between data and its padded equivalent.
@@ -270,7 +272,7 @@ namespace nil {
             std::size_t transform_byte_offset(std::size_t pos, bool padding) {
                 std::size_t transformed_bit_pos = transform_bit_offset(pos * 8, padding);
 
-                std::size_t transformed_byte_pos = transformed_bit_pos/ 8.;
+                std::size_t transformed_byte_pos = transformed_bit_pos / 8.;
                 // TODO: Optimization: It might end up being cheaper to avoid this
                 // float conversion and use / and %.
 
@@ -309,10 +311,10 @@ namespace nil {
             std::tuple<std::uint64_t, std::uint64_t, BitByte> target_offsets(SeekableType &target) {
                 // The current position in `target` is the number of padded bytes already written
                 // to the byte-aligned stream.
-                let padded_bytes = target.seek(SeekFrom::End(0)) ? ;
+                let padded_bytes = target.seek(SeekFrom::End(0));
 
                 // Deduce the number of input raw bytes that generated that padded byte size.
-                let raw_data_bytes = self.transform_byte_offset(padded_bytes as usize, false);
+                let raw_data_bytes = self.transform_byte_offset(padded_bytes, false);
 
                 // With the number of raw data bytes elucidated it can now be specified the
                 // number of padding bits in the generated bit stream (before it was converted
@@ -320,7 +322,7 @@ namespace nil {
                 // `padded_bits`).
                 let padded_bits = self.transform_bit_offset(raw_data_bytes * 8, true);
 
-                Ok((padded_bytes, raw_data_bytes as u64, BitByte::from_bits(padded_bits), ))
+                return std::make_tuple(padded_bytes, raw_data_bytes, BitByte::from_bits(padded_bits));
                 // TODO: Why do we use `usize` internally and `u64` externally?
             }
         };
