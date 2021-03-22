@@ -98,8 +98,9 @@ namespace nil {
 
                 template<typename MerkleTreeType>
                 struct PrivateSector {
-                    MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity,
-                                      MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
+                    MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store,
+                                      MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                                      MerkleTreeType::top_tree_arity>
                         tree;
                     typename MerkleTreeType::hash_type::digest_type comm_c;
                     typename MerkleTreeType::hash_type::digest_type comm_r_last;
@@ -117,7 +118,9 @@ namespace nil {
                 template<typename MerkleProofType>
                 struct SectorProof {
                     std::vector<typename MerkleProofType::hash_type::digest_type> leafs() {
-                        return inclusion_proofs.iter().map(BasicMerkleProof::leaf).collect();
+                        return std::accumulate(inclusion_proofs.begin(), inclusion_proofs.end(),
+                                               std::vector<typename MerkleProofType::hash_type::digest_type>(),
+                                               [&](auto &val, const auto &itr) { val.emplace_back(itr.leaf()); });
                     }
 
                     typename MerkleProofType::hash_type::digest_type comm_r_last() {
@@ -125,13 +128,17 @@ namespace nil {
                     }
 
                     std::vector<typename MerkleProofType::hash_type::digest_type> commitments() {
-                        return inclusion_proofs.iter().map(BasicMerkleProof::root).collect();
+                        return std::accumulate(inclusion_proofs.begin(), inclusion_proofs.end(),
+                                               std::vector<typename MerkleProofType::hash_type::digest_type>(),
+                                               [&](auto &val, const auto &itr) { val.emplace_back(itr.root()()); });
                     }
 
                     std::vector<std::vector<
                         std::pair<std::vector<typename MerkleProofType::hash_type::digest_type>, std::size_t>>>
                         paths() {
-                        return inclusion_proofs.iter().map(BasicMerkleProof::path).collect();
+                        return std::accumulate(inclusion_proofs.begin(), inclusion_proofs.end(),
+                                               std::vector<typename MerkleProofType::hash_type::digest_type>(),
+                                               [&](auto &val, const auto &itr) { val.emplace_back(itr.path()()); });
                     }
 
                     std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> as_options() {
@@ -183,14 +190,14 @@ namespace nil {
                                                                  const private_inputs_type &priv_inputs,
                                                                  std::size_t partition_count) {
 
-                        BOOST_ASSERT_MSG(priv_inputs.sectors.size() == pub_inputs.sectors.size(), 
-                            "inconsistent number of private and public sectors");
+                        BOOST_ASSERT_MSG(priv_inputs.sectors.size() == pub_inputs.sectors.size(),
+                                         "inconsistent number of private and public sectors");
 
                         std::size_t num_sectors_per_chunk = pub_params.sector_count;
                         std::size_t num_sectors = pub_inputs.sectors.size();
 
-                        BOOST_ASSERT_MSG(num_sectors <= partition_count * num_sectors_per_chunk, 
-                            "cannot prove the provided number of sectors:");
+                        BOOST_ASSERT_MSG(num_sectors <= partition_count * num_sectors_per_chunk,
+                                         "cannot prove the provided number of sectors:");
 
                         std::vector<proof_type> partition_proofs;
 
@@ -208,8 +215,9 @@ namespace nil {
                                 const auto sector_id = pub_sector.id;
                                 const auto tree_leafs = tree.leafs();
 
-                                BOOST_LOG_TRIVIAL(trace) << std::format("Generating proof for tree leafs {} and arity {}", tree_leafs,
-                                        MerkleTreeType::base_arity);
+                                BOOST_LOG_TRIVIAL(trace)
+                                    << std::format("Generating proof for tree leafs {} and arity {}", tree_leafs,
+                                                   MerkleTreeType::base_arity);
 
                                 const auto inclusion_proofs =
                                     (0..pub_params.challenge_count)
@@ -233,7 +241,7 @@ namespace nil {
                             // If there were less than the required number of sectors provided, we duplicate the
                             // last one to pad the proof out, such that it works in the circuit part.
                             while (proofs.size() < num_sectors_per_chunk) {
-                                proofs.push(proofs[proofs.len() - 1].clone());
+                                proofs.push_back(proofs[proofs.size() - 1]);
                             }
 
                             partition_proofs.push_back({proofs});
@@ -244,22 +252,22 @@ namespace nil {
 
                     bool verify_all_partitions(const public_params_type &pub_params,
                                                const public_inputs_type &pub_inputs,
-                                               const std::vector < proof_type> & partition_proofs) {
+                                               const std::vector<proof_type> &partition_proofs) {
                         std::size_t challenge_count = pub_params.challenge_count;
                         std::size_t num_sectors_per_chunk = pub_params.sector_count;
                         std::size_t num_sectors = pub_inputs.sectors.size();
 
-                        BOOST_ASSERT_MSG(num_sectors <= num_sectors_per_chunk * partition_proofs.size(), 
-                            "inconsistent number of sectors");
+                        BOOST_ASSERT_MSG(num_sectors <= num_sectors_per_chunk * partition_proofs.size(),
+                                         "inconsistent number of sectors");
 
                         for ((j, (proof, pub_sectors_chunk)) :
                              partition_proofs.iter()
                                  .zip(pub_inputs.sectors.chunks(num_sectors_per_chunk))
                                  .enumerate()) {
-                            BOOST_ASSERT_MSG(pub_sectors_chunk.size() <= num_sectors_per_chunk, 
-                                "inconsistent number of public sectors");
-                            BOOST_ASSERT_MSG(proof.sectors.size() == num_sectors_per_chunk, 
-                                "invalid number of sectors in the partition proof");
+                            BOOST_ASSERT_MSG(pub_sectors_chunk.size() <= num_sectors_per_chunk,
+                                             "inconsistent number of public sectors");
+                            BOOST_ASSERT_MSG(proof.sectors.size() == num_sectors_per_chunk,
+                                             "invalid number of sectors in the partition proof");
                             for ((i, (pub_sector, sector_proof)) :
                                  pub_sectors_chunk.iter().zip(proof.sectors.iter()).enumerate()) {
                                 const auto sector_id = pub_sector.id;
@@ -277,13 +285,14 @@ namespace nil {
                                     return false;
                                 }
 
-                                ensure !(challenge_count == inclusion_proofs.len(),
-                                         "unexpected umber of inclusion proofs: {} != {}",
-                                         challenge_count,
-                                         inclusion_proofs.len());
+                                BOOST_ASSERT_MSG(challenge_count == inclusion_proofs.len(),
+                                                 std::format("unexpected umber of inclusion proofs: {} != {}",
+                                                             challenge_count,
+                                                             inclusion_proofs.size()));
 
-                                for (std::size_t n = 0, inclusion_proofs::iterator inclusion_proof = inclusion_proofs.begin(); 
-                                    inclusion_proof != inclusion_proofs.end(); ++n, ++inclusion_proof) {
+                                for (std::size_t n = 0,
+                                                 inclusion_proofs::iterator inclusion_proof = inclusion_proofs.begin();
+                                     inclusion_proof != inclusion_proofs.end(); ++n, ++inclusion_proof) {
 
                                     const auto challenge_index =
                                         ((j * num_sectors_per_chunk + i) * pub_params.challenge_count + n) as u64;
@@ -329,7 +338,8 @@ namespace nil {
                         // Because partition proofs require a common setup, the general ProofScheme implementation,
                         // which makes use of `ProofScheme::prove` cannot be used here. Instead, we need to prove all
                         // partitions in one pass, as implemented by `prove_all_partitions` below.
-                        BOOST_ASSERT_MSG(k < 1, "It is a programmer error to call StackedDrg::prove with more than one partition.");
+                        BOOST_ASSERT_MSG(
+                            k < 1, "It is a programmer error to call StackedDrg::prove with more than one partition.");
 
                         return proofs[k].to_owned();
                     }
@@ -361,11 +371,11 @@ namespace nil {
                     std::vector<std::uint64_t> result;
                     result.reserve(challenge_count);
 
-                    for (std::size_t n = 0; n < challenge_count; ++n){
+                    for (std::size_t n = 0; n < challenge_count; ++n) {
                         result.push(generate_sector_challenge(randomness, n, sector_set_len, prover_id));
                     }
                 }
-                
+
                 /// Generate a single sector challenge.
                 template<typename Domain, typename ChallengeHash = crypto3::hashes::sha2<256>>
                 std::uint64_t generate_sector_challenge(Domain randomness, std::size_t n, std::uint64_t sector_set_len,

@@ -37,12 +37,13 @@ namespace nil {
     namespace filecoin {
         namespace post {
             namespace election {
-                template<typename MerkleTreeType, template<typename> class Circuit,
-                         typename ParameterSetMetadata, typename ProofScheme>
+                template<typename MerkleTreeType, template<typename> class Circuit, typename ParameterSetMetadata,
+                         typename ProofScheme>
                 struct ElectionPoStCompound
                     : public cacheable_parameters<Circuit, ParameterSetMetadata, MerkleTreeType>,
-                      public compound_proof<ElectionPoSt<MerkleTreeType>,
-                                            ElectionPoStCircuit<MerkleTreeType, algebra::curves::bls12<381>, Circuit>> {
+                      public compound_proof<
+                          ElectionPoSt<MerkleTreeType>,
+                          ElectionPoStCircuit<MerkleTreeType, crypto3::algebra::curves::bls12<381>, Circuit>> {
                     virtual std::string cache_prefix() const override {
                         return "proof-of-spacetime-election-" + MerkleTreeType::display();
                     }

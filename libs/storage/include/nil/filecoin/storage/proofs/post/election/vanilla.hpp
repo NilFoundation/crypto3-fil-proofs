@@ -31,6 +31,7 @@
 
 #include <nil/crypto3/hash/sha2.hpp>
 
+#include <algorithm>
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 #include <nil/filecoin/storage/proofs/core/btree/map.hpp>
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
@@ -71,8 +72,9 @@ namespace nil {
 
                 template<typename MerkleTreeType>
                 struct PrivateInputs {
-                    MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store, MerkleTreeType::base_arity,
-                                      MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>
+                    MerkleTreeWrapper<typename MerkleTreeType::hash_type, MerkleTreeType::Store,
+                                      MerkleTreeType::base_arity, MerkleTreeType::sub_tree_arity,
+                                      MerkleTreeType::top_tree_arity>
                         tree;
                     typename MerkleTreeType::hash_type::digest_type comm_c;
                     typename MerkleTreeType::hash_type::digest_type comm_r_last;
@@ -88,7 +90,11 @@ namespace nil {
                 template<typename BasicMerkleProof>
                 struct Proof {
                     std::vector<typename BasicMerkleProof::hash_type::digest_type> leafs() {
-                        return inclusion_proofs.iter().map(MerkleProof::leaf).collect();
+                        std::vector<typename BasicMerkleProof::hash_type::digest_type> result;
+                        for (const auto &proof : inclusion_proofs) {
+                            result.emplace_back(proof.leaf());
+                        }
+                        return result;
                     }
 
                     typename BasicMerkleProof::hash_type::digest_type comm_r_last() {
@@ -96,17 +102,27 @@ namespace nil {
                     }
 
                     std::vector<typename BasicMerkleProof::hash_type::digest_type> commitments() {
-                        return inclusion_proofs.iter().map(MerkleProof::root).collect();
+                        std::vector<typename BasicMerkleProof::hash_type::digest_type> result;
+                        for (const auto &proof : inclusion_proofs) {
+                            result.emplace_back(proof.root());
+                        }
+                        return result;
                     }
 
                     std::vector<std::vector<
                         std::pair<std::vector<typename BasicMerkleProof::hash_type::digest_type>, std::size_t>>>
                         paths() {
-                        return inclusion_proofs.iter().map(MerkleProof::path).collect();
+                        std::vector<std::vector<
+                            std::pair<std::vector<typename BasicMerkleProof::hash_type::digest_type>, std::size_t>>>
+                            result;
+                        for (const auto &proof : inclusion_proofs) {
+                            result.emplace_back(proof.path());
+                        }
+                        return result;
                     }
 
-                    std::vector<MerkleProof<typename BasicMerkleProof::hash, BasicMerkleProof::BaseArity,
-                                            BasicMerkleProof::SubTreeArity, BasicMerkleProof::TopTreeArity>>
+                    std::vector<merkletree::MerkleProof<typename BasicMerkleProof::hash, BasicMerkleProof::BaseArity,
+                                                        BasicMerkleProof::SubTreeArity, BasicMerkleProof::TopTreeArity>>
                         inclusion_proofs;
 
                     std::array<std::uint8_t, 32> ticket;
@@ -140,27 +156,28 @@ namespace nil {
                         const auto tree = pinputs.tree;
                         std::size_t tree_leafs = tree.leafs();
 
-                        BOOST_LOG_TRIVIAL(trace) << std::format("Generating proof for tree of len {} with leafs {}", tree.len(), tree_leafs);
+                        BOOST_LOG_TRIVIAL(trace)
+                            << std::format("Generating proof for tree of len {} with leafs {}", tree.len(), tree_leafs);
 
-                        const auto inclusion_proofs = (0..pub_params.challenge_count)
-                                    .into_par_iter()
-                                    .flat_map(
-                                        | n |
-                                        {
-                                            // TODO: replace unwrap with proper error handling
-                                            const auto challenged_leaf_start =
-                                                generate_leaf_challenge(pub_params, pub_inputs.randomness,
-                                                                        pub_inputs.sector_challenge_index, std::uint64_t(n))
-                                                    ;
-                                            (0..pub_params.challenged_nodes)
-                                                .into_par_iter()
-                                                .map(move | i |
-                                                     {tree.gen_cached_proof(std::uint(challenged_leaf_start) + i, None)})
-                                        })
-                                    .collect::<Result<Vec<_>>>();
+                        const auto inclusion_proofs =
+                            (0..pub_params.challenge_count)
+                                .into_par_iter()
+                                .flat_map(
+                                    | n |
+                                    {
+                                        // TODO: replace unwrap with proper error handling
+                                        const auto challenged_leaf_start = generate_leaf_challenge(
+                                            pub_params, pub_inputs.randomness, pub_inputs.sector_challenge_index,
+                                            std::uint64_t(n));
+                                        (0..pub_params.challenged_nodes)
+                                            .into_par_iter()
+                                            .map(move | i |
+                                                 {tree.gen_cached_proof(std::uint(challenged_leaf_start) + i, None)})
+                                    })
+                                .collect::<Result<Vec<_>>>();
 
                         // 2. correct generation of the ticket from the partial_ticket (add this to the candidate)
-                        const auto ticket = finalize_ticket(&pub_inputs.partial_ticket);
+                        const auto ticket = finalize_ticket(inputs.partial_ticket);
 
                         return {inclusion_proofs, ticket, pinputs.comm_c};
                     }
@@ -178,8 +195,8 @@ namespace nil {
                         }
 
                         for (int n = 0; n < pub_params.challenge_count; n++) {
-                            const auto challenged_leaf_start = generate_leaf_challenge(pub_params, pub_inputs.randomness,
-                                                                                pub_inputs.sector_challenge_index, n);
+                            const auto challenged_leaf_start = generate_leaf_challenge(
+                                pub_params, pub_inputs.randomness, pub_inputs.sector_challenge_index, n);
                             for (int i = 0; i < pub_params.challenged_nodes; i++) {
                                 const auto merkle_proof = &proof.inclusion_proofs[n * pub_params.challenged_nodes + i];
 
@@ -220,14 +237,14 @@ namespace nil {
                         .enumerate()
                         .map(| (sector_challenge_index, sector_id) |
                              {
-                                auto tree;
-                                switch (trees.get(sector_id)) {
-                                    case Some(tree):
-                                        tree = tree;
-                                        break;
-                                    case None:
-                                        tree = bail !(Error::MissingPrivateInput("tree", (*sector_id).into()));
-                                        break;
+                                 auto tree;
+                                 switch (trees.get(sector_id)) {
+                                     case Some(tree):
+                                         tree = tree;
+                                         break;
+                                     case None:
+                                         tree = bail !(Error::MissingPrivateInput("tree", (*sector_id).into()));
+                                         break;
                                  };
 
                                  generate_candidate::<Tree>(pub_params, tree, prover_id, *sector_id, randomness,
@@ -247,11 +264,12 @@ namespace nil {
                     std::uint64_t sector_challenge_index) {
                     Fr randomness_fr = randomness.into();
                     Fr prover_id_fr = prover_id.into();
-                    std::vector<MerkleTreeType::hash_type::digest_type> data = {randomness_fr.into(), prover_id_fr.into(),
-                                                        Fr::from(sector_id).into()};
+                    std::vector<MerkleTreeType::hash_type::digest_type> data = {
+                        randomness_fr.into(), prover_id_fr.into(), Fr::from(sector_id).into()};
 
                     for (int n = 0; n < pub_params.challenge_count; n++) {
-                        const auto challenge = generate_leaf_challenge(pub_params, randomness, sector_challenge_index, n);
+                        const auto challenge =
+                            generate_leaf_challenge(pub_params, randomness, sector_challenge_index, n);
 
                         Fr val = tree.read_at(challenge as usize).into();
                         data.push_back(val.into());
@@ -285,29 +303,32 @@ namespace nil {
                     return index < challenge_count;
                 }
 
+                template<typename Domain, typename FinalizationHash = crypto3::hashes::sha2<256>>
+                sector_id_type generate_sector_challenge(const Domain &randomness, std::size_t n,
+                                                         const ordered_sector_set &sectors) {
+                    using namespace crypto3::hashes;
+
+                    accumulator_set<FinalizationHash> acc;
+                    hash<FinalizationHash>(randomness, acc);
+                    hash<FinalizationHash>(n, acc);
+                    const auto hash = accumulators::extract<FinalizationHash>(acc);
+
+                    const auto sector_challenge = LittleEndian::read_u64(&hash[..8]);
+                    std::uint sector_index = (std::uint64_t(sector_challenge % sectors.size()));
+                    const auto sector = *sectors.iter().nth(sector_index).context("invalid challenge generated");
+
+                    return sector;
+                }
+
                 template<typename Domain>
                 std::vector<sector_id_type> generate_sector_challenges(const Domain &randomness,
                                                                        std::uint64_t challenge_count,
                                                                        const ordered_sector_set &sectors) {
-                    (0..challenge_count)
-                        .into_par_iter()
-                        .map(| n | generate_sector_challenge(randomness, n as usize, sectors))
-                        .collect();
-                }
-
-                template<typename Domain, typename FinalizationHash = crypto3::hashes::sha2<256>>
-                sector_id_type generate_sector_challenge(const Domain &randomness, std::size_t n,
-                                                         const ordered_sector_set &sectors) {
-                    auto hasher = Sha256();
-                    hasher.input(AsRef::<[u8]>::as_ref(&randomness));
-                    hasher.input(&n.to_le_bytes()[..]);
-                    const auto hash = hasher.result();
-
-                    const auto sector_challenge = LittleEndian::read_u64(&hash[..8]);
-                    std::uint sector_index = (std::uint64_t(sector_challenge % sectors.len()));
-                    const auto sector = *sectors.iter().nth(sector_index).context("invalid challenge generated");
-
-                    return sector;
+                    std::vector<sector_id_type> result(challenge_count);
+                    for (int i = 0; i < challenge_count; i++) {
+                        result[i] = generate_sector_challenge(randomness, i, sectors);
+                    }
+                    return result;
                 }
 
                 /// Generate all challenged leaf ranges for a single sector, such that the range fits into the sector.
@@ -330,7 +351,8 @@ namespace nil {
                 std::uint64_t generate_leaf_challenge(const PublicParams &pub_params, const Domain &randomness,
                                                       std::uint64_t sector_challenge_index,
                                                       std::uint64_t leaf_challenge_index) {
-                    BOOST_ASSERT_MSG(pub_params.sector_size > pub_params.challenged_nodes * NODE_SIZE, "sector size is too small");
+                    BOOST_ASSERT_MSG(pub_params.sector_size > pub_params.challenged_nodes * NODE_SIZE,
+                                     "sector size is too small");
 
                     auto hasher = Sha256();
                     hasher.input(AsRef::<[u8]>::as_ref(&randomness));

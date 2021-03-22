@@ -33,19 +33,9 @@ namespace nil {
             namespace election {
                 /// This is the `ElectionPoSt` circuit.
                 template<typename MerkleTreeType, template<typename> class Circuit>
-                struct ElectionPoStCircuit : public Circuit<algebra::curves::bls12<381>> {
+                struct ElectionPoStCircuit : public Circuit<crypto3::algebra::curves::bls12<381>> {
                     template<template<typename> class ConstraintSystem>
-                    void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
-                        const auto comm_r = self.comm_r;
-                        const auto comm_c = self.comm_c;
-                        const auto comm_r_last = self.comm_r_last;
-                        const auto leafs = self.leafs;
-                        const auto paths = self.paths;
-                        const auto partial_ticket = self.partial_ticket;
-                        const auto randomness = self.randomness;
-                        const auto prover_id = self.prover_id;
-                        const auto sector_id = self.sector_id;
-
+                    void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
                         assert(paths.size() == leafs.size());
 
                         // 1. Verify comm_r
@@ -69,14 +59,13 @@ namespace nil {
                             cs.namespace(|| "H_comm_c_comm_r_last"), &comm_c_num, &comm_r_last_num, );
 
                         // Check actual equality
-                        constraint::equal(cs, || "enforce_comm_c_comm_r_last_hash_comm_r", &comm_r_num,
-                                          &hash_num, );
+                        constraint::equal(cs, || "enforce_comm_c_comm_r_last_hash_comm_r", &comm_r_num, &hash_num, );
 
                         // 2. Verify Inclusion Paths
                         for ((i, (leaf, path)) : leafs.iter().zip(paths.iter()).enumerate()) {
-                            PoRCircuit::<Tree>::synthesize(
-                                cs.namespace(|| std::format("challenge_inclusion{}", i)), Root::Val(*leaf),
-                                path.clone().into(), Root::from_allocated::<CS>(comm_r_last_num.clone()), true, );
+                            PoRCircuit::<Tree>::synthesize(cs.namespace(|| std::format("challenge_inclusion{}", i)),
+                                                           Root::Val(*leaf), path.clone().into(),
+                                                           Root::from_allocated::<CS>(comm_r_last_num.clone()), true, );
                         }
 
                         // 3. Verify partial ticket
@@ -97,7 +86,7 @@ namespace nil {
                             || {sector_id.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
 
                         const std::vector<auto> partial_ticket_nums = {randomness_num, prover_id_num, sector_id_num};
-                        for ((i, leaf) in leafs.iter().enumerate()) {
+                        for ((i, leaf)in leafs.iter().enumerate()) {
                             const auto leaf_num = num::AllocatedNumber::alloc(
                                 cs.namespace(|| std::format("leaf_{}", i)),
                                 || {leaf.map(Into::into).ok_or_else(|| SynthesisError::AssignmentMissing)});
@@ -109,7 +98,7 @@ namespace nil {
                         while (partial_ticket_nums.size() % arity) {
                             partial_ticket_nums.push(num::AllocatedNumber::alloc(
                                 cs.namespace(|| std::format("padding_{}", partial_ticket_nums.len())),
-                            || Ok(Fr::zero())));
+                                || Ok(Fr::zero())));
                         }
 
                         // hash it

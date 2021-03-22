@@ -38,13 +38,11 @@ namespace nil {
                 template<typename MerkleTreeType>
                 struct Sector {
                     Sector(const PublicSector<typename MerkleTreeType::hash_type::digest_type> &sector,
-                           const SectorProof<typename MerkleTreeType::proof_type> &vanilla_proof) {
-                        leafs = vanilla_proof.leafs().iter().map(| l | Some((*l).into())).collect();
+                           const SectorProof<typename MerkleTreeType::proof_type> &vanilla_proof) :
+                        leafs(vanilla_proof.leafs()),
+                        id(sector.id), comm_r(sector.comm_r), comm_c(vanilla_proof.comm_c),
+                        comm_r_last(vanilla_proof.comm_r_last) {
                         paths = vanilla_proof.as_options().into_iter().map(Into::into).collect();
-                        id = sector.id;
-                        comm_r = sector.comm_r;
-                        comm_c = vanilla_proof.comm_c;
-                        comm_r_last = vanillaproof.comm_r_last;
                     }
 
                     Sector(const PublicParams &pub_params) {
@@ -54,9 +52,14 @@ namespace nil {
                         por::PublicParams por_params = {leaves, true};
                         std::vector<Fr> leafs(challenges_count);
                         std::vector<AuthPath<typename MerkleTreeType::hash_type,
-                                    MerkleTreeType::base_arity,
-                                    MerkleTreeType::sub_tree_arity,
-                        MerkleTreeType::top_tree_arity>> paths (challenges_count, AuthPath::blank(por_params.leaves));
+                                             MerkleTreeType::base_arity,
+                                             MerkleTreeType::sub_tree_arity,
+                                             MerkleTreeType::top_tree_arity>>
+                            paths(challenges_count,
+                                  AuthPath<typename MerkleTreeType::hash_type,
+                                           MerkleTreeType::base_arity,
+                                           MerkleTreeType::sub_tree_arity,
+                                           MerkleTreeType::top_tree_arity>(por_params.leaves));
 
                         return Sector {
                         id:
