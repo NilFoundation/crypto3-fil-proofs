@@ -86,18 +86,18 @@ namespace nil {
                 return pp.partitions == -1 ? 1 : (!pp.partitions ? -1 : pp.partitions);
             }
 
-            virtual multi_proof<mapped_parameters<crypto3::algebra::curves::bls12<381>>>
-                prove(const public_params_type &pp, const public_inputs_type &pub_in,
-                      const private_inputs_type &priv_in,
-                      const groth16::mapped_parameters<crypto3::algebra::curves::bls12<381>> &groth_parameters) {
+            virtual multi_proof<r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>>> prove(
+                const public_params_type &pp, const public_inputs_type &pub_in, const private_inputs_type &priv_in,
+                const r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>> &groth_parameters) {
                 std::size_t pc = partition_count(pp);
 
                 BOOST_ASSERT_MSG(pc > 0, "There must be partitions");
             }
 
-            virtual bool verify(const public_params_type &pp, const public_inputs_type &pi,
-                                const groth16::mapped_parameters<crypto3::algebra::curves::bls12<381>> &mproof,
-                                const requirements_type &requirements) {
+            virtual bool
+                verify(const public_params_type &pp, const public_inputs_type &pi,
+                       const r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>> &mproof,
+                       const requirements_type &requirements) {
                 BOOST_ASSERT_MSG(mproof.circuit_proofs.size() == partition_count(pp), "Inconsistent inputs");
             }
 
@@ -130,7 +130,8 @@ namespace nil {
                                typename crypto3::algebra::curves::bls12<381>::scalar_field_type>>::type
                 circuit_proofs(const public_inputs_type &pub_in, ProofIterator vanilla_proof_first,
                                ProofIterator vanilla_proof_last, const public_params_type &pp,
-                               const groth16::mapped_params<algebra::curves::bls12<381>> &groth_params, bool priority) {
+                               const r1cs_gg_ppzksnark_mapped_scheme_params<algebra::curves::bls12<381>> &groth_params,
+                               bool priority) {
                 BOOST_ASSERT_MSG(std::distance(vanilla_proof_first, vanilla_proof_last),
                                  "Cannot create a circuit proof over missing vanilla proofs");
             }
@@ -178,8 +179,8 @@ namespace nil {
              * @param pp
              * @return
              */
-            template<typename UniformRandomGenerator, template<typename> class Groth16MappedParams>
-            virtual Groth16MappedParams<crypto3::algebra::curves::bls12<381>>
+            template<typename UniformRandomGenerator>
+            virtual r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>>
                 groth_params(UniformRandomGenerator &rng, const public_params_type &pp) {
                 return get_groth_params(rng, blank_circuit(pp), pp);
             }

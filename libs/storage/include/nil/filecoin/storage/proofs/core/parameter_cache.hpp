@@ -182,7 +182,8 @@ namespace nil {
             }
 
             template<typename UniformRandomGenerator>
-            mapped_scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>>
+            r1cs_gg_ppzksnark_mapped_scheme_params<
+                crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>>
                 get_groth_params(UniformRandomGenerator &r, const C &circuit, const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
