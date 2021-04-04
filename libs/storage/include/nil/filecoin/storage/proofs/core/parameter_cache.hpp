@@ -41,6 +41,9 @@
 
 #include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
 
+#include <nil/filecoin/storage/proofs/core/crypto/scheme_params.hpp>
+#include <nil/filecoin/storage/proofs/core/crypto/mapped_scheme_params.hpp>
+
 namespace nil {
     namespace filecoin {
         constexpr static const std::size_t VERSION = 27;
@@ -78,7 +81,7 @@ namespace nil {
 
         boost::filesystem::path ensure_ancestor_dirs_exist(const boost::filesystem::path &cache_entry_path) {
             boost::filesystem::path parent_dir = cache_entry_path.parent_path();
-            if (boost::filesystem::exists(parent_dir.status())) {
+            if (boost::filesystem::exists(parent_dir)) {
                 return cache_entry_path;
             } else {
                 throw std::invalid_argument(cache_entry_path.string() + " has no parent directory");
@@ -108,14 +111,14 @@ namespace nil {
             });
         }
 
-        template<template<typename> class Groth16MappedParams>
-        Groth16MappedParams<crypto3::algebra::curves::bls12<381>>
+        r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>>
             read_cached_params(const boost::filesystem::path &cache_entry_path) {
-            with_exclusive_read_lock(cache_entry_path,
-                                     [&]() -> Groth16MappedParams<crypto3::algebra::curves::bls12<381>> {
-                                         Groth16MappedParams<crypto3::algebra::curves::bls12<381>> params =
-                                             Parameters::build_mapped_parameters(cache_entry_path, false);
-                                     });
+            with_exclusive_read_lock(
+                cache_entry_path,
+                [&]() -> r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>> {
+                    r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>> params =
+                        Parameters::build_mapped_parameters(cache_entry_path, false);
+                });
         }
 
         crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
@@ -138,10 +141,9 @@ namespace nil {
             });
         }
 
-        template<template<typename> class Groth16Parameters>
-        Groth16Parameters<crypto3::algebra::curves::bls12<381>>
+        r1cs_gg_ppzksnark_scheme_params<crypto3::algebra::curves::bls12<381>>
             write_cached_params(const boost::filesystem::path &cache_entry_path,
-                                Groth16Parameters<crypto3::algebra::curves::bls12<381>>
+                                r1cs_gg_ppzksnark_scheme_params<crypto3::algebra::curves::bls12<381>>
                                     value) {
             with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
                 value.write(file);
@@ -164,7 +166,7 @@ namespace nil {
                 using namespace nil::crypto3;
 
                 std::string circuit_hash = crypto3::hash<crypto3::hashes::sha2<256>>(pub_params.identifier());
-                std::format("{}-{:02x}", cache_prefix(), circuit_hash.iter().format(""))
+                std::format("{}-{:02x}", cache_prefix(), circuit_hash.iter().format(""));
             }
 
             cache_entry_metadata get_param_metadata(const C &circuit, const P &pub_params) {
@@ -179,8 +181,8 @@ namespace nil {
                 }
             }
 
-            template<template<typename> class Groth16MappedParams, typename UniformRandomGenerator>
-            Groth16MappedParams<crypto3::algebra::curves::bls12<381>>
+            template<typename UniformRandomGenerator>
+            mapped_scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>>
                 get_groth_params(UniformRandomGenerator &r, const C &circuit, const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
@@ -198,12 +200,12 @@ namespace nil {
             }
 
             template<typename UniformRandomGenerator>
-            crypto3::zk::snark::r1cs_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
+            crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
                 get_verifying_key(UniformRandomGenerator &r, const C &circuit, const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
-                const auto generate =
-                    [&]() -> crypto3::zk::snark::r1cs_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>> {
+                const auto generate = [&]()
+                    -> crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>> {
                     return get_groth_params(r, circuit, pub_params).vk;
                 };
 

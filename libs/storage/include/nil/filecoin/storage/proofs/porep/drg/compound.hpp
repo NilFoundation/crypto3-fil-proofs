@@ -39,11 +39,9 @@ namespace nil {
         namespace porep {
             namespace drg {
                 template<typename Hash, typename Graph, template<typename> class Circuit>
-                class drg_porep_compound
-                    : public cacheable_parameters<Circuit<crypto3::algebra::curves::bls12<381>>,
-                                                  parameter_set_metadata>,
-                      public compound_proof<porep::drg::DrgPoRep<Hash, Graph>, DrgPoRepCircuit<Hash>> {
-                    typedef compound_proof<porep::drg::DrgPoRep<Hash, Graph>, DrgPoRepCircuit<Hash>> policy_type;
+                class drg_porep_compound : public cacheable_parameters<Circuit, parameter_set_metadata>,
+                                           public compound_proof<porep::drg::DrgPoRep<Hash, Graph>, DrgPoRepCircuit> {
+                    typedef compound_proof<porep::drg::DrgPoRep<Hash, Graph>, DrgPoRepCircuit> policy_type;
 
                 public:
                     typedef Hash hash_type;

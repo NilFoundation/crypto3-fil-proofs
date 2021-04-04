@@ -95,6 +95,9 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PRIVATE
                       crypto3::hash
                       crypto3::zk
 
+                      actor::core
+                      actor::network
+
                       ${CMAKE_WORKSPACE_NAME}::storage_proofs
 
                       ${Boost_LIBRARIES})

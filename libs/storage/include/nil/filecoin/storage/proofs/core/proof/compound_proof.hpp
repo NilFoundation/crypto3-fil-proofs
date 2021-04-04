@@ -29,6 +29,9 @@
 
 #include <cstdint>
 
+#include <nil/filecoin/storage/proofs/core/crypto/scheme_params.hpp>
+#include <nil/filecoin/storage/proofs/core/crypto/mapped_scheme_params.hpp>
+
 #include <nil/filecoin/storage/proofs/core/proof/proof.hpp>
 #include <nil/filecoin/storage/proofs/core/proof/multi_proof.hpp>
 
@@ -83,7 +86,7 @@ namespace nil {
                 return pp.partitions == -1 ? 1 : (!pp.partitions ? -1 : pp.partitions);
             }
 
-            virtual multi_proof<crypto3::zk::snark::groth16::mapped_parameters<crypto3::algebra::curves::bls12<381>>>
+            virtual multi_proof<mapped_parameters<crypto3::algebra::curves::bls12<381>>>
                 prove(const public_params_type &pp, const public_inputs_type &pub_in,
                       const private_inputs_type &priv_in,
                       const groth16::mapped_parameters<crypto3::algebra::curves::bls12<381>> &groth_parameters) {

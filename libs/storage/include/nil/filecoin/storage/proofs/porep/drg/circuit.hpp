@@ -64,9 +64,9 @@ namespace nil {
 
                  * @tparam Hash
                  */
-                template<typename Hash, typename CurveType = algebra::curves::bls12<381>>
-                struct DrgPoRepCircuit : public crypto3::zk::snark::components::component<
-                typename CurveType::scalar_field_type> {
+                template<typename Hash, typename CurveType = crypto3::algebra::curves::bls12<381>>
+                struct DrgPoRepCircuit
+                    : public crypto3::zk::snark::components::component<typename CurveType::scalar_field_type> {
                     typedef Hash hash_type;
                     typedef CurveType curve_type;
                     typedef typename curve_type::scalar_field_type fr_type;
@@ -84,12 +84,12 @@ namespace nil {
                     fr_value_type replica_id;
                     bool priv;
 
-                    DrgPoRepCircuit(crypto3::zk::snark::blueprint<fr_type> &bp) : 
-                    crypto3::zk::snark::components::component<fr_type>(bp) {
+                    DrgPoRepCircuit(crypto3::zk::snark::blueprint<fr_type> &bp) :
+                        crypto3::zk::snark::components::component<fr_type>(bp) {
                     }
 
                     template<template<typename> class ConstraintSystem>
-                    void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
+                    void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
                         fr_value_type replica_id = replica_id;
                         root<fr_type> replica_root = replica_root;
                         root<fr_type> data_root = data_root;
@@ -112,7 +112,8 @@ namespace nil {
                         std::size_t replica_id_bits =
                             reverse_bit_numbering(replica_node_num.to_bits_le(cs.namespace(|| "replica_id_bits")));
 
-                        const auto replica_root_var = Root::Var(replica_root.allocated(cs.namespace(|| "replica_root")));
+                        const auto replica_root_var =
+                            Root::Var(replica_root.allocated(cs.namespace(|| "replica_root")));
                         const auto data_root_var = Root::Var(data_root.allocated(cs.namespace(|| "data_root")));
 
                         for (int i = 0; i < data_nodes.size(); i++) {
@@ -148,8 +149,8 @@ namespace nil {
 
                             // validate data node commitment
                             PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
-                                cs.namespace(|| "data_inclusion"), Root::Val(*data_node),
-                                data_node_path.clone().into(), data_root_var.clone(), self.priv);
+                                cs.namespace(|| "data_inclusion"), Root::Val(*data_node), data_node_path.clone().into(),
+                                data_root_var.clone(), self.priv);
 
                             // Encoding checks
                             auto cs = cs.namespace(|| "encoding_checks");
@@ -191,8 +192,7 @@ namespace nil {
 
                 /// Key derivation function.
                 template<typename ScalarEngine, template<typename> class ConstraintSystem>
-                AllocatedNumber<ScalarEngine> kdf(ConstraintSystem<ScalarEngine> &cs, const
-                                                  std::vector<bool> &id,
+                AllocatedNumber<ScalarEngine> kdf(ConstraintSystem<ScalarEngine> &cs, const std::vector<bool> &id,
                                                   const std::vector<std::vector<bool>> &parents,
                                                   std::uint64_t window_index = 0, std::uint64_t node = 0) {
                     // ciphertexts will become a buffer of the layout
@@ -217,14 +217,14 @@ namespace nil {
 
                     if (alloc_bits[0].get_value().is_some()) {
                         const auto be_bits = alloc_bits.iter()
-                                          .map(| v | v.get_value().ok_or(SynthesisError::AssignmentMissing))
-                                          .collect::<Result<Vec<bool>, SynthesisError>>();
+                                                 .map(| v | v.get_value().ok_or(SynthesisError::AssignmentMissing))
+                                                 .collect::<Result<Vec<bool>, SynthesisError>>();
 
                         const auto le_bits = be_bits.chunks(8)
-                                          .flat_map(| chunk | chunk.iter().rev())
-                                          .copied()
-                                          .take(std::size_t(ScalarEngine::Fr::CAPACITY))
-                                          .collect::<Vec<bool>>();
+                                                 .flat_map(| chunk | chunk.iter().rev())
+                                                 .copied()
+                                                 .take(std::size_t(ScalarEngine::Fr::CAPACITY))
+                                                 .collect::<Vec<bool>>();
 
                         fr = multipack::compute_multipacking<ScalarEngine>(&le_bits)[0];
                     } else {

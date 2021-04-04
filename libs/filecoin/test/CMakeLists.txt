@@ -35,7 +35,11 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        crypto3::block
                        crypto3::codec
                        crypto3::hash
+                       crypto3::multiprecision
                        crypto3::zk
+
+                       actor::core
+                       actor::network
 
                        ${CMAKE_WORKSPACE_NAME}::storage_proofs
 
@@ -70,15 +74,15 @@ macro(define_filecoin_test test)
 endmacro()
 
 set(TESTS_NAMES
-    api/mod
+    "api/mod"
 
-    types/bytes_amount
+    "types/bytes_amount"
 
-    commitment_reader
-    fr32
-    fr32_reader
-    pieces
-    parameters)
+    "commitment_reader"
+    "fr32"
+    "fr32_reader"
+    "pieces"
+    "parameters")
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_filecoin_test(${TEST_NAME})

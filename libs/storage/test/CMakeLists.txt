@@ -35,7 +35,11 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        crypto3::block
                        crypto3::codec
                        crypto3::hash
+                       crypto3::multiprecision
                        crypto3::zk
+
+                       actor::core
+                       actor::network
 
                        ${Boost_LIBRARIES})
 

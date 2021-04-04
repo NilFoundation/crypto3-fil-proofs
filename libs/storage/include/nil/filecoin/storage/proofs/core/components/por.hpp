@@ -27,6 +27,9 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
 
+#include <tuple>
+#include <vector>
+
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
 #include <nil/crypto3/zk/snark/components/basic_components.hpp>
@@ -45,7 +48,7 @@ namespace nil {
     namespace filecoin {
         template<typename Hash, std::size_t BaseArity, typename FieldType>
         struct SubPath : public crypto3::zk::snark::components::component<FieldType> {
-            std::vector<PathElement<Hash, FieldType, BaseArity>> path;
+            std::vector<PathElement<Hash, BaseArity, FieldType>> path;
 
             SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, crypto3::zk::snark::blueprint_variable<FieldType> cur,
                     std::size_t capacity) :
@@ -74,7 +77,7 @@ namespace nil {
             template<template<typename> class ConstraintSystem>
             std::pair<AllocatedNumber<crypto3::algebra::curves::bls12<381>>, std::vector<bool>>
                 synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs,
-                           crypto3::zk::snark::blueprint_variable<algebra::curves::bls12<381>> &cur) {
+                           crypto3::zk::snark::blueprint_variable<crypto3::algebra::curves::bls12<381>> &cur) {
 
                 std::size_t arity = BaseArity;
 
@@ -132,7 +135,7 @@ namespace nil {
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
                  typename FieldType>
         struct AuthPath : public crypto3::zk::snark::components::component<FieldType> {
-            SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, std::size_t capacity) :
+            AuthPath(crypto3::zk::snark::blueprint<FieldType> &bp, std::size_t capacity) :
                 path(capacity), crypto3::zk::snark::components::component<FieldType>(bp) {
             }
 
@@ -170,40 +173,32 @@ namespace nil {
                                       })
                                       .collect();
 
-                const auto top = if has_top {
-                    const auto(hashes, index) = opts.pop();
-                    vec ![PathElement {
-                        hashes,
-                        index,
-                        _a : Default::default(),
-                        _h : Default::default(),
-                    }]
-                }
-                else {Vec()};
+                std::vector<PathElement<Hash, BaseArity, FieldType>> top, sub;
 
-                const auto sub = if has_sub {
-                    const auto(hashes, index) = opts.pop();
-                    vec ![PathElement {
-                        hashes,
-                        index,
-                        _a : Default::default(),
-                        _h : Default::default(),
-                    }]
+                if (has_top) {
+                    const auto hashes, index = opts.pop();
+                    top = {{hashes, index}};
                 }
-                else {Vec()};
+
+                if (has_sub) {
+                    const auto hashes, index = opts.pop();
+                    sub = {{hashes, index}};
+                }
 
                 assert(opts.is_empty());
 
-                return AuthPath {base : {path : base}, sub : SubPath {path : sub}, top : SubPath {path : top}};
+                return AuthPath {.base = {.path = base},
+                                 .sub = SubPath<Hash, BaseArity, FieldType> {.path = sub},
+                                 .top = SubPath<Hash, BaseArity, FieldType> {.path = top}};
             }
 
-            SubPath<Hash, BaseArity> base;
-            SubPath<Hash, SubTreeArity> sub;
-            SubPath<Hash, TopTreeArity> top;
+            SubPath<Hash, BaseArity, FieldType> base;
+            SubPath<Hash, SubTreeArity, FieldType> sub;
+            SubPath<Hash, TopTreeArity, FieldType> top;
         };
 
         template<typename MerkleTreeType, template<typename> class Circuit>
-        struct PoRCircuit : public cacheable_parameters<Circuit<algebra::curves::bls12<381>>, parameter_set_metadata>,
+        struct PoRCircuit : public cacheable_parameters<Circuit, parameter_set_metadata>,
                             public crypto3::zk::snark::components::component<FieldType> {
 
             constexpr static const std::size_t base_arity = MerkleTreeType::arity;
@@ -246,10 +241,10 @@ namespace nil {
             ///
             /// Note: All public inputs must be provided as `E::Fr`.
             template<template<typename> class ConstraintSystem>
-            void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
-                root<algebra::curves::bls12<381>> value = value;
+            void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
+                root<crypto3::algebra::curves::bls12<381>> value = value;
                 auth_path_type auth_path = auth_path;
-                root<algebra::curves::bls12<381>> root = root;
+                root<crypto3::algebra::curves::bls12<381>> root = root;
 
                 // All arities must be powers of two or circuits cannot be generated.
                 BOOST_ASSERT_MSG(1 == base_arity.count_ones(), "base arity must be power of two");
@@ -291,9 +286,9 @@ namespace nil {
             }
 
             template<template<typename> class ConstraintSystem>
-            void synthesize(ConstraintSystem<algebra::curves::bls12<381>> &cs,
-                            const root<algebra::curves::bls12<381>> &value, auth_path_type &auth_path,
-                            root<algebra::curves::bls12<381>> root, bool priv) {
+            void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs,
+                            const root<crypto3::algebra::curves::bls12<381>> &value, auth_path_type &auth_path,
+                            root<crypto3::algebra::curves::bls12<381>> root, bool priv) {
                 this->value = value;
                 this->auth_path = auth_path;
                 this->root = root;
@@ -302,14 +297,14 @@ namespace nil {
                 synthesize(cs);
             }
 
-            root<algebra::curves::bls12<381>> value;
+            root<crypto3::algebra::curves::bls12<381>> value;
             auth_path_type auth_path;
-            root<algebra::curves::bls12<381>> root;
+            root<crypto3::algebra::curves::bls12<381>> root;
             bool priv;
         };
 
         template<typename MerkleTreeType, template<typename> class Circuit>
-        struct PoRCompound : public PoRCircuit<MerkleTreeType, Circuit<algebra::curves::bls12<381>>>,
+        struct PoRCompound : public PoRCircuit<MerkleTreeType, Circuit<crypto3::algebra::curves::bls12<381>>>,
                              public CompoundProof<PoR<MerkleTreeType>, PoRCircuit<MerkleTreeType>> { };
     }    // namespace filecoin
 }    // namespace nil

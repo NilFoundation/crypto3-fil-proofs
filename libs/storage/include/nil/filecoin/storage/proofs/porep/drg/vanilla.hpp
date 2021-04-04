@@ -184,10 +184,10 @@ namespace nil {
                             std::vector<auto> parents(params.graph.degree(), 0);
                             params.graph.parents(challenge, parents);
                             std::vector<auto> replica_parentsi;
-                            replica_parentsi.reserve(parents.len());
+                            replica_parentsi.reserve(parents.size());
 
-                            for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent) {
-                                replica_parentsi.push_back((*parent, {
+                            for (const auto &parent : parents) {
+                                replica_parentsi.push_back((parent, {
                                     const auto proof = tree_r.gen_cached_proof(std::size_t(*parent),
                                                                                Some(tree_r_config_rows_to_discard));
                                     DataProof {
@@ -409,12 +409,11 @@ namespace nil {
 
                         for (parents::iterator parent = parents.begin(); parent != parents.end(); ++parent) {
                             tree.read_into(*parent, scratch);
-                            hasher.input(&scratch);
+                            hash<Hash>(scratch, acc);
                         }
                     }
 
-                    const auto hash = hasher.result();
-                    return bytes_into_fr_repr_safe(hash).into();
+                    return accumulators::extract::hash<Hash>(acc);
                 }
 
                 template<typename Hash, template<typename> class BinaryLCMerkleTree>
