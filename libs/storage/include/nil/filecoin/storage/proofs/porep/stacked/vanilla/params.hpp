@@ -121,9 +121,9 @@ namespace nil {
                     void verify_stores(VerifyCallback callback, const boost::filesystem::path &cache_dir) {
                         std::vector<StoreConfig> updated_path_labels = labels;
                         std::size_t required_configs = get_base_tree_count<MerkleTreeType>();
-                        for (updated_path_labels::const_iterator label; label != updated_path_labels.end(); ++label) {
+                        for (const auto &label : updated_path_labels) {
                             label.path = cache_dir;
-                            callback(*label, BINARY_ARITY, required_configs);
+                            callback(label, BINARY_ARITY, required_configs);
                         }
                     }
 

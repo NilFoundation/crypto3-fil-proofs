@@ -267,7 +267,6 @@ namespace nil {
                         PoRCircuitMerkleTreeWrapper<H, DiskStore<H::digest_type>, U, V, W> >
                             ::synthesize(cs, leaf, path, root, true);
                     }
-
                 }    // namespace circuit
             }        // namespace stacked
         }            // namespace porep

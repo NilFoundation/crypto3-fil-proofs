@@ -29,6 +29,8 @@
 
 #include <format>
 
+#include <nil/crypto3/zk/snark/component.hpp>
+
 #include <nil/crypto3/zk/snark/relations/constraint_satisfaction_problems/r1cs.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/params.hpp>
@@ -37,38 +39,44 @@ namespace nil {
     namespace filecoin {
         namespace stacked {
             namespace circuit {
-                template<template<typename> class AllocatedNumber>
+                template<typename CurveType, template<typename> class AllocatedNumber>
                 struct AllocatedColumn {
+                    typedef CurveType curve_type;
+
                     template<template<typename> class ConstraintSystem>
-                    AllocatedNumber<crypto3::algebra::curves::bls12<381>>
-                        hash(const ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
+                    AllocatedNumber<curve_type> hash(const ConstraintSystem<curve_type> &cs) {
                         hash_single_column(cs, rows);
                     }
 
-                    AllocatedNumber<crypto3::algebra::curves::bls12<381>> get_value(std::size_t layer) {
+                    AllocatedNumber<curve_type> get_value(std::size_t layer) {
                         BOOST_ASSERT_MSG(layer > 0, "layers are 1 indexed");
                         BOOST_ASSERT_MSG(layer <= rows.len(),
                                          std::format("layer {} out of range: 1..={}", layer, rows.size()));
                         return rows[layer - 1];
                     }
 
-                    std::vector<AllocatedNumber<algebra::curves::bls12<381>>> rows;
+                    std::vector<AllocatedNumber<curve_type>> rows;
                 };
 
-                struct Column {
+                template<typename CurveType>
+                struct Column : public crypto3::zk::snark::component<CurveType> {
+                    typedef CurveType curve_type;
+
                     /// Create an empty `Column`, used in `blank_circuit`s.
                     template<typename MerkleTreeType>
-                    Column(const PublicParams<MerkleTreeType> &params) : rows(params.layer_challenges.layers()) {
+                    Column(crypto3::zk::snark::blueprint<CurveType> &bp,
+                           const vanilla::PublicParams<MerkleTreeType> &params) :
+                        crypto3::zk::snark::component<CurveType>(bp),
+                        rows(params.layer_challenges.layers()) {
                     }
 
                     template<typename Hash>
-                    Column(const vanilla::Column<Hash> &vanilla) :
-                        rows(vanilla.rows.into_iter().map(| r | Some(r.into())).collect()) {
+                    Column(const vanilla::Column<Hash> &vanilla) : rows(vanilla.rows) {
                     }
 
                     /// Consume this column, and allocate its values in the circuit.
                     template<template<typename> class ConstraintSystem>
-                    AllocatedColumn alloc(ConstraintSystem<algebra::curves::bls12<381>> &cs) {
+                    AllocatedColumn<CurveType, AllocatedNumber> alloc(ConstraintSystem<CurveType> &cs) {
                         const auto Self {rows} = self;
 
                         const auto rows = rows.into_iter()
@@ -82,7 +90,7 @@ namespace nil {
                         return {rows};
                     }
 
-                    std::vector<Fr> rows;
+                    std::vector<typename curve_type::scalar_field_type::value_type> rows;
                 };
             }    // namespace circuit
         }        // namespace stacked
