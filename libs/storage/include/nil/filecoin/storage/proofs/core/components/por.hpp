@@ -27,11 +27,13 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_POR_HPP
 
+#include "nil/crypto3/zk/snark/blueprint.hpp"
 #include <tuple>
 #include <vector>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
+#include <nil/crypto3/zk/snark/blueprint_variable.hpp>
 #include <nil/crypto3/zk/snark/components/basic_components.hpp>
 
 #include <nil/filecoin/storage/proofs/core/path_element.hpp>
@@ -47,88 +49,50 @@
 namespace nil {
     namespace filecoin {
         template<typename Hash, std::size_t BaseArity, typename FieldType>
-        struct SubPath : public crypto3::zk::snark::components::component<FieldType> {
+        class SubPath : public crypto3::zk::snark::components::component<FieldType> {
+            template<typename Integer>
+            Integer trailing_zeroes(Integer n) {
+                Integer bits = 0, x = n;
+
+                if (x) {
+                    while ((x & 1) == 0) {
+                        ++bits;
+                        x >>= 1;
+                    }
+                }
+                return bits;
+            }
+
+        public:
+            std::shared_ptr<crypto3::zk::snark::blueprint_variable_vector<FieldType>> index_bits;
+            std::vector<std::shared_ptr<crypto3::zk::snark::blueprint_variable_vector<FieldType>>> path_hash_nums;
+
             std::vector<PathElement<Hash, BaseArity, FieldType>> path;
 
             SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, crypto3::zk::snark::blueprint_variable<FieldType> cur,
                     std::size_t capacity) :
                 path(capacity),
                 crypto3::zk::snark::components::component<FieldType>(bp) {
-                std::size_t arity = BaseArity;
 
-                if (arity == 0) {
-                    // Nothing to do here.
-                    assert(path.empty());
-                    return std::make_pair(cur, std::vector<bool>());
-                }
-
-                BOOST_ASSERT_MSG(std::ceil(std::log2(arity)) == std::floor(std::log2(arity)),
+                BOOST_ASSERT_MSG(std::ceil(std::log2(BaseArity)) == std::floor(std::log2(arity)),
                                  "arity must be a power of two");
-                std::size_t index_bit_count = arity.trailing_zeros();
 
-                std::vector<bool> auth_path_bits(path.size());
+                for (int i = 0; i < path.size(); i++) {
+                    index_bits->allocate(bp, trailing_zeroes(BaseArity));
+                    path_hash_nums[i]->allocate(bp, path[i].hashes.size());
+                }
             }
 
             void generate_r1cs_constraints() {
             }
             void generate_r1cs_witness() {
-            }
+                for (int i = 0; i < index_bits.size(); i++) {
+                    this->bp.val(index_bits[i]) = (((path[i].index >> i) & 1) == 1);
 
-            template<template<typename> class ConstraintSystem>
-            std::pair<AllocatedNumber<crypto3::algebra::curves::bls12<381>>, std::vector<bool>>
-                synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs,
-                           crypto3::zk::snark::blueprint_variable<crypto3::algebra::curves::bls12<381>> &cur) {
-
-                std::size_t arity = BaseArity;
-
-                if (arity == 0) {
-                    // Nothing to do here.
-                    assert(path.empty());
-                    return std::make_pair(cur, std::vector<bool>());
-                }
-
-                BOOST_ASSERT_MSG(std::ceil(std::log2(arity)) == std::floor(std::log2(arity)),
-                                 "arity must be a power of two");
-                std::size_t index_bit_count = arity.trailing_zeros();
-
-                std::vector<bool> auth_path_bits(path.size());
-
-                for (int i = 0; i < path.size(); i++) {
-                    std::vector<Fr> path_hashes = path[i].hashes;
-                    std::size_t optional_index =
-                        path[i].index;    // Optional because of Bellman blank-circuit construction mechanics.
-
-                    auto cs = cs.namespace(|| std::format("merkle tree hash {}", i));
-
-                    std::vector<bool> index_bits(index_bit_count);
-
-                    for (int i = 0; i < index_bit_count; i++) {
-                        const auto bit = AllocatedBit::alloc(cs.namespace(|| std::format("index bit {}", i)),
-                                                             {optional_index.map(| index | ((index >> i) & 1) == 1)});
-
-                        index_bits.push_back(bit);
+                    for (int j = 0; j < path[i].hashes.size(); j++) {
+                        this->bp.val(path_hash_nums[i][j]) = path[i].hashes[j];
                     }
-
-                    auth_path_bits.extend_from_slice(&index_bits);
-
-                    // Witness the authentication path elements adjacent at this depth.
-                    const auto path_hash_nums =
-                        path_hashes.iter()
-                            .enumerate()
-                            .map(| (i, elt) |
-                                 {num::AllocatedNumber::alloc(
-                                     cs.namespace(|| std::format("path element {}", i)),
-                                     || {elt.ok_or_else(|| SynthesisError::AssignmentMissing)})})
-                            .collect::<Result<Vec<_>, _>>();
-
-                    const auto inserted = insert(cs, &cur, &index_bits, &path_hash_nums);
-
-                    // Compute the new subtree value
-                    cur = H::Function::hash_multi_leaf_circuit::<Arity, _>(
-                        cs.namespace(|| "computation of commitment hash"), &inserted, i);
                 }
-
-                return std::make_pair(cur, auth_path_bits);
             }
         };
 
@@ -136,7 +100,7 @@ namespace nil {
                  typename FieldType>
         struct AuthPath : public crypto3::zk::snark::components::component<FieldType> {
             AuthPath(crypto3::zk::snark::blueprint<FieldType> &bp, std::size_t capacity) :
-                path(capacity), crypto3::zk::snark::components::component<FieldType>(bp) {
+                base(capacity), sub(capacity), top(capacity), crypto3::zk::snark::components::component<FieldType>(bp) {
             }
 
             void generate_r1cs_constraints() {
@@ -145,12 +109,16 @@ namespace nil {
             }
 
             AuthPath(crypto3::zk::snark::blueprint<FieldType> &bp, std::size_t leaves) :
-                base(SubPath<Hash, BaseArity>(bp, base_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves))) {
+                base(SubPath<Hash, BaseArity, FieldType>(
+                    bp, base_path_length<BaseArity, SubTreeArity, TopTreeArity>(leaves))),
+                crypto3::zk::snark::components::component<FieldType>(bp) {
             }
 
-            AuthPath(const std::vector<std::pair<std::vector<Fr>, std::size_t>> &base_opts) {
+            AuthPath(
+                const std::vector<std::pair<std::vector<typename FieldType::value_type>, std::size_t>> &base_opts) {
                 bool has_top = TopTreeArity > 0;
                 bool has_sub = SubTreeArity > 0;
+
                 std::size_t len = base_opts.size();
                 std::size_t x;
 
@@ -162,34 +130,29 @@ namespace nil {
                     x = 0;
                 }
 
-                auto opts = base_opts.split_off(len - x);
+                std::vector<std::pair<std::vector<typename FieldType::value_type>, std::size_t>> opts(
+                    base_opts.begin() + len - x, base_opts.end());
 
-                const auto base = base_opts.into_iter()
-                                      .map(| (hashes, index) | PathElement {
-                                          hashes,
-                                          index,
-                                          _a : Default::default(),
-                                          _h : Default::default(),
-                                      })
-                                      .collect();
-
-                std::vector<PathElement<Hash, BaseArity, FieldType>> top, sub;
+                std::vector<PathElement<Hash, BaseArity, FieldType>> base, top, sub;
+                for (const auto &pair : base_opts) {
+                    base.emplace_back(pair.first, pair.second);
+                }
 
                 if (has_top) {
-                    const auto hashes, index = opts.pop();
-                    top = {{hashes, index}};
+                    top = {*(opts.end() - 1)};
+                    opts.erase(opts.end() - 1);
                 }
 
                 if (has_sub) {
-                    const auto hashes, index = opts.pop();
-                    sub = {{hashes, index}};
+                    sub = {*(opts.end() - 1)};
+                    opts.erase(opts.end() - 1);
                 }
 
                 assert(opts.is_empty());
 
-                return AuthPath {.base = {.path = base},
-                                 .sub = SubPath<Hash, BaseArity, FieldType> {.path = sub},
-                                 .top = SubPath<Hash, BaseArity, FieldType> {.path = top}};
+                base = {.path = base};
+                sub = {.path = sub};
+                top = {.path = top};
             }
 
             SubPath<Hash, BaseArity, FieldType> base;
@@ -197,16 +160,20 @@ namespace nil {
             SubPath<Hash, TopTreeArity, FieldType> top;
         };
 
-        template<typename MerkleTreeType, template<typename> class Circuit>
-        struct PoRCircuit : public cacheable_parameters<Circuit, parameter_set_metadata>,
-                            public crypto3::zk::snark::components::component<FieldType> {
+        template<typename MerkleTreeType, typename FieldType>
+        struct PoRCircuit : public crypto3::zk::snark::components::component<FieldType> {
+            typedef FieldType field_type;
 
             constexpr static const std::size_t base_arity = MerkleTreeType::arity;
             constexpr static const std::size_t sub_arity = MerkleTreeType::arity;
             constexpr static const std::size_t top_arity = MerkleTreeType::arity;
 
-            using auth_path_type =
-                AuthPath<typename MerkleTreeType::hash_type, base_arity, sub_tree_arity, top_tree_arity, field_type>;
+            typedef AuthPath<typename MerkleTreeType::hash_type, base_arity, sub_arity, top_arity, field_type>
+                auth_path_type;
+
+            PoRCircuit(crypto3::zk::snark::blueprint<FieldType> &bp) :
+                crypto3::zk::snark::components::component<FieldType>(bp) {
+            }
 
             void generate_r1cs_constraints() {
                 // base tree
@@ -298,14 +265,19 @@ namespace nil {
             }
 
             root<crypto3::algebra::curves::bls12<381>> value;
-            auth_path_type auth_path;
             root<crypto3::algebra::curves::bls12<381>> root;
+
+            auth_path_type auth_path;
             bool priv;
         };
 
-        template<typename MerkleTreeType, template<typename> class Circuit>
-        struct PoRCompound : public PoRCircuit<MerkleTreeType, Circuit<crypto3::algebra::curves::bls12<381>>>,
-                             public CompoundProof<PoR<MerkleTreeType>, PoRCircuit<MerkleTreeType>> { };
+        template<typename MerkleTreeType, typename Circuit>
+        struct PoRCompound : public PoRCircuit<MerkleTreeType, Circuit>,
+                             public CompoundProof<PoR<MerkleTreeType>, Circuit>,
+                             public CacheableParameters<ParameterSetMetadata, MerkleTreeType, Circuit> {
+            typedef Circuit circuit_type;
+            typedef typename circuit_type::curve_type curve_type;
+        };
     }    // namespace filecoin
 }    // namespace nil
 
