@@ -32,6 +32,8 @@
 
 #include <nil/crypto3/zk/snark/components/basic_components.hpp>
 
+#include <nil/crypto3/zk/snark/blueprint_variable.hpp>
+
 #include <nil/filecoin/storage/proofs/core/components/variables.hpp>
 #include <nil/filecoin/storage/proofs/core/components/por.hpp>
 
@@ -84,8 +86,14 @@ namespace nil {
                     fr_value_type replica_id;
                     bool priv;
 
-                    DrgPoRepCircuit(crypto3::zk::snark::blueprint<fr_type> &bp) :
-                        crypto3::zk::snark::components::component<fr_type>(bp) {
+                    crypto3::zk::snark::blueprint_variable<fr_type> replica_node_num;
+
+                    DrgPoRepCircuit(crypto3::zk::snark::blueprint<fr_type> &bp,
+                                    const crypto3::zk::snark::blueprint_variable<fr_type> &rroot,
+                                    const crypto3::zk::snark::blueprint_variable<fr_type> &droot) :
+                        replica_root(rroot),
+                        data_root(droot), crypto3::zk::snark::components::component<fr_type>(bp) {
+                        replica_node_num.allocate(bp);
                     }
 
                     template<template<typename> class ConstraintSystem>
