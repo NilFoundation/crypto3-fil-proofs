@@ -82,3 +82,6 @@
 [submodule "libs/crypto/multiprecision"]
 	path = libs/crypto/multiprecision
 	url = git@github.com:nilfoundation/crypto3-multiprecision.git
+[submodule "libs/crypto/blueprint"]
+	path = libs/crypto/blueprint
+	url = git@github.com:nilfoundation/crypto3-blueprint.git
