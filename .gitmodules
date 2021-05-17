@@ -72,7 +72,7 @@
 	url = git@github.com:nilfoundation/actor-cluster.git
 [submodule "libs/actor/dpdk"]
 	path = libs/actor/dpdk
-	url = git@github.com:DPDK/dpdk.git
+	url = git@github.com:nilfoundation/dpdk.git
 [submodule "libs/actor/cuda"]
 	path = libs/actor/cuda
 	url = git@github.com:nilfoundation/actor-cuda.git
