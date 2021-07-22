@@ -16,36 +16,18 @@
 [submodule "libs/crypto/codec"]
 	path = libs/crypto/codec
 	url = git@github.com:nilfoundation/codec.git
-[submodule "libs/algebra"]
-	path = libs/algebra
-	url = git@github.com:nilfoundation/algebra.git
-[submodule "libs/pairing"]
-	path = libs/pairing
-	url = git@github.com:nilfoundation/pairing.git
-[submodule "libs/fft"]
-	path = libs/fft
-	url = git@github.com:nilfoundation/fft.git
 [submodule "libs/crypto/zk"]
 	path = libs/crypto/zk
 	url = git@github.com:nilfoundation/zk.git
 [submodule "libs/crypto/fft"]
 	path = libs/crypto/fft
 	url = git@github.com:nilfoundation/crypto3-fft.git
-[submodule "libs/predef"]
-	path = libs/predef
-	url = git@github.com:nilfoundation/predef.git
-[submodule "libs/config"]
-	path = libs/config
-	url = git@github.com:nilfoundation/config.git
 [submodule "libs/cuda"]
 	path = libs/cuda
 	url = git@github.com:nilfoundation/actor-cuda.git
 [submodule "libs/crypto/stream"]
 	path = libs/crypto/stream
 	url = git@github.com:nilfoundation/stream.git
-[submodule "libs/math"]
-	path = libs/math
-	url = git@github.com:nilfoundation/math.git
 [submodule "libs/crypto/random"]
 	path = libs/crypto/random
 	url = git@github.com:nilfoundation/random.git
@@ -58,9 +40,6 @@
 [submodule "libs/crypto/algebra"]
 	path = libs/crypto/algebra
 	url = git@github.com:nilfoundation/crypto3-algebra.git
-[submodule "libs/blueprint"]
-	path = libs/blueprint
-	url = git@github.com:NilFoundation/crypto3-blueprint.git
 [submodule "libs/actor/core"]
 	path = libs/actor/core
 	url = git@github.com:nilfoundation/actor-core.git
