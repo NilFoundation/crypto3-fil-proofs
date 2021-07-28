@@ -76,3 +76,9 @@
 [submodule "cmake/modules"]
 	path = cmake/modules
 	url = git@github.com:BoostCMake/cmake_modules.git
+[submodule "libs/marshalling/core"]
+	path = libs/marshalling/core
+	url = git@github.com:nilfoundation/marshalling.git
+[submodule "libs/marshalling/crypto3"]
+	path = libs/marshalling/crypto3
+	url = git@github.com:nilfoundation/crypto3-marshalling.git
