@@ -26,14 +26,14 @@
 
 #include <boost/filesystem/path.hpp>
 
-#include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
+#include <nil/crypto3/zk/snark/schemes/ppzksnark/r1cs_gg_ppzksnark.hpp>
 
 namespace nil {
     namespace filecoin {
         template<typename CurveType>
         struct r1cs_gg_ppzksnark_scheme_params {
             typedef CurveType curve_type;
-            typedef typename curve_type::g1_type g1_type;
+            typedef typename curve_type::g1_type<> g1_type;
 
             typedef typename crypto3::zk::snark::r1cs_gg_ppzksnark<CurveType>::verifying_key_type verifying_key_type;
 
