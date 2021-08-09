@@ -33,9 +33,9 @@
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
-#include <nil/crypto3/zk/snark/blueprint.hpp>
-#include <nil/crypto3/zk/snark/blueprint_variable.hpp>
-#include <nil/crypto3/zk/snark/components/basic_components.hpp>
+#include <nil/crypto3/zk/components/blueprint.hpp>
+#include <nil/crypto3/zk/components/blueprint_variable.hpp>
+#include <nil/crypto3/zk/components/component.hpp>
 
 #include <nil/filecoin/storage/proofs/core/path_element.hpp>
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
@@ -50,7 +50,7 @@
 namespace nil {
     namespace filecoin {
         template<typename Hash, std::size_t BaseArity, typename FieldType>
-        class SubPath : public crypto3::zk::snark::components::component<FieldType> {
+        class SubPath : public crypto3::zk::components::component<FieldType> {
             template<typename Integer>
             Integer trailing_zeroes(Integer n) {
                 Integer bits = 0, x = n;
@@ -68,16 +68,16 @@ namespace nil {
             BOOST_STATIC_ASSERT_MSG(std::ceil(std::log2(BaseArity)) == std::floor(std::log2(BaseArity)),
                                     "arity must be a power of two");
 
-            crypto3::zk::snark::blueprint_variable<FieldType> current;
-            crypto3::zk::snark::blueprint_variable_vector<FieldType> index_bits;
-            std::vector<crypto3::zk::snark::blueprint_variable_vector<FieldType>> path_hash_nums;
+            crypto3::zk::components::blueprint_variable<FieldType> current;
+            crypto3::zk::components::blueprint_variable_vector<FieldType> index_bits;
+            std::vector<crypto3::zk::components::blueprint_variable_vector<FieldType>> path_hash_nums;
 
             std::vector<PathElement<Hash, BaseArity, FieldType>> path;
 
-            SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, crypto3::zk::snark::blueprint_variable<FieldType> cur,
+            SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, crypto3::zk::blueprint_variable<FieldType> cur,
                     std::size_t capacity) :
                 current(cur),
-                path(capacity), crypto3::zk::snark::components::component<FieldType>(bp) {
+                path(capacity), crypto3::zk::components::component<FieldType>(bp) {
 
                 for (int i = 0; i < path.size(); i++) {
                     index_bits.allocate(bp, trailing_zeroes(BaseArity));
@@ -100,10 +100,10 @@ namespace nil {
 
         template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
                  typename FieldType>
-        struct AuthPath : public crypto3::zk::snark::components::component<FieldType> {
-            AuthPath(crypto3::zk::snark::blueprint<FieldType> &bp,
+        struct AuthPath : public crypto3::zk::components::component<FieldType> {
+            AuthPath(crypto3::zk::components::blueprint<FieldType> &bp,
                      const std::unordered_map<std::vector<typename FieldType::value_type>, std::size_t> &base_opts) :
-                crypto3::zk::snark::components::component<FieldType>(bp) {
+                crypto3::zk::components::component<FieldType>(bp) {
                 std::size_t len = base_opts.size(), x = 0;
 
                 if (TopTreeArity > 0) {
@@ -155,7 +155,7 @@ namespace nil {
         };
 
         template<typename MerkleTreeType, typename FieldType>
-        struct PoRCircuit : public crypto3::zk::snark::components::component<FieldType> {
+        struct PoRCircuit : public crypto3::zk::components::component<FieldType> {
             typedef FieldType field_type;
             typedef MerkleTreeType tree_type;
             typedef typename MerkleTreeType::hash_type hash_type;
@@ -183,13 +183,13 @@ namespace nil {
             auth_path_type auth_path;
             bool priv;
 
-            crypto3::zk::snark::blueprint_variable<FieldType> value;
+            crypto3::zk::components::blueprint_variable<FieldType> value;
 
             PoRCircuit(crypto3::zk::snark::blueprint<FieldType> &bp,
                        const crypto3::zk::snark::blueprint_variable<FieldType> &value, auth_path_type &auth_path,
                        root<FieldType> root, bool priv) :
                 value(value),
-                auth_path(auth_path), r(root), priv(priv), crypto3::zk::snark::components::component<FieldType>(bp) {
+                auth_path(auth_path), r(root), priv(priv), crypto3::zk::components::component<FieldType>(bp) {
             }
 
             void generate_r1cs_constraints() {
