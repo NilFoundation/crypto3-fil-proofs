@@ -185,8 +185,8 @@ namespace nil {
 
             crypto3::zk::components::blueprint_variable<FieldType> value;
 
-            PoRCircuit(crypto3::zk::snark::blueprint<FieldType> &bp,
-                       const crypto3::zk::snark::blueprint_variable<FieldType> &value, auth_path_type &auth_path,
+            PoRCircuit(crypto3::zk::components::blueprint<FieldType> &bp,
+                       const crypto3::zk::components::blueprint_variable<FieldType> &value, auth_path_type &auth_path,
                        root<FieldType> root, bool priv) :
                 value(value),
                 auth_path(auth_path), r(root), priv(priv), crypto3::zk::components::component<FieldType>(bp) {
