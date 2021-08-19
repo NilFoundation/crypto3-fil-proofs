@@ -30,12 +30,18 @@
 
 namespace nil {
     namespace filecoin {
+        template<typename SchemeType>
+        struct scheme_params {
+            typedef SchemeType scheme_type;
+        };
+
         template<typename CurveType>
-        struct r1cs_gg_ppzksnark_scheme_params {
+        struct scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<CurveType>> {
             typedef CurveType curve_type;
             typedef typename curve_type::g1_type<> g1_type;
 
-            typedef typename crypto3::zk::snark::r1cs_gg_ppzksnark<CurveType>::verifying_key_type verifying_key_type;
+            typedef crypto3::zk::snark::r1cs_gg_ppzksnark<CurveType> scheme_type;
+            typedef typename scheme_type::verifying_key_type verifying_key_type;
 
             verifying_key_type vk;
 

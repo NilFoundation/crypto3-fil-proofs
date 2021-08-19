@@ -40,8 +40,8 @@ namespace nil {
         constexpr static domain_separation_tag_type FEISTEL_DST = "Filecoin_Feistel";
 
         template<typename SeedHash = crypto3::hashes::sha2<256>>
-        std::array<std::uint8_t, 32> derive_porep_domain_seed(domain_separation_tag_type domain_separation_tag, const
-                                                              std::array<std::uint8_t, 32> &porep_id) {
+        typename SeedHash::digest_type derive_porep_domain_seed(domain_separation_tag_type domain_separation_tag,
+                                                                const std::array<std::uint8_t, 32> &porep_id) {
             using namespace nil::crypto3;
 
             accumulator_set<SeedHash> acc;
@@ -52,4 +52,4 @@ namespace nil {
     }    // namespace filecoin
 }    // namespace nil
 
-#endif // FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_DOMAIN_SEED_HPP
+#endif    // FILECOIN_STORAGE_PROOFS_CORE_CRYPTO_DOMAIN_SEED_HPP

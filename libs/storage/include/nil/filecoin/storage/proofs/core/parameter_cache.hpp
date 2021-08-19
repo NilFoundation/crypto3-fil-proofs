@@ -39,19 +39,19 @@
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
-#include <nil/crypto3/zk/snark/proof_systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
-
 #include <nil/filecoin/storage/proofs/core/crypto/scheme_params.hpp>
 #include <nil/filecoin/storage/proofs/core/crypto/mapped_scheme_params.hpp>
 
 namespace nil {
     namespace filecoin {
-        constexpr static const std::size_t VERSION = 27;
+        constexpr static const std::size_t VERSION = 28;
+        constexpr static const std::size_t SRS_MAX_PROOFS_TO_AGGREGATE = 65535;
         constexpr static const char *PARAMETER_CACHE_ENV_VAR = "FIL_PROOFS_PARAMETER_CACHE";
         constexpr static const char *PARAMETER_CACHE_DIR = "/var/tmp/filecoin-proof-parameters/";
         constexpr static const char *GROTH_PARAMETER_EXT = "params";
         constexpr static const char *PARAMETER_METADATA_EXT = "meta";
         constexpr static const char *VERIFYING_KEY_EXT = "vk";
+        constexpr static const char *SRS_SHARED_KEY_NAME = "fil-inner-product-v1";
 
         std::string parameter_cache_dir_name() {
             return std::getenv(PARAMETER_CACHE_ENV_VAR);
@@ -98,35 +98,26 @@ namespace nil {
         };
 
         cache_entry_metadata read_cached_metadata(const boost::filesystem::path &cache_entry_path) {
-            with_exclusive_read_lock(
-                cache_entry_path, [&](const boost::filesystem::path &file) { return serde_json::from_reader(file); });
+            return serde_json::from_reader(cache_entry_path);
         }
 
         cache_entry_metadata write_cached_metadata(const boost::filesystem::path &cache_entry_path,
                                                    cache_entry_metadata value) {
-            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                serde_json::to_writer(file, value);
+            serde_json::to_writer(cache_entry_path, value);
 
-                return value;
-            });
+            return value;
         }
 
-        r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>>
+        mapped_scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>>
             read_cached_params(const boost::filesystem::path &cache_entry_path) {
-            with_exclusive_read_lock(
-                cache_entry_path,
-                [&]() -> r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>> {
-                    r1cs_gg_ppzksnark_mapped_scheme_params<crypto3::algebra::curves::bls12<381>> params =
-                        Parameters::build_mapped_parameters(cache_entry_path, false);
-                });
+            return mapped_scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>>::
+                build_mapped_parameters(cache_entry_path, false);
         }
 
         crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
             read_cached_verifying_key(const boost::filesystem::path &cache_entry_path) {
-            with_exclusive_read_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                return crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<
-                    crypto3::algebra::curves::bls12<381>>::read(file);
-            });
+            return crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>::read(
+                cache_entry_path);
         }
 
         crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
@@ -134,21 +125,17 @@ namespace nil {
                 const boost::filesystem::path &cache_entry_path,
                 const crypto3::zk::snark::r1cs_gg_ppzksnark_verification_key<crypto3::algebra::curves::bls12<381>>
                     &value) {
-            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                value.write(file);
+            value.write(cache_entry_path);
 
-                return value;
-            });
+            return value;
         }
 
-        r1cs_gg_ppzksnark_scheme_params<crypto3::algebra::curves::bls12<381>>
-            write_cached_params(const boost::filesystem::path &cache_entry_path,
-                                r1cs_gg_ppzksnark_scheme_params<crypto3::algebra::curves::bls12<381>>
-                                    value) {
-            with_exclusive_lock(cache_entry_path, [&](const boost::filesystem::path &file) {
-                value.write(file);
-                return value;
-            });
+        scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>> write_cached_params(
+            const boost::filesystem::path &cache_entry_path,
+            scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>>
+                value) {
+            value.write(cache_entry_path);
+            return value;
         }
 
         template<template<typename> class Circuit, typename ParameterSetMetadata = parameter_set_metadata>
@@ -166,7 +153,7 @@ namespace nil {
                 using namespace nil::crypto3;
 
                 std::string circuit_hash = crypto3::hash<crypto3::hashes::sha2<256>>(pub_params.identifier());
-                std::format("{}-{:02x}", cache_prefix(), circuit_hash.iter().format(""));
+                actor::format("{}-{:02x}", cache_prefix(), circuit_hash.iter().format(""));
             }
 
             cache_entry_metadata get_param_metadata(const C &circuit, const P &pub_params) {
@@ -181,10 +168,8 @@ namespace nil {
                 }
             }
 
-            template<typename UniformRandomGenerator>
-            r1cs_gg_ppzksnark_mapped_scheme_params<
-                crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>>
-                get_groth_params(UniformRandomGenerator &r, const C &circuit, const P &pub_params) {
+            mapped_scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>>
+                get_groth_params(const C &circuit, const P &pub_params) {
                 std::string id = cache_identifier(pub_params);
 
                 const auto generate = [&]() {
