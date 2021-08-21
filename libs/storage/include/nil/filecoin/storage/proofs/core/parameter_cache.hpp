@@ -39,6 +39,10 @@
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
+#include <nil/crypto3/marshalling/types/zk/r1cs_gg_ppzksnark/verification_key.hpp>
+
+#include <nil/filecoin/storage/proofs/core/btree/map.hpp>
+
 #include <nil/filecoin/storage/proofs/core/crypto/scheme_params.hpp>
 #include <nil/filecoin/storage/proofs/core/crypto/mapped_scheme_params.hpp>
 
@@ -52,6 +56,17 @@ namespace nil {
         constexpr static const char *PARAMETER_METADATA_EXT = "meta";
         constexpr static const char *VERIFYING_KEY_EXT = "vk";
         constexpr static const char *SRS_SHARED_KEY_NAME = "fil-inner-product-v1";
+
+        struct parameter_data {
+            std::string cid;
+            std::string digest;
+            std::uint64_t sector_size;
+        };
+
+        typedef btree::map<std::string, parameter_data> parameter_map;
+
+        static parameter_map PARAMETERS;
+        static parameter_map SRS_PARAMETERS;
 
         std::string parameter_cache_dir_name() {
             return std::getenv(PARAMETER_CACHE_ENV_VAR);
