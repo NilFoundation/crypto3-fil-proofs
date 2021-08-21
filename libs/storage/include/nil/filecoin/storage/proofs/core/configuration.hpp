@@ -33,19 +33,35 @@ namespace nil {
     namespace filecoin {
         constexpr static const char *settings_path = "config.ini";
 
+        /// All cache files and directories paths should be constructed using this function,
+        /// which its base directory from the FIL_PROOFS_CACHE_DIR env var, and defaults to /var/tmp.
+        /// Note that FIL_PROOFS_CACHE_DIR is not a first class setting and can only be set by env var.
+        std::string cache(const std::string &s) {
+            std::string cache_var = actor::format("{}_CACHE_DIR", PREFIX);
+            std::string cache_name = std::getenv(cache_var);
+            if (!cache_name) {
+                cache_name = "var/tmp";
+            }
+            return cache_name + s;
+        }
+
         struct configuration {
-            bool maximize_caching = true;
-            std::uint32_t pedersen_hash_exp_window_size = 16;
-            bool use_gpu_column_builder = false;
+            bool verify_cache = false;
+            bool verify_production_params = false;
+            bool use_gpu_column_builder = true;
             std::uint32_t max_gpu_column_batch_size = 400000;
-            std::uint32_t column_write_batch_size = 262144;
-            bool use_gpu_tree_builder = false;
+            std::uint32_t column_write_batch_size = 262114;
+            bool use_gpu_tree_builder = true;
+            std::uint32_t gpu_for_parallel_tree_r = 0;
             std::uint32_t max_gpu_tree_batch_size = 700000;
             std::uint32_t rows_to_discard = 2;
             std::uint32_t sdr_parents_cache_size = 2048;
-            std::uint32_t window_post_synthesis_num_cpus;
-            std::string parameter_cache;
-            std::string parent_cache;
+            std::string parameter_cache = "/var/tmp/filecoin-proof-parameters/";
+            std::string parent_cache = cache("filecoin-parents");
+            bool use_multicore_sdr = true;
+            std::uint32_t multicore_sdr_producers = 3;
+            std::uint32_t multicore_sdr_producer_stride = 128;
+            std::uint32_t multicore_sdr_lookahead = 800;
         };
     }    // namespace filecoin
 }    // namespace nil
