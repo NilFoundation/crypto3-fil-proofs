@@ -95,6 +95,11 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       actor::core
                       actor::network
 
+                      marshallling::algebra
+                      marshallling::core
+                      marshallling::multiprecision
+                      marshallling::zk
+
                       ${Boost_LIBRARIES})
 
 target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
