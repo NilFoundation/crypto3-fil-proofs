@@ -95,10 +95,10 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       actor::core
                       actor::network
 
-                      marshallling::algebra
-                      marshallling::core
-                      marshallling::multiprecision
-                      marshallling::zk
+                      marshalling::core
+                      marshalling::crypto3_algebra
+                      marshalling::crypto3_multiprecision
+                      marshalling::crypto3_zk
 
                       ${Boost_LIBRARIES})
 

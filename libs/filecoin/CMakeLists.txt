@@ -100,6 +100,11 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PRIVATE
 
                       ${CMAKE_WORKSPACE_NAME}::storage_proofs
 
+                      marshalling::core
+                      marshalling::crypto3_algebra
+                      marshalling::crypto3_multiprecision
+                      marshalling::crypto3_zk
+
                       ${Boost_LIBRARIES})
 
 target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PRIVATE
