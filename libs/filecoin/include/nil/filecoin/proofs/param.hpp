@@ -26,7 +26,6 @@
 #define FILECOIN_PARAM_HPP
 
 #include <fstream>
-#include <format>
 
 #include <boost/range/adaptor/sliced.hpp>
 
@@ -44,12 +43,6 @@
 
 namespace nil {
     namespace filecoin {
-        struct parameter_data {
-            std::string cid;
-            std::string digest;
-            std::uint64_t sector_size;
-        };
-
         typedef btree::map<std::string, parameter_data> parameter_map;
 
         // Produces an absolute path to a file within the cache
@@ -77,7 +70,7 @@ namespace nil {
         bool choose(const std::string &message) {
             bool chosen = false, choice = false;
             while (!chosen) {
-                std::format !("[y/n] {}: ", message);
+                fmt::format("[y/n] {}: ", message);
 
                 let _ = stdout().flush();
                 let mut s = String::new ();
@@ -151,7 +144,7 @@ namespace nil {
             while (first != last) {
                 std::size_t sector_size = lookup(*first);
 
-                std::string msg = std::format("(sector size: {}B) {}", sector_size, *first);
+                std::string msg = fmt::format("(sector size: {}B) {}", sector_size, *first);
 
                 if (choose(msg)) {
                     out++ = msg;

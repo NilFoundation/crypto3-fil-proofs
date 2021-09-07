@@ -25,7 +25,7 @@
 #ifndef FILECOIN_SEAL_API_POST_HPP
 #define FILECOIN_SEAL_API_POST_HPP
 
-#include <ifstream>
+#include <iostream>
 
 #include <boost/filesystem/file_status.hpp>
 
@@ -160,22 +160,16 @@ namespace nil {
 
             TemporaryAux<MerkleTreeType> result = TemporaryAux<MerkleTreeType, DefaultPieceHasher>::clear_temp(t_aux);
 
-            info !("clear_cache:finish");
-
             return result;
         }    // namespace filecoin
 
         // Ensure that any associated cached data persisted is discarded.
         template<typename MerkleTreeType>
         void clear_caches(const btree::map<sector_id_type, PrivateReplicaInfo<MerkleTreeType>> &replicas) {
-            info !("clear_caches:start");
-
             for (const typename btree::map<sector_id_type, PrivateReplicaInfo<MerkleTreeType>>::value_type &replica :
                  replicas) {
                 clear_cache<MerkleTreeType>(replica.second().cache_dir.as_path());
             }
-
-            info !("clear_caches:finish");
         }
 
         typedef std::vector<std::uint8_t> SnarkProof;
@@ -185,7 +179,6 @@ namespace nil {
         SnarkProof generate_winning_post(const post_config &config, const challenge_seed_type &randomness,
                                          const btree::map<sector_id_type, PrivateReplicaInfo<MerkleTreeType>> &replicas,
                                          prover_id_type prover_id) {
-            info !("generate_winning_post:start");
             assert(("invalid post config type", config.typ == post_type::Winning));
             assert(("invalid amount of replicas", replicas.size() == post_config.sector_count));
 
@@ -233,8 +226,6 @@ namespace nil {
                                                                               groth_params);
             let proof = proof.to_vec();
 
-            info !("generate_winning_post:finish");
-
             return proof;
         }
 
@@ -246,9 +237,8 @@ namespace nil {
         std::vector<std::uint64_t>
             generate_winning_post_sector_challenge(const post_config &config, const challenge_seed_type &randomness,
                                                    std::uint64_t sector_set_size, const commitment_type &prover_id) {
-            info !("generate_winning_post_sector_challenge:start");
-            ensure !(sector_set_size != 0, "empty sector set is invalid");
-            ensure !(post_config.typ == PoStType::Winning, "invalid post config type");
+            assert(sector_set_size != 0, "empty sector set is invalid");
+            assert(post_config.typ == PoStType::Winning, "invalid post config type");
 
             typename MerkleTreeType::hash_type::digest_type prover_id_safe = as_safe_commitment(prover_id, "prover_id");
 
@@ -256,8 +246,6 @@ namespace nil {
                 as_safe_commitment(randomness, "randomness");
             std::vector<std::uint64_t> result = fallback::generate_sector_challenges(
                 randomness_safe, config.sector_count, sector_set_size, prover_id_safe);
-
-            info !("generate_winning_post_sector_challenge:finish");
 
             return result;
         }
@@ -271,8 +259,6 @@ namespace nil {
         bool verify_winning_post(const post_config &config, const challenge_seed_type &randomness,
                                  const btree::map<sector_id_type, PublicReplicaInfo> &replicas,
                                  prover_id_type prover_id, const std::vector<std::uint8_t> &proof) {
-            info !("verify_winning_post:start");
-
             assert(("invalid post config type", config.typ == PoStType::Winning));
             assert(("invalid amount of replicas provided", config.sector_count == replicas.size()));
 
@@ -312,8 +298,6 @@ namespace nil {
                 return false;
             }
 
-            info !("verify_winning_post:finish");
-
             return true;
         }
 
@@ -322,7 +306,6 @@ namespace nil {
         SnarkProof generate_window_post(const post_config &config, const challenge_seed_type &randomness,
                                         const btree::map<sector_id_type, PrivateReplicaInfo<MerkleTreeType>> &replicas,
                                         prover_id_type prover_id) {
-            info !("generate_window_post:start");
             assert(("invalid post config type", post_config.typ == PoStType::Window));
 
             typename MerkleTreeType::hash_type::digest_type randomness_safe =
@@ -361,8 +344,6 @@ namespace nil {
 
             let proof = fallback::FallbackPoStCompound::prove(&pub_params, &pub_inputs, &priv_inputs, &groth_params, );
 
-            info !("generate_window_post:finish");
-
             return proof.to_vec();
         }
 
@@ -373,8 +354,6 @@ namespace nil {
                                 const btree::map<sector_id_type, PublicReplicaInfo> &replicas,
                                 prover_id_type prover_id,
                                 const std::vector<std::uint8_t> &proof) {
-            info !("verify_window_post:start");
-
             assert(("invalid post config type", post_config.typ == PoStType::Window));
 
             typename MerkleTreeType::hash_type::digest_type randomness_safe =
@@ -403,8 +382,8 @@ namespace nil {
                                                              })
                                                         .collect::<Result<_>>();
 
-            fallback::PublicInputs pub_inputs =
-                {randomness : randomness_safe, prover_id : prover_id_safe, sectors : pub_sectors, k : None};
+            fallback::PublicInputs pub_inputs = {
+                .randomness = randomness_safe, .prover_id = prover_id_safe, .sectors = pub_sectors, .k = None};
 
             bool is_valid =
                 fallback::FallbackPoStCompound::verify(pub_params, pub_inputs, proof, fallback::ChallengeRequirements {
@@ -414,8 +393,6 @@ namespace nil {
             if (!is_valid) {
                 return false;
             }
-
-            info !("verify_window_post:finish");
 
             return true;
         }
