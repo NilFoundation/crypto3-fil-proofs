@@ -127,15 +127,16 @@ namespace nil {
                         for (int i = 0; i < data_nodes.size(); i++) {
                             auto cs = cs.namespace(|| std::format("challenge_{}", i));
                             // ensure that all inputs are well formed
-                            std::vector<std::pair<Fr, std::size_t>> replica_node_path = this->replica_nodes_paths[i];
-                            std::vector<std::vector<std::pair<std::vector<Fr>, std::size_t>>> replica_parents_paths =
-                                this->replica_parents_paths[i];
-                            std::vector<std::pair<std::vector<Fr>, std::size_t>> data_node_path =
+                            std::vector<std::pair<fr_value_type, std::size_t>> replica_node_path =
+                                this->replica_nodes_paths[i];
+                            std::vector<std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>>
+                                replica_parents_paths = this->replica_parents_paths[i];
+                            std::vector<std::pair<std::vector<fr_value_type>, std::size_t>> data_node_path =
                                 this->data_nodes_paths[i];
 
-                            Fr replica_node = replica_nodes[i];
-                            std::vector<Fr> replica_parents = replica_parents[i];
-                            Fr data_node = data_nodes[i];
+                            fr_value_type replica_node = replica_nodes[i];
+                            std::vector<fr_value_type> replica_parents = replica_parents[i];
+                            fr_value_type data_node = data_nodes[i];
 
                             assert(replica_parents.size() == replica_parents_paths.size());
                             assert(data_node_path.size() == replica_node_path.size());
@@ -221,7 +222,7 @@ namespace nil {
                     }
 
                     const auto alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]);
-                    Fr fr;
+                    fr_value_type fr;
 
                     if (alloc_bits[0].get_value().is_some()) {
                         const auto be_bits = alloc_bits.iter()
