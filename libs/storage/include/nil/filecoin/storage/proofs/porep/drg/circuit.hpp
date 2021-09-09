@@ -30,9 +30,8 @@
 #include <nil/crypto3/hash/hash_state.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
 
-#include <nil/crypto3/zk/snark/components/basic_components.hpp>
-
-#include <nil/crypto3/zk/snark/blueprint_variable.hpp>
+#include <nil/crypto3/zk/components/blueprint_variable.hpp>
+#include <nil/crypto3/zk/components/packing.hpp>
 
 #include <nil/filecoin/storage/proofs/core/components/variables.hpp>
 #include <nil/filecoin/storage/proofs/core/components/por.hpp>
@@ -68,7 +67,7 @@ namespace nil {
                  */
                 template<typename Hash, typename CurveType = crypto3::algebra::curves::bls12<381>>
                 struct DrgPoRepCircuit
-                    : public crypto3::zk::snark::components::component<typename CurveType::scalar_field_type> {
+                    : public crypto3::zk::components::component<typename CurveType::scalar_field_type> {
                     typedef Hash hash_type;
                     typedef CurveType curve_type;
                     typedef typename curve_type::scalar_field_type fr_type;
@@ -86,13 +85,13 @@ namespace nil {
                     fr_value_type replica_id;
                     bool priv;
 
-                    crypto3::zk::snark::blueprint_variable<fr_type> replica_node_num;
+                    crypto3::zk::components::blueprint_variable<fr_type> replica_node_num;
 
-                    DrgPoRepCircuit(crypto3::zk::snark::blueprint<fr_type> &bp,
-                                    const crypto3::zk::snark::blueprint_variable<fr_type> &rroot,
-                                    const crypto3::zk::snark::blueprint_variable<fr_type> &droot) :
+                    DrgPoRepCircuit(crypto3::zk::components::blueprint<fr_type> &bp,
+                                    const crypto3::zk::components::blueprint_variable<fr_type> &rroot,
+                                    const crypto3::zk::components::blueprint_variable<fr_type> &droot) :
                         replica_root(rroot),
-                        data_root(droot), crypto3::zk::snark::components::component<fr_type>(bp) {
+                        data_root(droot), crypto3::zk::components::component<fr_type>(bp) {
                         replica_node_num.allocate(bp);
                     }
 
