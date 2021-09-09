@@ -33,14 +33,28 @@ namespace nil {
     namespace filecoin {
         namespace porep {
             namespace stacked {
-                namespace circuit {
-                    template<typename CurveType, typename Hash, std::size_t BaseArity, std::size_t SubTreeArity,
+                namespace components {
+
+                    using namespace crypto3::zk::snark;
+
+                    template<typename FieldType, typename Hash, std::size_t BaseArity, std::size_t SubTreeArity,
                              std::size_t TopTreeArity>
-                    struct ColumnProof {
-                        Column<CurveType> column;
+                    struct ColumnProof : public components::component<FieldType> {
+
+                        Column<FieldType> column;
                         AuthPath<Hash, BaseArity, SubTreeArity, TopTreeArity> inclusion_path;
+
+                        ColumnProof(components::blueprint<FieldType> &bp, 
+                                    const vanilla::PublicParams<MerkleTreeType> &params) :
+                                    components::component<FieldType>(bp), column(bp, params), 
+                                    AuthPath<Hash, BaseArity, SubTreeArity, TopTreeArity>(params.graph.size()) {}
+
+                        ColumnProof(components::blueprint<FieldType> &bp, 
+                                    VanillaColumnProof<Proof> vanilla_proof): 
+                                    components::component<FieldType>(bp), column(vanilla_proof.column), 
+                                    inclusion_path(vanilla_proof.inclusion_proof){}
                     };
-                }    // namespace circuit
+                }    // namespace components
             }        // namespace stacked
         }            // namespace porep
     }                // namespace filecoin

@@ -38,63 +38,58 @@ namespace nil {
     namespace filecoin {
         namespace porep {
             namespace stacked {
-                namespace circuit {
-                    template<typename CurveType, template<typename> class AllocatedNumber>
-                    struct AllocatedColumn : public crypto3::zk::snark::components::component<CurveType> {
-                        typedef CurveType curve_type;
+                namespace components {
 
-                        AllocatedColumn(crypto3::zk::snark::blueprint<CurveType> &bp) :
-                            crypto3::zk::snark::components::component<CurveType>(bp) {
+                    using namespace crypto3::zk::snark;
+
+                    template<typename FieldType>
+                    struct Column : public components::component<FieldType> {
+
+                        components::blueprint_variable_vector<FieldType> rows;
+
+                        /// Create an empty `Column`, used in `blank_circuit`s.
+                        template<typename MerkleTreeType>
+                        Column(components::blueprint<FieldType> &bp,
+                               const vanilla::PublicParams<MerkleTreeType> &params) :
+                            components::component<FieldType>(bp){
+
+                            for (const auto &layer : params.layer_challenges.layers()) {
+                                components::blueprint_variable<FieldType> val;
+                                val.allocate(bp);
+
+                                bp.val(val) = layer;
+                                rows.emplace_back(val);
+                            }
+                        }
+
+                        /// Consume this column, and allocate its values in the circuit.
+                        template<typename Hash>
+                        Column(components::blueprint<FieldType> &bp, const vanilla::Column<Hash> &vanilla_column) :
+                            components::component<FieldType>(bp) {
+
+                            for (const auto &row : vanilla_column.rows) {
+                                components::blueprint_variable<FieldType> val;
+                                val.allocate(bp);
+
+                                bp.val(val) = row;
+                                rows.emplace_back(val);
+                            }
                         }
 
                         template<template<typename> class ConstraintSystem>
-                        AllocatedNumber<curve_type> hash(const ConstraintSystem<curve_type> &cs) {
-                            hash_single_column(cs, rows);
+                        components::blueprint_variable<FieldType> hash(const ConstraintSystem<FieldType> &cs) {
+                            return hash_single_column(cs, rows);
                         }
 
-                        AllocatedNumber<curve_type> get_value(std::size_t layer) {
+                        components::blueprint_variable<FieldType> get_value(std::size_t layer) {
                             BOOST_ASSERT_MSG(layer > 0, "layers are 1 indexed");
                             BOOST_ASSERT_MSG(layer <= rows.len(),
                                              std::format("layer {} out of range: 1..={}", layer, rows.size()));
                             return rows[layer - 1];
                         }
 
-                        std::vector<AllocatedNumber<curve_type>> rows;
                     };
-
-                    template<typename CurveType>
-                    struct Column : public crypto3::zk::snark::components::component<CurveType> {
-                        typedef CurveType curve_type;
-
-                        /// Create an empty `Column`, used in `blank_circuit`s.
-                        template<typename MerkleTreeType>
-                        Column(crypto3::zk::snark::blueprint<CurveType> &bp,
-                               const vanilla::PublicParams<MerkleTreeType> &params) :
-                            crypto3::zk::snark::components::component<CurveType>(bp),
-                            rows(params.layer_challenges.layers()) {
-                            for (const auto &row : rows) {
-                                crypto3::zk::snark::blueprint_variable<CurveType> val;
-                                val.allocate(bp);
-
-                                bp.val(val) = row;
-                            }
-                        }
-
-                        /// Consume this column, and allocate its values in the circuit.
-                        template<typename Hash>
-                        Column(crypto3::zk::snark::blueprint<CurveType> &bp, const vanilla::Column<Hash> &vanilla) :
-                            crypto3::zk::snark::components::component<CurveType>(bp), rows(vanilla.rows) {
-                            for (const auto &row : rows) {
-                                crypto3::zk::snark::blueprint_variable<CurveType> val;
-                                val.allocate(bp);
-
-                                bp.val(val) = row;
-                            }
-                        }
-
-                        std::vector<typename curve_type::scalar_field_type::value_type> rows;
-                    };
-                }    // namespace circuit
+                }    // namespace components
             }        // namespace stacked
         }            // namespace porep
     }                // namespace filecoin
