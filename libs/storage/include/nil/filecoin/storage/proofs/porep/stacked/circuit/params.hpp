@@ -24,105 +24,121 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_PARAMS_HPP
-#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_PARAMS_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_PARAMS_COMPONENTS_HPP
+#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_PARAMS_COMPONENTS_HPP
 
 #include <nil/filecoin/storage/proofs/core/components/por.hpp>
 
 #include <nil/filecoin/storage/proofs/porep/stacked/circuit/column_proof.hpp>
-
 #include <nil/filecoin/storage/proofs/porep/stacked/vanilla/proof.hpp>
 
 namespace nil {
     namespace filecoin {
         namespace porep {
             namespace stacked {
-                namespace circuit {
+                namespace components {
 
-                    template<typename MerkleTreeType>
-                    using TreeAuthPath = AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
-                                                  MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>;
+                    template<typename TField, typename MerkleTreeType>
+                    using TreeAuthPath = AuthPath<TField, typename MerkleTreeType::hash_type, 
+                                                  MerkleTreeType::base_arity,
+                                                  MerkleTreeType::sub_tree_arity, 
+                                                  MerkleTreeType::top_tree_arity>;
 
-                    template<typename MerkleTreeType>
-                    using TreeColumnProof = ColumnProof<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
-                                                        MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>;
+                    template<typename TField, typename MerkleTreeType>
+                    using TreeColumnProof = ColumnProof<TField, typename MerkleTreeType::hash_type, 
+                                                        MerkleTreeType::base_arity,
+                                                        MerkleTreeType::sub_tree_arity, 
+                                                        MerkleTreeType::top_tree_arity>;
 
                     /// Proof for a single challenge.
-                    template<typename MerkleTreeType, typename Hash>
-                    struct Proof {
-                        Proof(const PublicParams<MerkleTreeType> &params) :
-                            comm_d_path(AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
-                                                 MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>(
+                    template<typename TField, typename TMerkleTree, typename THash>
+                    class Proof {
+
+                        components::blueprint_variable<TField> data_leaf_var;
+
+                        std::vector<auto> drg_parents;
+                    public:
+                        /// Inclusion path for the challenged data node in tree D.
+                        AuthPath<THash, 2, 0, 0> comm_d_path;
+                        /// The value of the challenged data node.
+                        typename TField::value_type data_leaf;
+                        /// The index of the challenged node.
+                        std::uint64_t challenge;
+                        /// Inclusion path of the challenged replica node in tree R.
+                        TreeAuthPath<TField, TMerkleTree> comm_r_last_path;
+
+                        /// Inclusion path of the column hash of the challenged node  in tree C.
+                        TreeAuthPath<TField, TMerkleTree> comm_c_path;
+                        /// Column proofs for the drg parents.
+                        std::vector<TreeColumnProof<TField, TMerkleTree>> drg_parents_proofs;
+                        /// Column proofs for the expander parents.
+                        std::vector<TreeColumnProof<TField, TMerkleTree>> exp_parents_proofs;
+
+                        Proof(components::blueprint<TField> &bp, 
+                              const PublicParams<TMerkleTree> &params, 
+                              std::size_t layers) :
+                            comm_d_path(AuthPath<typename TMerkleTree::hash_type, TMerkleTree::base_arity,
+                                                 TMerkleTree::sub_tree_arity, TMerkleTree::top_tree_arity>(
                                 params.graph.size())),
-                            comm_r_last_path(AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
-                                                      MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>(
+                            comm_r_last_path(AuthPath<typename TMerkleTree::hash_type, TMerkleTree::base_arity,
+                                                      TMerkleTree::sub_tree_arity, TMerkleTree::top_tree_arity>(
                                 params.graph.size())),
-                            comm_c_path(AuthPath<typename MerkleTreeType::hash_type, MerkleTreeType::base_arity,
-                                                 MerkleTreeType::sub_tree_arity, MerkleTreeType::top_tree_arity>(
+                            comm_c_path(AuthPath<typename TMerkleTree::hash_type, TMerkleTree::base_arity,
+                                                 TMerkleTree::sub_tree_arity, TMerkleTree::top_tree_arity>(
                                 params.graph.size())),
-                            drg_parents_proofs(std::vector<TreeColumnProof<MerkleTreeType>>(
+                            drg_parents_proofs(std::vector<TreeColumnProof<TField, TMerkleTree>>(
                                 ColumnProof(params), params.graph.base_graph().degree())),
-                            exp_parents_proofs(std::vector<TreeColumnProof<MerkleTreeType>>(
+                            exp_parents_proofs(std::vector<TreeColumnProof<TField, TMerkleTree>>(
                                 ColumnProof(params), params.graph.expansion_degree())) {
+
+                            replica_id_var.allocate(data_leaf_var);
                         }
 
-                        Proof(const vanilla::Proof<MerkleTreeType, Hash> &vanilla_proof) {
-                            const auto VanillaProof {comm_d_proofs, comm_r_last_proof, replica_column_proofs,
-                                                     labeling_proofs, ..} = vanilla_proof;
-                            const auto VanillaReplicaColumnProof {
-                                c_x,
-                                drg_parents,
-                                exp_parents,
-                            } = replica_column_proofs;
+                        Proof(components::blueprint<TField> &bp, 
+                              const vanilla::Proof<TField, TMerkleTree, THash> &vanilla_proof, 
+                              std::size_t layers) {
 
-                            const auto data_leaf = Some(comm_d_proofs.leaf().into());
+                            comm_d_proofs, comm_r_last_proof, replica_column_proofs,
+                                                      = vanilla_proof;
 
-                            Proof {
-                            comm_d_path:
-                                comm_d_proofs.as_options().into(), data_leaf,
-                                    challenge
-                                    : Some(labeling_proofs[0].node),
-                                      comm_r_last_path : comm_r_last_proof.as_options().into(),
-                                      comm_c_path : c_x.inclusion_proof.as_options().into(),
-                                      drg_parents_proofs : drg_parents.into_iter().map(| p | p.into()).collect(),
-                                      exp_parents_proofs : exp_parents.into_iter().map(| p | p.into()).collect()
-                            }
-                        }
+                            const typename TField::value_type data_leaf = 
+                                vanilla_proof.comm_d_proofs.leaf();
 
-                        /// Circuit synthesis.
-                        void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs,
-                                        std::size_t layers,
-                                        AllocatedNumber<crypto3::algebra::curves::bls12<381>> &comm_d,
-                                        AllocatedNumber<crypto3::algebra::curves::bls12<381>> &comm_c,
-                                        AllocatedNumber<crypto3::algebra::curves::bls12<381>> &comm_r_last,
-                                        const std::vector<bool> &replica_id) {
-                            const auto Proof {comm_d_path, data_leaf,          challenge,          comm_r_last_path,
-                                              comm_c_path, drg_parents_proofs, exp_parents_proofs, ..} = self;
-
+                            comm_d_path = comm_d_proofs;
+                            challenge = vanilla_proof.labeling_proofs[0].node;
+                            comm_r_last_path = comm_r_last_proof;
+                            comm_c_path = vanilla_proof.replica_column_proofs.c_x.inclusion_proof;
+                            drg_parents_proofs = vanilla_proof.replica_column_proofs.drg_parents;
+                            exp_parents_proofs = vanilla_proof.replica_column_proofs.exp_parents;
+                            
                             assert(!drg_parents_proofs.empty());
                             assert(!exp_parents_proofs.empty());
 
-                            // -- verify initial data layer
+                            replica_id_var.allocate(data_leaf_var);
+                        }
 
-                            // PrivateInput: data_leaf
-                            const auto data_leaf_num = num::AllocatedNumber::alloc(
-                                cs.namespace(|| "data_leaf"),
-                                || {data_leaf.ok_or_else(|| SynthesisError::AssignmentMissing)});
+                        void generate_r1cs_constraints() {
+                            
+                        }
 
-                            // enforce inclusion of the data leaf in the tree D
-                            enforce_inclusion(cs.namespace(|| "comm_d_inclusion"), comm_d_path, comm_d, &data_leaf_num);
+                        void generate_r1cs_witness(std::size_t layers, 
+                                                   components::blueprint_variable<TField> &comm_d, 
+                                                   components::blueprint_variable<TField> &comm_c, 
+                                                   components::blueprint_variable<TField> &comm_r_last, 
+                                                   const std::vector<bool> &replica_id){
+
+
+                            // Private Inputs for the DRG parent nodes.
+                            drg_parents.reserve(layers);
 
                             // -- verify replica column openings
 
-                            // Private Inputs for the DRG parent nodes.
-                            std::vector<auto> drg_parents;
-                            drg_parents.reserve(layers);
+                            for (TreeColumnProof<TField, TMerkleTree>::iterator parent = drg_parents_proofs.begin();
+                                 parent != drg_parents_proofs.end(); ++parent) {
 
-                            for (std::size_t i = 0, drg_parents_proofs::iterator parent = drg_parents_proofs.begin();
-                                 parent != drg_parents_proofs.end(); ++i, ++parent) {
+                                auto parent_col = parent.column;
+                                auto inclusion_path = parent.inclusion_path;
 
-                                const auto(parent_col, inclusion_path) =
-                                    (*parent).alloc(cs.namespace(|| std::format("drg_parent_%d_num", i)));
                                 assert(layers == parent_col.size());
 
                                 // calculate column hash
@@ -133,6 +149,10 @@ namespace nil {
                                                   inclusion_path, comm_c, &val);
                                 drg_parents.push(parent_col);
                             }
+                        }
+
+                        /// Circuit synthesis.
+                        void synthesize() {
 
                             // Private Inputs for the Expander parent nodes.
                             std::vector<auto> exp_parents;
@@ -237,21 +257,6 @@ namespace nil {
                             enforce_inclusion(cs.namespace(|| "c_x_inclusion"), comm_c_path, comm_c, &column_hash);
                         }
 
-                        /// Inclusion path for the challenged data node in tree D.
-                        AuthPath<G, U2, U0, U0> comm_d_path;
-                        /// The value of the challenged data node.
-                        Fr data_leaf;
-                        /// The index of the challenged node.
-                        std::uint64_t challenge;
-                        /// Inclusion path of the challenged replica node in tree R.
-                        TreeAuthPath<MerkleTreeType> comm_r_last_path;
-
-                        /// Inclusion path of the column hash of the challenged node  in tree C.
-                        TreeAuthPath<MerkleTreeType> comm_c_path;
-                        /// Column proofs for the drg parents.
-                        std::vector<TreeColumnProof<MerkleTreeType>> drg_parents_proofs;
-                        /// Column proofs for the expander parents.
-                        std::vector<TreeColumnProof<MerkleTreeType>> exp_parents_proofs;
                     };
 
                     /// Enforce the inclusion of the given path, to the given leaf and the root.
@@ -267,10 +272,10 @@ namespace nil {
                         PoRCircuitMerkleTreeWrapper<H, DiskStore<H::digest_type>, U, V, W> >
                             ::synthesize(cs, leaf, path, root, true);
                     }
-                }    // namespace circuit
+                }    // namespace components
             }        // namespace stacked
         }            // namespace porep
     }                // namespace filecoin
 }    // namespace nil
 
-#endif
+#endif    // FILECOIN_STORAGE_PROOFS_POREP_STACKED_PARAMS_COMPONENTS_HPP

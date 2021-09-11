@@ -24,8 +24,8 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_HPP
-#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_COLUMN_COMPONENTS_HPP
+#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_COLUMN_COMPONENTS_HPP
 
 #include <nil/crypto3/zk/snark/blueprint.hpp>
 #include <nil/crypto3/zk/snark/component.hpp>
@@ -42,33 +42,41 @@ namespace nil {
 
                     using namespace crypto3::zk::snark;
 
-                    template<typename FieldType>
-                    struct Column : public components::component<FieldType> {
+                    template<typename TField>
+                    class Column : public components::component<TField> {
 
-                        components::blueprint_variable_vector<FieldType> rows;
+                        components::blueprint_variable<TField> hash_result;
+                        hash_single_column<TField> hash_single_column_component;
+
+                    public:
+
+                        components::blueprint_variable_vector<TField> rows;
 
                         /// Create an empty `Column`, used in `blank_circuit`s.
                         template<typename MerkleTreeType>
-                        Column(components::blueprint<FieldType> &bp,
+                        Column(components::blueprint<TField> &bp,
                                const vanilla::PublicParams<MerkleTreeType> &params) :
-                            components::component<FieldType>(bp){
+                            components::component<TField>(bp){
 
                             for (const auto &layer : params.layer_challenges.layers()) {
-                                components::blueprint_variable<FieldType> val;
+                                components::blueprint_variable<TField> val;
                                 val.allocate(bp);
 
                                 bp.val(val) = layer;
                                 rows.emplace_back(val);
                             }
+
+                            hash_result.allocate(bp);
+                            hash_single_column_component = hash_single_column(bp, hash_result);
                         }
 
                         /// Consume this column, and allocate its values in the circuit.
                         template<typename Hash>
-                        Column(components::blueprint<FieldType> &bp, const vanilla::Column<Hash> &vanilla_column) :
-                            components::component<FieldType>(bp) {
+                        Column(components::blueprint<TField> &bp, const vanilla::Column<Hash> &vanilla_column) :
+                            components::component<TField>(bp) {
 
                             for (const auto &row : vanilla_column.rows) {
-                                components::blueprint_variable<FieldType> val;
+                                components::blueprint_variable<TField> val;
                                 val.allocate(bp);
 
                                 bp.val(val) = row;
@@ -76,12 +84,19 @@ namespace nil {
                             }
                         }
 
-                        template<template<typename> class ConstraintSystem>
-                        components::blueprint_variable<FieldType> hash(const ConstraintSystem<FieldType> &cs) {
-                            return hash_single_column(cs, rows);
+                        void generate_r1cs_constraints() {
+                            hash_single_column_component.generate_r1cs_constraints();
+                        }
+                        
+                        void generate_r1cs_witness(){
+                            hash_single_column_component.generate_r1cs_constraints(rows);
                         }
 
-                        components::blueprint_variable<FieldType> get_value(std::size_t layer) {
+                        components::blueprint_variable<TField> get_hash() const {
+                            return hash_result;
+                        }
+
+                        components::blueprint_variable<TField> get_value(std::size_t layer) const {
                             BOOST_ASSERT_MSG(layer > 0, "layers are 1 indexed");
                             BOOST_ASSERT_MSG(layer <= rows.len(),
                                              std::format("layer {} out of range: 1..={}", layer, rows.size()));
@@ -95,4 +110,4 @@ namespace nil {
     }                // namespace filecoin
 }    // namespace nil
 
-#endif
+#endif    // FILECOIN_STORAGE_PROOFS_POREP_STACKED_COLUMN_COMPONENTS_HPP
