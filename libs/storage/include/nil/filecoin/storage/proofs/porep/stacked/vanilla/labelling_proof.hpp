@@ -40,8 +40,9 @@ namespace nil {
                 template<typename ParentsHash>
                 struct LabelingProof {
                     typedef ParentsHash parents_hash_type;
+                    typedef typename parents_hash_type::digest_type digest_type;
 
-                    std::vector<typename parents_hash_type::digest_type> parents;
+                    std::vector<digest_type> parents;
                     std::uint32_t layer_index;
                     std::uint64_t node;
                 };

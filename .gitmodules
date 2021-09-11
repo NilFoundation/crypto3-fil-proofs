@@ -91,3 +91,6 @@
 [submodule "libs/marshalling/zk"]
 	path = libs/marshalling/zk
 	url = git@github.com:nilfoundation/crypto3-zk-marshalling.git
+[submodule "libs/actor/shim/epoll"]
+	path = libs/actor/shim/epoll
+	url = git@github.com:nilfoundation/epoll-shim.git
