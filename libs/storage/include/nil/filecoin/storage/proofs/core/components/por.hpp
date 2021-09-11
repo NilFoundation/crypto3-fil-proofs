@@ -49,208 +49,211 @@
 
 namespace nil {
     namespace filecoin {
-        template<typename Hash, std::size_t BaseArity, typename FieldType>
-        class SubPath : public crypto3::zk::components::component<FieldType> {
-            template<typename Integer>
-            Integer trailing_zeroes(Integer n) {
-                Integer bits = 0, x = n;
+        namespace components {
+            template<typename TField, typename Hash, std::size_t BaseArity>
+            class SubPath : public components::component<TField> {
+                template<typename Integer>
+                Integer trailing_zeroes(Integer n) {
+                    Integer bits = 0, x = n;
 
-                if (x) {
-                    while ((x & 1) == 0) {
-                        ++bits;
-                        x >>= 1;
+                    if (x) {
+                        while ((x & 1) == 0) {
+                            ++bits;
+                            x >>= 1;
+                        }
+                    }
+                    return bits;
+                }
+
+            public:
+                BOOST_STATIC_ASSERT_MSG(std::ceil(std::log2(BaseArity)) == std::floor(std::log2(BaseArity)),
+                                        "arity must be a power of two");
+
+                components::blueprint_variable<TField> current;
+                components::blueprint_variable_vector<TField> index_bits;
+                std::vector<components::blueprint_variable_vector<TField>> path_hash_nums;
+
+                std::vector<PathElement<TField, Hash, BaseArity>> path;
+
+                SubPath(components::blueprint<TField> &bp, components::blueprint_variable<TField> cur,
+                        std::size_t capacity) :
+                    current(cur),
+                    path(capacity), crypto3::zk::components::component<FieldType>(bp) {
+
+                    for (int i = 0; i < path.size(); i++) {
+                        index_bits.allocate(bp, trailing_zeroes(BaseArity));
+                        path_hash_nums[i].allocate(bp, path[i].hashes.size());
                     }
                 }
-                return bits;
-            }
 
-        public:
-            BOOST_STATIC_ASSERT_MSG(std::ceil(std::log2(BaseArity)) == std::floor(std::log2(BaseArity)),
-                                    "arity must be a power of two");
-
-            crypto3::zk::components::blueprint_variable<FieldType> current;
-            crypto3::zk::components::blueprint_variable_vector<FieldType> index_bits;
-            std::vector<crypto3::zk::components::blueprint_variable_vector<FieldType>> path_hash_nums;
-
-            std::vector<PathElement<Hash, BaseArity, FieldType>> path;
-
-            SubPath(crypto3::zk::snark::blueprint<FieldType> &bp, crypto3::zk::blueprint_variable<FieldType> cur,
-                    std::size_t capacity) :
-                current(cur),
-                path(capacity), crypto3::zk::components::component<FieldType>(bp) {
-
-                for (int i = 0; i < path.size(); i++) {
-                    index_bits.allocate(bp, trailing_zeroes(BaseArity));
-                    path_hash_nums[i].allocate(bp, path[i].hashes.size());
+                void generate_r1cs_constraints() {
                 }
-            }
+                void generate_r1cs_witness() {
+                    for (int i = 0; i < index_bits.size(); i++) {
+                        this->bp.val(index_bits[i]) = (((path[i].index >> i) & 1) == 1);
 
-            void generate_r1cs_constraints() {
-            }
-            void generate_r1cs_witness() {
-                for (int i = 0; i < index_bits.size(); i++) {
-                    this->bp.val(index_bits[i]) = (((path[i].index >> i) & 1) == 1);
-
-                    for (int j = 0; j < path[i].hashes.size(); j++) {
-                        this->bp.val(path_hash_nums[i][j]) = path[i].hashes[j];
+                        for (int j = 0; j < path[i].hashes.size(); j++) {
+                            this->bp.val(path_hash_nums[i][j]) = path[i].hashes[j];
+                        }
                     }
                 }
-            }
-        };
+            };
 
-        template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
-                 typename FieldType>
-        struct AuthPath : public crypto3::zk::components::component<FieldType> {
-            AuthPath(crypto3::zk::components::blueprint<FieldType> &bp,
-                     const std::unordered_map<std::vector<typename FieldType::value_type>, std::size_t> &base_opts) :
-                crypto3::zk::components::component<FieldType>(bp) {
-                std::size_t len = base_opts.size(), x = 0;
+            template<typename TField, typename Hash, 
+                     std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
+            struct AuthPath : public components::component<TField> {
+                AuthPath(components::blueprint<TField> &bp,
+                         const std::unordered_map<std::vector<typename TField::value_type>, std::size_t> &base_opts) :
+                    crypto3::zk::components::component<TField>(bp) {
+                    std::size_t len = base_opts.size(), x = 0;
 
-                if (TopTreeArity > 0) {
-                    x = 2;
-                } else if (SubTreeArity > 0) {
-                    x = 1;
+                    if (TopTreeArity > 0) {
+                        x = 2;
+                    } else if (SubTreeArity > 0) {
+                        x = 1;
+                    }
+
+                    std::unordered_map<std::vector<typename TField::value_type>, std::size_t> opts(
+                        base_opts.begin() + len - x, base_opts.end());
+
+                    std::vector<PathElement<TField, Hash, BaseArity>> base, top, sub;
+                    for (const auto &pair : base_opts) {
+                        base.emplace_back(pair.first, pair.second);
+                    }
+
+                    if (TopTreeArity > 0) {
+                        top = {*(opts.end() - 1)};
+                        opts.erase(opts.end() - 1);
+                    }
+
+                    if (SubTreeArity > 0) {
+                        sub = {*(opts.end() - 1)};
+                        opts.erase(opts.end() - 1);
+                    }
+
+                    assert(opts.empty());
+
+                    base = {.path = base};
+                    sub = {.path = sub};
+                    top = {.path = top};
                 }
 
-                std::unordered_map<std::vector<typename FieldType::value_type>, std::size_t> opts(
-                    base_opts.begin() + len - x, base_opts.end());
-
-                std::vector<PathElement<Hash, BaseArity, FieldType>> base, top, sub;
-                for (const auto &pair : base_opts) {
-                    base.emplace_back(pair.first, pair.second);
+                void generate_r1cs_constraints() {
+                    base.generate_r1cs_constraints();
+                    sub.generate_r1cs_constraints();
+                    top.generate_r1cs_constraints();
                 }
 
-                if (TopTreeArity > 0) {
-                    top = {*(opts.end() - 1)};
-                    opts.erase(opts.end() - 1);
+                void generate_r1cs_witness() {
+                    base.generate_r1cs_witness();
+                    sub.generate_r1cs_witness();
+                    top.generate_r1cs_witness();
                 }
 
-                if (SubTreeArity > 0) {
-                    sub = {*(opts.end() - 1)};
-                    opts.erase(opts.end() - 1);
+                SubPath<Hash, BaseArity, FieldType> base;
+                SubPath<Hash, SubTreeArity, FieldType> sub;
+                SubPath<Hash, TopTreeArity, FieldType> top;
+            };
+
+            template<typename TField, typename MerkleTreeType>
+            struct PoRCircuit : public components::component<TField> {
+                typedef TField field_type;
+                typedef MerkleTreeType tree_type;
+                typedef typename MerkleTreeType::hash_type hash_type;
+
+                constexpr static const std::size_t base_arity = MerkleTreeType::arity;
+                constexpr static const std::size_t sub_arity = MerkleTreeType::arity;
+                constexpr static const std::size_t top_arity = MerkleTreeType::arity;
+
+                typedef AuthPath<TField, hash_type, base_arity, sub_arity, top_arity> auth_path_type;
+
+                // All arities must be powers of two or circuits cannot be generated.
+                BOOST_STATIC_ASSERT_MSG(std::ceil(std::log2(base_arity)) == std::floor(std::log2(base_arity)),
+                                        "base arity must be power of two");
+                BOOST_STATIC_ASSERT_MSG(sub_arity > 0 ?
+                                            std::ceil(std::log2(sub_arity)) == std::floor(std::log2(sub_arity)) :
+                                            true,
+                                        "subtree arity must be power of two");
+                BOOST_STATIC_ASSERT_MSG(top_arity > 0 ?
+                                            std::ceil(std::log2(top_arity)) == std::floor(std::log2(top_arity)) :
+                                            true,
+                                        "subtree arity must be power of two");
+
+                root<FieldType> r;
+
+                auth_path_type auth_path;
+                bool priv;
+
+                crypto3::zk::components::blueprint_variable<FieldType> value;
+
+                PoRCircuit(crypto3::zk::components::blueprint<FieldType> &bp,
+                           const crypto3::zk::components::blueprint_variable<FieldType> &value, auth_path_type &auth_path,
+                           root<FieldType> root, bool priv) :
+                    value(value),
+                    auth_path(auth_path), r(root), priv(priv), crypto3::zk::components::component<FieldType>(bp) {
                 }
 
-                assert(opts.empty());
-
-                base = {.path = base};
-                sub = {.path = sub};
-                top = {.path = top};
-            }
-
-            void generate_r1cs_constraints() {
-                base.generate_r1cs_constraints();
-                sub.generate_r1cs_constraints();
-                top.generate_r1cs_constraints();
-            }
-
-            void generate_r1cs_witness() {
-                base.generate_r1cs_witness();
-                sub.generate_r1cs_witness();
-                top.generate_r1cs_witness();
-            }
-
-            SubPath<Hash, BaseArity, FieldType> base;
-            SubPath<Hash, SubTreeArity, FieldType> sub;
-            SubPath<Hash, TopTreeArity, FieldType> top;
-        };
-
-        template<typename MerkleTreeType, typename FieldType>
-        struct PoRCircuit : public crypto3::zk::components::component<FieldType> {
-            typedef FieldType field_type;
-            typedef MerkleTreeType tree_type;
-            typedef typename MerkleTreeType::hash_type hash_type;
-
-            constexpr static const std::size_t base_arity = MerkleTreeType::arity;
-            constexpr static const std::size_t sub_arity = MerkleTreeType::arity;
-            constexpr static const std::size_t top_arity = MerkleTreeType::arity;
-
-            typedef AuthPath<hash_type, base_arity, sub_arity, top_arity, FieldType> auth_path_type;
-
-            // All arities must be powers of two or circuits cannot be generated.
-            BOOST_STATIC_ASSERT_MSG(std::ceil(std::log2(base_arity)) == std::floor(std::log2(base_arity)),
-                                    "base arity must be power of two");
-            BOOST_STATIC_ASSERT_MSG(sub_arity > 0 ?
-                                        std::ceil(std::log2(sub_arity)) == std::floor(std::log2(sub_arity)) :
-                                        true,
-                                    "subtree arity must be power of two");
-            BOOST_STATIC_ASSERT_MSG(top_arity > 0 ?
-                                        std::ceil(std::log2(top_arity)) == std::floor(std::log2(top_arity)) :
-                                        true,
-                                    "subtree arity must be power of two");
-
-            root<FieldType> r;
-
-            auth_path_type auth_path;
-            bool priv;
-
-            crypto3::zk::components::blueprint_variable<FieldType> value;
-
-            PoRCircuit(crypto3::zk::components::blueprint<FieldType> &bp,
-                       const crypto3::zk::components::blueprint_variable<FieldType> &value, auth_path_type &auth_path,
-                       root<FieldType> root, bool priv) :
-                value(value),
-                auth_path(auth_path), r(root), priv(priv), crypto3::zk::components::component<FieldType>(bp) {
-            }
-
-            void generate_r1cs_constraints() {
-                auth_path.generate_r1cs_constraints();
-            }
-
-            void generate_r1cs_witness() {
-                auth_path.generate_r1cs_witness();
-            }
-
-            /// # Public Inputs
-            ///
-            /// This circuit expects the following public inputs.
-            ///
-            /// * [0] - packed version of the `is_right` components of the auth_path.
-            /// * [1] - the merkle root of the tree.
-            ///
-            /// This circuit derives the following private inputs from its fields:
-            /// * value_num - packed version of `value` as bits. (might be more than one Fr)
-            ///
-            /// Note: All public inputs must be provided as `E::Fr`.
-            template<template<typename> class ConstraintSystem>
-            void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
-                const auto value_num = value.allocated(cs.namespace(|| "value"));
-                const auto cur = value_num;
-
-                // Ascend the merkle tree authentication path
-
-                // base tree
-                const auto(cur, base_auth_path_bits) = auth_path.base.synthesize(cs.namespace(|| "base"), cur);
-
-                // sub
-                const auto(cur, sub_auth_path_bits) = auth_path.sub.synthesize(cs.namespace(|| "sub"), cur);
-
-                // top
-                const auto(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur);
-
-                std::vector<auto> auth_path_bits;
-                auth_path_bits.extend(base_auth_path_bits);
-                auth_path_bits.extend(sub_auth_path_bits);
-                auth_path_bits.extend(top_auth_path_bits);
-
-                multipack::pack_into_inputs(cs.namespace(|| "path"), &auth_path_bits);
-                // Validate that the root of the merkle tree that we calculated is the same as the input.
-                const auto rt = root.allocated(cs.namespace(|| "root_value"));
-                constraint::equal(cs, || "enforce root is correct", &computed_root, &rt);
-
-                if (!priv) {
-                    // Expose the root
-                    rt.inputize(cs.namespace(|| "root"));
+                void generate_r1cs_constraints() {
+                    auth_path.generate_r1cs_constraints();
                 }
-            }
-        };
 
-        template<typename MerkleTreeType, typename Circuit>
-        struct PoRCompound : public PoRCircuit<MerkleTreeType, Circuit>,
-                             public CompoundProof<PoR<MerkleTreeType>, Circuit>,
-                             public CacheableParameters<ParameterSetMetadata, MerkleTreeType, Circuit> {
-            typedef Circuit circuit_type;
-            typedef typename circuit_type::curve_type curve_type;
-        };
+                void generate_r1cs_witness() {
+                    auth_path.generate_r1cs_witness();
+                }
+
+                /// # Public Inputs
+                ///
+                /// This circuit expects the following public inputs.
+                ///
+                /// * [0] - packed version of the `is_right` components of the auth_path.
+                /// * [1] - the merkle root of the tree.
+                ///
+                /// This circuit derives the following private inputs from its fields:
+                /// * value_num - packed version of `value` as bits. (might be more than one Fr)
+                ///
+                /// Note: All public inputs must be provided as `E::Fr`.
+                template<template<typename> class ConstraintSystem>
+                void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
+                    const auto value_num = value.allocated(cs.namespace(|| "value"));
+                    const auto cur = value_num;
+
+                    // Ascend the merkle tree authentication path
+
+                    // base tree
+                    const auto(cur, base_auth_path_bits) = auth_path.base.synthesize(cs.namespace(|| "base"), cur);
+
+                    // sub
+                    const auto(cur, sub_auth_path_bits) = auth_path.sub.synthesize(cs.namespace(|| "sub"), cur);
+
+                    // top
+                    const auto(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur);
+
+                    std::vector<auto> auth_path_bits;
+                    auth_path_bits.extend(base_auth_path_bits);
+                    auth_path_bits.extend(sub_auth_path_bits);
+                    auth_path_bits.extend(top_auth_path_bits);
+
+                    multipack::pack_into_inputs(cs.namespace(|| "path"), &auth_path_bits);
+                    // Validate that the root of the merkle tree that we calculated is the same as the input.
+                    const auto rt = root.allocated(cs.namespace(|| "root_value"));
+                    constraint::equal(cs, || "enforce root is correct", &computed_root, &rt);
+
+                    if (!priv) {
+                        // Expose the root
+                        rt.inputize(cs.namespace(|| "root"));
+                    }
+                }
+            };
+
+            template<typename MerkleTreeType, typename Circuit>
+            struct PoRCompound : public PoRCircuit<MerkleTreeType, Circuit>,
+                                 public CompoundProof<PoR<MerkleTreeType>, Circuit>,
+                                 public CacheableParameters<ParameterSetMetadata, MerkleTreeType, Circuit> {
+                typedef Circuit circuit_type;
+                typedef typename circuit_type::curve_type curve_type;
+            };
+
+        }    // namespace components
     }    // namespace filecoin
 }    // namespace nil
 

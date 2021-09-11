@@ -37,23 +37,39 @@ namespace nil {
     namespace filecoin {
         namespace porep {
             namespace stacked {
-                namespace circuit {
+                namespace components {
                     /// Hash a list of bits.
-                    template<template<typename> class ConstraintSystem>
-                    AllocatedNumber<crypto3::algebra::curves::bls12<381>>
-                        hash_single_column(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs,
-                                           std::vector<AllocatedNumber<crypto3::algebra::curves::bls12<381>>> &column) {
-                        if (column.size() == 2) {
-                            poseidon_hash<ConstraintSystem, crypto3::algebra::curves::bls12<381>, 2>(
-                                cs, column, POSEIDON_CONSTANTS_2);
-                        } else if (column.size() == 11) {
-                            poseidon_hash<ConstraintSystem, crypto3::algebra::curves::bls12<381>, 11>(
-                                cs, column, POSEIDON_CONSTANTS_11);
-                        } else {
-                            throw "unsupported column size: " + column.size();
+                    template<typename TField>
+                    class hash_single_column: public components::component<TField>{
+
+                        components::poseidon_hash<TField> poseidon_hash_component;
+
+                    public:
+
+                        hash_single_column(components::blueprint<TField> &bp, 
+                                           components::blueprint_variable<TField> result):
+                            components::component<TField>(bp), poseidon_hash_component(bp, result){
+
+                            assert ((column.size() == 2) || (column.size() == 11), 
+                                std::format("Unsupported single column to hash size: {}", column.size()));
                         }
-                    }
-                }    // namespace circuit
+
+                        void generate_r1cs_constraints() {
+                            poseidon_hash_component.generate_r1cs_constraints();
+                        }
+
+                        void generate_r1cs_witness(std::vector<typename TField::value_type> &column){
+
+                            if (column.size() == 2) {
+                                poseidon_hash_component.generate_r1cs_witness(
+                                    column, POSEIDON_CONSTANTS_2);
+                            } else if (column.size() == 11) {
+                                poseidon_hash_component.generate_r1cs_witness(
+                                    column, POSEIDON_CONSTANTS_11);
+                            }
+                        }
+                    };
+                }    // namespace components
             }        // namespace stacked
         }            // namespace porep
     }                // namespace filecoin

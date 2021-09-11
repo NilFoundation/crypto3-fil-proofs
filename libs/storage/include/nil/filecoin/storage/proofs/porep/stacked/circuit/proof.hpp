@@ -24,8 +24,8 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_PROOF_HPP
-#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_PROOF_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_PROOF_COMPONENTS_HPP
+#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_PROOF_COMPONENTS_HPP
 
 namespace nil {
     namespace filecoin {
@@ -39,9 +39,8 @@ namespace nil {
                     /// * `params` - parameters for the curve
                     ///
                     template<typename TField, typename TMerkleTree, typename THasher>
-                    struct StackedCircuit : public components::component<TField> {
-
-                        typename StackedDrg<a, TMerkleTree, THasher>::PublicParams public_params;
+                    class StackedCircuit : public components::component<TField> {
+                        
                         typename TMerkleTree::Hasher::Domain replica_id;
                         typename THasher::Domain comm_d;
                         typename TMerkleTree::Hasher::Domain comm_r;
@@ -56,8 +55,12 @@ namespace nil {
                         components::blueprint_variable<TField> hash_var;
                         components::hash_component hash_component;
 
+                    public:
+
+                        typename StackedDrg<a, TMerkleTree, THasher>::PublicParams public_params;
+
                         // one proof per challenge
-                        std::vector<Proof<TMerkleTree, THasher>> proofs;
+                        std::vector<Proof<TField, TMerkleTree, THasher>> proofs;
 
                         StackedCircuit clone(){
 
@@ -113,11 +116,16 @@ namespace nil {
                         }
 
                         void generate_r1cs_witness(
-                                typename TMerkleTree::Hasher::Domain replica_id, 
-                                typename THasher::Domain comm_d, 
-                                typename TMerkleTree::Hasher::Domain comm_r, 
-                                typename TMerkleTree::Hasher::Domain comm_r_last, 
-                                typename TMerkleTree::Hasher::Domain comm_c) {
+                                typename TMerkleTree::Hasher::Domain replica_id_in, 
+                                typename THasher::Domain comm_d_in, 
+                                typename TMerkleTree::Hasher::Domain comm_r_in, 
+                                typename TMerkleTree::Hasher::Domain comm_r_last_in, 
+                                typename TMerkleTree::Hasher::Domain comm_c_in) {
+                            replica_id = replica_id_in;
+                            comm_d = comm_d_in;
+                            comm_r = comm_r_in;
+                            comm_r_last = comm_r_last_in;
+                            comm_c = comm_c_in;
 
                             bp.val(replica_id_var) = replica_id;
                             bp.val(comm_d_var) = comm_d;
@@ -140,4 +148,4 @@ namespace nil {
     }    // namespace filecoin
 }    // namespace nil
 
-#endif
+#endif  // FILECOIN_STORAGE_PROOFS_POREP_STACKED_PROOF_COMPONENTS_HPP
