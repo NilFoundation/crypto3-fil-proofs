@@ -24,8 +24,8 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_HPP
-#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_COLUMN_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_COLUMN_COMPONENTS_HPP
+#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_COLUMN_COMPONENTS_HPP
 
 #include <nil/crypto3/zk/snark/blueprint.hpp>
 #include <nil/crypto3/zk/snark/component.hpp>
@@ -110,4 +110,4 @@ namespace nil {
     }                // namespace filecoin
 }    // namespace nil
 
-#endif
+#endif    // FILECOIN_STORAGE_PROOFS_POREP_STACKED_COLUMN_COMPONENTS_HPP

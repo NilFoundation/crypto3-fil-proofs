@@ -278,4 +278,4 @@ namespace nil {
     }                // namespace filecoin
 }    // namespace nil
 
-#endif  // FILECOIN_STORAGE_PROOFS_POREP_STACKED_PARAMS_COMPONENTS_HPP
+#endif    // FILECOIN_STORAGE_PROOFS_POREP_STACKED_PARAMS_COMPONENTS_HPP

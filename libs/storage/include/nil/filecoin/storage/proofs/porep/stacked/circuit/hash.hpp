@@ -24,8 +24,8 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_HASH_HPP
-#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_CIRCUIT_HASH_HPP
+#ifndef FILECOIN_STORAGE_PROOFS_POREP_STACKED_HASH_COMPONENT_HPP
+#define FILECOIN_STORAGE_PROOFS_POREP_STACKED_HASH_COMPONENT_HPP
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
@@ -49,9 +49,6 @@ namespace nil {
                         hash_single_column(components::blueprint<TField> &bp, 
                                            components::blueprint_variable<TField> result):
                             components::component<TField>(bp), poseidon_hash_component(bp, result){
-
-                            assert ((column.size() == 2) || (column.size() == 11), 
-                                std::format("Unsupported single column to hash size: {}", column.size()));
                         }
 
                         void generate_r1cs_constraints() {
@@ -59,6 +56,9 @@ namespace nil {
                         }
 
                         void generate_r1cs_witness(std::vector<typename TField::value_type> &column){
+
+                            assert ((column.size() == 2) || (column.size() == 11), 
+                                std::format("Unsupported single column to hash size: {}", column.size()));
 
                             if (column.size() == 2) {
                                 poseidon_hash_component.generate_r1cs_witness(
@@ -75,4 +75,4 @@ namespace nil {
     }                // namespace filecoin
 }    // namespace nil
 
-#endif
+#endif    // FILECOIN_STORAGE_PROOFS_POREP_STACKED_HASH_COMPONENT_HPP
