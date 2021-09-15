@@ -31,6 +31,8 @@
 
 #include <boost/assert.hpp>
 
+#include <nil/filecoin/storage/proofs/porep/stacked/vanilla/hash.hpp>
+
 namespace nil {
     namespace filecoin {
         namespace stacked {
@@ -38,17 +40,18 @@ namespace nil {
                 template<typename Hash>
                 struct Column {
                     typedef Hash hash_type;
+                    typedef typename hash_type::digest_type digest_type;
 
-                    Column(std::uint32_t index, const std::vector<typename hash_type::digest_type> &rows) :
-                        index(index), rows(rows) {
+                    Column(std::uint32_t index, const std::vector<digest_type> &rows) : index(index), rows(rows) {
                     }
 
                     Column(std::uint32_t index, std::size_t capacity) : index(index), rows(capacity) {
                     }
 
                     /// Calculate the column hashes `C_i = H(E_i, O_i)` for the passed in column.
-                    Fr hash() {
-                        return hash_single_column(rows.iter().copied().map(Into::into).collect::<Vec<_>>());
+                    template<typename FieldType>
+                    typename FieldType::value_type hash() {
+                        return hash_single_column(rows.begin(), rows.end());
                     }
 
                     typename hash_type::digest_type get_node_at_layer(std::size_t layer) {
@@ -58,7 +61,7 @@ namespace nil {
                     }
 
                     std::uint32_t index;
-                    std::vector<typename hash_type::digest_type> rows;
+                    std::vector<digest_type> rows;
                 };
             }    // namespace vanilla
         }        // namespace stacked

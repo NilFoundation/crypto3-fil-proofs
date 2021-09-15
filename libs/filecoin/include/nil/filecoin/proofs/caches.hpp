@@ -28,6 +28,7 @@
 #include <unordered_map>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
+#include <nil/crypto3/algebra/pairing/bls12.hpp>
 
 #include <nil/crypto3/zk/snark/schemes/ppzksnark/r1cs_gg_ppzksnark.hpp>
 
@@ -37,8 +38,9 @@ namespace nil {
     namespace filecoin {
         using namespace crypto3::zk::snark;
 
-        typedef r1cs_gg_ppzksnark_scheme_params<crypto3::algebra::curves::bls12<381>> params_type;
-        typedef r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>::verification_key_type Bls12VerifyingKey;
+        typedef scheme_params<r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>> params_type;
+        typedef
+            typename r1cs_gg_ppzksnark<crypto3::algebra::curves::bls12<381>>::verification_key_type Bls12VerifyingKey;
 
         template<typename T>
         using cache_type = std::unordered_map<std::string, T>;

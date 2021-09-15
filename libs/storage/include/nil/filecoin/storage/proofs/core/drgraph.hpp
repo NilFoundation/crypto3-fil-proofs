@@ -29,7 +29,7 @@
 
 #include <boost/graph/directed_graph.hpp>
 
-#include <boost/random/chacha.hpp>
+#include <nil/crypto3/random/chacha.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
@@ -117,7 +117,8 @@ namespace nil {
                 // when casting metagraph node indexes from `std::uint64_t` to `double` during parent generation.
                 std::size_t m_prime = base_degree - 1;
                 std::size_t n_metagraph_nodes = nodes * m_prime;
-                BOOST_ASSERT_MSG(n_metagraph_nodes <= 1ULL << 54, "The number of metagraph nodes must be precisely castable to `double`");
+                BOOST_ASSERT_MSG(n_metagraph_nodes <= 1ULL << 54,
+                                 "The number of metagraph nodes must be precisely castable to `double`");
 
                 seed = derive_drg_seed(porep_id);
             }
@@ -144,7 +145,7 @@ namespace nil {
                     std::array<std::uint8_t, 32> s32;
                     boost::copy(seed, s32);
                     crypto3::detail::pack_to<crypto3::stream_endian::little_octet_big_bit>({node}, seed);
-                    boost::random::chacha rng(seed);
+                    crypto3::random::chacha rng(seed);
 
                     std::size_t m_prime = m - 1;
                     // Large sector sizes require that metagraph node indexes are `u64`.
@@ -155,8 +156,8 @@ namespace nil {
                          parent < parents.begin() + m_prime;
                          ++parent) {
                         std::uint64_t bucket_index = (rng() % n_buckets) + 1;
-                        std::size_t largest_distance_in_bucket = std::min(metagraph_node, 1ULL << bucket_index);
-                        std::size_t smallest_distance_in_bucket = std::max(2ULL, largest_distance_in_bucket >> 1ULL);
+                        std::size_t largest_distance_in_bucket = std::min(metagraph_node, 1UL << bucket_index);
+                        std::size_t smallest_distance_in_bucket = std::max(2UL, largest_distance_in_bucket >> 1UL);
 
                         // Add 1 becuase the number of distances in the bucket is inclusive.
                         std::size_t n_distances_in_bucket =

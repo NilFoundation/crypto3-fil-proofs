@@ -38,7 +38,7 @@ namespace nil {
         template<typename CurveType>
         struct scheme_params<crypto3::zk::snark::r1cs_gg_ppzksnark<CurveType>> {
             typedef CurveType curve_type;
-            typedef typename curve_type::g1_type<> g1_type;
+            typedef typename curve_type::template g1_type<> g1_type;
 
             typedef crypto3::zk::snark::r1cs_gg_ppzksnark<CurveType> scheme_type;
             typedef typename scheme_type::verifying_key_type verifying_key_type;

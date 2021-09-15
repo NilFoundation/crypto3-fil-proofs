@@ -28,7 +28,6 @@
 #define FILECOIN_STORAGE_PROOFS_POREP_STACKED_VANILLA_PARAMS_HPP
 
 #include <array>
-#include <format>
 #include <string>
 
 #include <boost/filesystem/path.hpp>
