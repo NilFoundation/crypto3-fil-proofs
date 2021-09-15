@@ -50,10 +50,21 @@
 namespace nil {
     namespace filecoin {
         namespace components {
-            template<typename TField, typename Hash, std::size_t BaseArity>
+
+            template<typename TField>
+            struct PathElement {
+                std::vector<typename TField::value_type> hashes;
+                std::size_t index;
+            }
+
+            template<typename TField, typename THash, std::size_t BaseArity>
             class SubPath : public components::component<TField> {
+                
+                BOOST_STATIC_ASSERT_MSG(std::ceil(std::log2(BaseArity)) == std::floor(std::log2(BaseArity)),
+                                        "arity must be a power of two");
+
                 template<typename Integer>
-                Integer trailing_zeroes(Integer n) {
+                Integer trailing_zeros(Integer n) {
                     Integer bits = 0, x = n;
 
                     if (x) {
@@ -65,69 +76,104 @@ namespace nil {
                     return bits;
                 }
 
+                std::vector<components::blueprint_variable_vector<TField>> path_hash_vars;
+                std::vector<components::blueprint_variable_vector<TField>> index_bits;
+                components::blueprint_variable_vector<TField> inserted;
+                std::vector<components::insert> insert_components;
+                std::vector<H::Function::hash_multi_leaf_circuit> hash_components;
+                std::vector<std::size_t> capacities;
+
             public:
-                BOOST_STATIC_ASSERT_MSG(std::ceil(std::log2(BaseArity)) == std::floor(std::log2(BaseArity)),
-                                        "arity must be a power of two");
 
                 components::blueprint_variable<TField> current;
-                components::blueprint_variable_vector<TField> index_bits;
-                std::vector<components::blueprint_variable_vector<TField>> path_hash_nums;
 
-                std::vector<PathElement<TField, Hash, BaseArity>> path;
+                SubPath(components::blueprint<TField> &bp, components::blueprint_variable<TField> current,
+                        std::vector<std::size_t> capacities) :
+                    current(current), capacities(capacities),
+                    components::component<FieldType>(bp) {
 
-                SubPath(components::blueprint<TField> &bp, components::blueprint_variable<TField> cur,
-                        std::size_t capacity) :
-                    current(cur),
-                    path(capacity), crypto3::zk::components::component<FieldType>(bp) {
+                    inserted.allocate(bp, capacities.size());
+                    for (std::size_t i = 0; i < capacities.size(); i++) {
 
-                    for (int i = 0; i < path.size(); i++) {
-                        index_bits.allocate(bp, trailing_zeroes(BaseArity));
-                        path_hash_nums[i].allocate(bp, path[i].hashes.size());
+                        index_bits[i].allocate(bp, trailing_zeros(BaseArity));
+                        path_hash_vars[i].allocate(bp, capacities[i]);
+
+                        insert_components.emplace_back(bp, current, index_bits[i], path_hash_vars[i], inserted[i]);
+
+                        hash_components.emplace_back(bp, inserted[i], current);
                     }
                 }
 
-                void generate_r1cs_constraints() {
-                }
-                void generate_r1cs_witness() {
-                    for (int i = 0; i < index_bits.size(); i++) {
-                        this->bp.val(index_bits[i]) = (((path[i].index >> i) & 1) == 1);
+                SubPath(components::blueprint<TField> &bp, components::blueprint_variable<TField> current) :
+                    current(current), 
+                    components::component<FieldType>(bp) {}
 
-                        for (int j = 0; j < path[i].hashes.size(); j++) {
-                            this->bp.val(path_hash_nums[i][j]) = path[i].hashes[j];
+                void generate_r1cs_constraints() {
+                    for (std::size_t i = 0; i < path.size(); i++) {
+
+                        insert_components[i].generate_r1cs_witness();
+
+                        hash_components[i].generate_r1cs_witness(i);
+                    }
+                }
+
+                void generate_r1cs_witness(std::vector<PathElement<TField, Hash, BaseArity>> path) {
+
+                    assert(capacities.size() == path.size());
+
+                    std::size_t arity = BaseArity;
+                    std::size_t index_bit_count = trailing_zeros(arity);
+                    for (std::size_t i = 0; i < path.size(); i++) {
+
+                        for (std::size_t j = 0; j<index_bit_count; j++) {
+                            this->bp.val(index_bits) = (((path[i].index >> j) & 1) == 1);
                         }
+
+                        assert(capacities[i] == path[i].hashes.size());
+                        for (std::size_t j = 0; j < path[i].hashes.size(); j++) {
+                            this->bp.val(path_hash_vars[i][j]) = path[i].hashes[j];
+                        }
+
+                        insert_components[i].generate_r1cs_witness();
+
+                        hash_components[i].generate_r1cs_witness(i);
                     }
                 }
             };
 
-            template<typename TField, typename Hash, 
+            template<typename TField, typename THash, 
                      std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
             struct AuthPath : public components::component<TField> {
                 AuthPath(components::blueprint<TField> &bp,
                          const std::unordered_map<std::vector<typename TField::value_type>, std::size_t> &base_opts) :
-                    crypto3::zk::components::component<TField>(bp) {
-                    std::size_t len = base_opts.size(), x = 0;
+                         components::component<TField>(bp) {
+
+                    std::size_t len = base_opts.size();
+                    std::size_t x;
 
                     if (TopTreeArity > 0) {
                         x = 2;
                     } else if (SubTreeArity > 0) {
                         x = 1;
+                    }  else {
+                        x = 0;
                     }
 
                     std::unordered_map<std::vector<typename TField::value_type>, std::size_t> opts(
                         base_opts.begin() + len - x, base_opts.end());
 
-                    std::vector<PathElement<TField, Hash, BaseArity>> base, top, sub;
+                    std::vector<PathElement<TField>> base, top, sub;
                     for (const auto &pair : base_opts) {
                         base.emplace_back(pair.first, pair.second);
                     }
 
                     if (TopTreeArity > 0) {
-                        top = {*(opts.end() - 1)};
+                        top = *(opts.end() - 1);
                         opts.erase(opts.end() - 1);
                     }
 
                     if (SubTreeArity > 0) {
-                        sub = {*(opts.end() - 1)};
+                        sub = *(opts.end() - 1);
                         opts.erase(opts.end() - 1);
                     }
 
@@ -150,54 +196,96 @@ namespace nil {
                     top.generate_r1cs_witness();
                 }
 
-                SubPath<Hash, BaseArity, FieldType> base;
-                SubPath<Hash, SubTreeArity, FieldType> sub;
-                SubPath<Hash, TopTreeArity, FieldType> top;
+                SubPath<TField, THash, BaseArity> base;
+                SubPath<TField, THash, SubTreeArity> sub;
+                SubPath<TField, THash, TopTreeArity> top;
             };
 
-            template<typename TField, typename MerkleTreeType>
-            struct PoRCircuit : public components::component<TField> {
-                typedef TField field_type;
-                typedef MerkleTreeType tree_type;
-                typedef typename MerkleTreeType::hash_type hash_type;
+            /// # Public Inputs
+            ///
+            /// This circuit expects the following public inputs.
+            ///
+            /// * [0] - packed version of the `is_right` components of the auth_path.
+            /// * [1] - the merkle root of the tree.
+            ///
+            /// This circuit derives the following private inputs from its fields:
+            /// * value_num - packed version of `value` as bits. (might be more than one Fr)
+            ///
+            /// Note: All public inputs must be provided as `E::Fr`.
+            template<typename TField, typename TMerkleTree>
+            class PoRCircuit : public components::component<TField> {
 
-                constexpr static const std::size_t base_arity = MerkleTreeType::arity;
-                constexpr static const std::size_t sub_arity = MerkleTreeType::arity;
-                constexpr static const std::size_t top_arity = MerkleTreeType::arity;
+                components::blueprint_variable<TField> value_var;
+            public:
 
-                typedef AuthPath<TField, hash_type, base_arity, sub_arity, top_arity> auth_path_type;
+                constexpr static const std::size_t base_arity = TMerkleTree::arity;
+                constexpr static const std::size_t sub_arity = TMerkleTree::arity;
+                constexpr static const std::size_t top_arity = TMerkleTree::arity;
+
+                typedef AuthPath<TField, typename TMerkleTree::hash_type, 
+                                 base_arity, sub_arity, top_arity> auth_path_type;
 
                 // All arities must be powers of two or circuits cannot be generated.
-                BOOST_STATIC_ASSERT_MSG(std::ceil(std::log2(base_arity)) == std::floor(std::log2(base_arity)),
-                                        "base arity must be power of two");
+                BOOST_STATIC_ASSERT_MSG(base_arity > 0 ? 
+                                        std::ceil(std::log2(base_arity)) == std::floor(std::log2(base_arity)) :
+                                        true, "base arity must be power of two");
                 BOOST_STATIC_ASSERT_MSG(sub_arity > 0 ?
-                                            std::ceil(std::log2(sub_arity)) == std::floor(std::log2(sub_arity)) :
-                                            true,
-                                        "subtree arity must be power of two");
+                                        std::ceil(std::log2(sub_arity)) == std::floor(std::log2(sub_arity)) :
+                                        true, "subtree arity must be power of two");
                 BOOST_STATIC_ASSERT_MSG(top_arity > 0 ?
-                                            std::ceil(std::log2(top_arity)) == std::floor(std::log2(top_arity)) :
-                                            true,
-                                        "subtree arity must be power of two");
-
-                root<FieldType> r;
+                                        std::ceil(std::log2(top_arity)) == std::floor(std::log2(top_arity)) :
+                                        true, "subtree arity must be power of two");
 
                 auth_path_type auth_path;
                 bool priv;
 
-                crypto3::zk::components::blueprint_variable<FieldType> value;
+                PoRCircuit(crypto3::zk::components::blueprint<TField> &bp,
+                           root<TField> root) :
+                           components::component<TField>(bp) {
 
-                PoRCircuit(crypto3::zk::components::blueprint<FieldType> &bp,
-                           const crypto3::zk::components::blueprint_variable<FieldType> &value, auth_path_type &auth_path,
-                           root<FieldType> root, bool priv) :
-                    value(value),
-                    auth_path(auth_path), r(root), priv(priv), crypto3::zk::components::component<FieldType>(bp) {
+                    value_var.allocate(bp);
+                    auth_path = auth_path_type(bp, value_var);
+
                 }
 
                 void generate_r1cs_constraints() {
                     auth_path.generate_r1cs_constraints();
                 }
 
-                void generate_r1cs_witness() {
+                void generate_r1cs_witness(root<TField> value, 
+                        std::vector<typename TField::value_type> auth_path, root<TField> r) {
+
+                    std::size_t len = auth_path.size();
+                    std::size_t x;
+
+                    if (TopTreeArity > 0) {
+                        x = 2;
+                    } else if (SubTreeArity > 0) {
+                        x = 1;
+                    }  else {
+                        x = 0;
+                    }
+
+                    std::vector<PathElement<TField>> base, top, sub;
+
+                    std::copy(auth_path.begin(), auth_path.begin() + len - x, base.begin());
+
+                    if (TopTreeArity > 0) {
+                        top = *(auth_path.end() - 1);
+                        auth_path.erase(auth_path.end() - 1);
+                    }
+
+                    if (SubTreeArity > 0) {
+                        sub = *(auth_path.end() - 1);
+                        auth_path.erase(auth_path.end() - 1);
+                    }
+
+                    assert(auth_path.empty());
+
+
+
+                    bp.val(value_var) = value;
+
                     auth_path.generate_r1cs_witness();
                 }
 
@@ -214,7 +302,6 @@ namespace nil {
                 /// Note: All public inputs must be provided as `E::Fr`.
                 template<template<typename> class ConstraintSystem>
                 void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
-                    const auto value_num = value.allocated(cs.namespace(|| "value"));
                     const auto cur = value_num;
 
                     // Ascend the merkle tree authentication path
@@ -245,10 +332,10 @@ namespace nil {
                 }
             };
 
-            template<typename MerkleTreeType, typename Circuit>
-            struct PoRCompound : public PoRCircuit<MerkleTreeType, Circuit>,
-                                 public CompoundProof<PoR<MerkleTreeType>, Circuit>,
-                                 public CacheableParameters<ParameterSetMetadata, MerkleTreeType, Circuit> {
+            template<typename TMerkleTree, typename Circuit>
+            struct PoRCompound : public PoRCircuit<TMerkleTree, Circuit>,
+                                 public CompoundProof<PoR<TMerkleTree>, Circuit>,
+                                 public CacheableParameters<ParameterSetMetadata, TMerkleTree, Circuit> {
                 typedef Circuit circuit_type;
                 typedef typename circuit_type::curve_type curve_type;
             };

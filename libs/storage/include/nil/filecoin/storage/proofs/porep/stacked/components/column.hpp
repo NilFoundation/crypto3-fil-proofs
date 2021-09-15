@@ -89,7 +89,7 @@ namespace nil {
                         }
                         
                         void generate_r1cs_witness(){
-                            hash_single_column_component.generate_r1cs_constraints(rows);
+                            hash_single_column_component.generate_r1cs_witness(rows);
                         }
 
                         components::blueprint_variable<TField> get_hash() const {

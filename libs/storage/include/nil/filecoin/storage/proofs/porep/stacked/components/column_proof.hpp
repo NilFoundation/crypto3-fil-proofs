@@ -42,7 +42,7 @@ namespace nil {
                     struct ColumnProof : public components::component<FieldType> {
 
                         Column<FieldType> column;
-                        AuthPath<Hash, BaseArity, SubTreeArity, TopTreeArity> inclusion_path;
+                        AuthPath<Hash, BaseArity, SubTreeArity, TopTreeArity> inclusion_proof;
 
                         ColumnProof(components::blueprint<FieldType> &bp, 
                                     const vanilla::PublicParams<MerkleTreeType> &params) :
@@ -51,8 +51,11 @@ namespace nil {
 
                         ColumnProof(components::blueprint<FieldType> &bp, 
                                     VanillaColumnProof<Proof> vanilla_proof): 
-                                    components::component<FieldType>(bp), column(vanilla_proof.column), 
-                                    inclusion_path(vanilla_proof.inclusion_proof){}
+                                    components::component<FieldType>(bp), column(vanilla_proof.column){
+
+                            inclusion_proof = AuthPath<Hash, BaseArity, SubTreeArity, TopTreeArity>(
+                                vanilla_proof.inclusion_proof);
+                        }
                     };
                 }    // namespace components
             }        // namespace stacked

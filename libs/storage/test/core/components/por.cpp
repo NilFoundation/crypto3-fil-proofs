@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE(test_private_por_input_circuit_poseidon_oct() {
 }
 
 template <typename Tree>
-void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::usize_t num_constraints) {
+void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::size_t num_constraints) {
     const auto rng = XorShiftRng::from_seed(crate::TEST_SEED);
 
     std::size_t leaves = 64 * get_base_tree_count<MerkleTreeType>();
