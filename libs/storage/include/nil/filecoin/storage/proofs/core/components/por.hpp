@@ -31,8 +31,6 @@
 #include <vector>
 #include <unordered_map>
 
-#include <nil/crypto3/algebra/curves/bls12.hpp>
-
 #include <nil/crypto3/zk/components/blueprint.hpp>
 #include <nil/crypto3/zk/components/blueprint_variable.hpp>
 #include <nil/crypto3/zk/components/component.hpp>
@@ -55,6 +53,13 @@ namespace nil {
             struct PathElement {
                 std::vector<typename TField::value_type> hashes;
                 std::size_t index;
+            }
+
+            template<typename TField>
+            struct AuthPathData {
+                std::vector<PathElement<TField>> base;
+                std::vector<PathElement<TField>> sub;
+                std::vector<PathElement<TField>> top;
             }
 
             template<typename TField, typename THash, std::size_t BaseArity>
@@ -88,8 +93,10 @@ namespace nil {
                 components::blueprint_variable<TField> current;
 
                 SubPath(components::blueprint<TField> &bp, components::blueprint_variable<TField> current,
+                        components::blueprint_variable<TField> &result, 
+                        components::blueprint_variable_vector<TField> &auth_path_bits,
                         std::vector<std::size_t> capacities) :
-                    current(current), capacities(capacities),
+                    current(current), result(result) capacities(capacities),
                     components::component<FieldType>(bp) {
 
                     inserted.allocate(bp, capacities.size());
@@ -104,10 +111,6 @@ namespace nil {
                     }
                 }
 
-                SubPath(components::blueprint<TField> &bp, components::blueprint_variable<TField> current) :
-                    current(current), 
-                    components::component<FieldType>(bp) {}
-
                 void generate_r1cs_constraints() {
                     for (std::size_t i = 0; i < path.size(); i++) {
 
@@ -117,7 +120,7 @@ namespace nil {
                     }
                 }
 
-                void generate_r1cs_witness(std::vector<PathElement<TField, Hash, BaseArity>> path) {
+                void generate_r1cs_witness(std::vector<PathElement<TField>> path) {
 
                     assert(capacities.size() == path.size());
 
@@ -141,66 +144,6 @@ namespace nil {
                 }
             };
 
-            template<typename TField, typename THash, 
-                     std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity>
-            struct AuthPath : public components::component<TField> {
-                AuthPath(components::blueprint<TField> &bp,
-                         const std::unordered_map<std::vector<typename TField::value_type>, std::size_t> &base_opts) :
-                         components::component<TField>(bp) {
-
-                    std::size_t len = base_opts.size();
-                    std::size_t x;
-
-                    if (TopTreeArity > 0) {
-                        x = 2;
-                    } else if (SubTreeArity > 0) {
-                        x = 1;
-                    }  else {
-                        x = 0;
-                    }
-
-                    std::unordered_map<std::vector<typename TField::value_type>, std::size_t> opts(
-                        base_opts.begin() + len - x, base_opts.end());
-
-                    std::vector<PathElement<TField>> base, top, sub;
-                    for (const auto &pair : base_opts) {
-                        base.emplace_back(pair.first, pair.second);
-                    }
-
-                    if (TopTreeArity > 0) {
-                        top = *(opts.end() - 1);
-                        opts.erase(opts.end() - 1);
-                    }
-
-                    if (SubTreeArity > 0) {
-                        sub = *(opts.end() - 1);
-                        opts.erase(opts.end() - 1);
-                    }
-
-                    assert(opts.empty());
-
-                    base = {.path = base};
-                    sub = {.path = sub};
-                    top = {.path = top};
-                }
-
-                void generate_r1cs_constraints() {
-                    base.generate_r1cs_constraints();
-                    sub.generate_r1cs_constraints();
-                    top.generate_r1cs_constraints();
-                }
-
-                void generate_r1cs_witness() {
-                    base.generate_r1cs_witness();
-                    sub.generate_r1cs_witness();
-                    top.generate_r1cs_witness();
-                }
-
-                SubPath<TField, THash, BaseArity> base;
-                SubPath<TField, THash, SubTreeArity> sub;
-                SubPath<TField, THash, TopTreeArity> top;
-            };
-
             /// # Public Inputs
             ///
             /// This circuit expects the following public inputs.
@@ -212,123 +155,87 @@ namespace nil {
             /// * value_num - packed version of `value` as bits. (might be more than one Fr)
             ///
             /// Note: All public inputs must be provided as `E::Fr`.
-            template<typename TField, typename TMerkleTree>
+            template<typename TField, typename TMerkleTree, bool PrivateRoot = false>
             class PoRCircuit : public components::component<TField> {
 
-                components::blueprint_variable<TField> value_var;
-            public:
+                components::blueprint_variable<TField> value_var_base;
+                components::blueprint_variable<TField> value_var_sub;
+                components::blueprint_variable<TField> value_var_top;
 
-                constexpr static const std::size_t base_arity = TMerkleTree::arity;
-                constexpr static const std::size_t sub_arity = TMerkleTree::arity;
-                constexpr static const std::size_t top_arity = TMerkleTree::arity;
-
-                typedef AuthPath<TField, typename TMerkleTree::hash_type, 
-                                 base_arity, sub_arity, top_arity> auth_path_type;
+                components::blueprint_variable<TField> root_var;
 
                 // All arities must be powers of two or circuits cannot be generated.
-                BOOST_STATIC_ASSERT_MSG(base_arity > 0 ? 
-                                        std::ceil(std::log2(base_arity)) == std::floor(std::log2(base_arity)) :
+                BOOST_STATIC_ASSERT_MSG(TMerkleTree::arity > 0 ? 
+                                        std::ceil(std::log2(TMerkleTree::arity)) == 
+                                        std::floor(std::log2(TMerkleTree::arity)) :
                                         true, "base arity must be power of two");
-                BOOST_STATIC_ASSERT_MSG(sub_arity > 0 ?
-                                        std::ceil(std::log2(sub_arity)) == std::floor(std::log2(sub_arity)) :
+                BOOST_STATIC_ASSERT_MSG(TMerkleTree::arity > 0 ?
+                                        std::ceil(std::log2(TMerkleTree::arity)) == 
+                                        std::floor(std::log2(TMerkleTree::arity)) :
                                         true, "subtree arity must be power of two");
-                BOOST_STATIC_ASSERT_MSG(top_arity > 0 ?
-                                        std::ceil(std::log2(top_arity)) == std::floor(std::log2(top_arity)) :
+                BOOST_STATIC_ASSERT_MSG(TMerkleTree::arity > 0 ?
+                                        std::ceil(std::log2(TMerkleTree::arity)) == 
+                                        std::floor(std::log2(TMerkleTree::arity)) :
                                         true, "subtree arity must be power of two");
+            public:
 
-                auth_path_type auth_path;
-                bool priv;
+                SubPath<TField, TMerkleTree::hash, TMerkleTree::arity> base;
+                SubPath<TField, TMerkleTree::hash, TMerkleTree::arity> sub;
+                SubPath<TField, TMerkleTree::hash, TMerkleTree::arity> top;
+
+                components::multipack::pack_into_inputs pack_component;
 
                 PoRCircuit(crypto3::zk::components::blueprint<TField> &bp,
-                           root<TField> root) :
+                           root<TField> root, 
+                           std::vector<std::size_t> base_capacities,
+                           std::vector<std::size_t> sub_capacities,
+                           std::vector<std::size_t> top_capacities) :
                            components::component<TField>(bp) {
 
-                    value_var.allocate(bp);
-                    auth_path = auth_path_type(bp, value_var);
+                    value_var_base.allocate(bp);
+                    value_var_sub.allocate(bp);
+                    value_var_top.allocate(bp);
 
+                    root_var.allocate(bp);
+
+                    computed_root.allocate(bp);
+                    components::blueprint_variable_vector<TField> base_auth_path_bits;
+                    components::blueprint_variable_vector<TField> sub_auth_path_bits;
+                    components::blueprint_variable_vector<TField> top_auth_path_bits;
+
+                    base(bp, value_var_base, value_var_sub, base_auth_path_bits, base_capacities);
+                    sub(bp, value_var_sub, value_var_top, sub_auth_path_bits, sub_capacities);
+                    top(bp, value_var_top, computed_root, top_auth_path_bits, top_capacities);
+
+                    components::blueprint_variable_vector<TField> pre_pack_vector(base_auth_path_bits);
+                    pre_pack_vector.insert(pre_pack_vector.end(), sub_auth_path_bits.begin(), sub_auth_path_bits.end());
+                    pre_pack_vector.insert(pre_pack_vector.end(), top_auth_path_bits.begin(), top_auth_path_bits.end());
+                    pack_component(pre_pack_vector);
                 }
 
                 void generate_r1cs_constraints() {
-                    auth_path.generate_r1cs_constraints();
+
+                    base.generate_r1cs_constraints();
+                    sub.generate_r1cs_constraints();
+                    top.generate_r1cs_constraints();
+
+                    this->bp.add_r1cs_constraint(snark::r1cs_constraint<FieldType>(
+                        1, computed_root, root_var));
+
+                    pack_component.generate_r1cs_constraints();
                 }
 
                 void generate_r1cs_witness(root<TField> value, 
-                        std::vector<typename TField::value_type> auth_path, root<TField> r) {
+                        AuthPathData<TField> auth_path, root<TField> root) {
 
-                    std::size_t len = auth_path.size();
-                    std::size_t x;
+                    bp.val(value_var_base) = value;
+                    bp.val(root_var) = root;
 
-                    if (TopTreeArity > 0) {
-                        x = 2;
-                    } else if (SubTreeArity > 0) {
-                        x = 1;
-                    }  else {
-                        x = 0;
-                    }
+                    base.generate_r1cs_witness(auth_path.base);
+                    sub.generate_r1cs_witness(auth_path.sub);
+                    top.generate_r1cs_witness(auth_path.top);
 
-                    std::vector<PathElement<TField>> base, top, sub;
-
-                    std::copy(auth_path.begin(), auth_path.begin() + len - x, base.begin());
-
-                    if (TopTreeArity > 0) {
-                        top = *(auth_path.end() - 1);
-                        auth_path.erase(auth_path.end() - 1);
-                    }
-
-                    if (SubTreeArity > 0) {
-                        sub = *(auth_path.end() - 1);
-                        auth_path.erase(auth_path.end() - 1);
-                    }
-
-                    assert(auth_path.empty());
-
-
-
-                    bp.val(value_var) = value;
-
-                    auth_path.generate_r1cs_witness();
-                }
-
-                /// # Public Inputs
-                ///
-                /// This circuit expects the following public inputs.
-                ///
-                /// * [0] - packed version of the `is_right` components of the auth_path.
-                /// * [1] - the merkle root of the tree.
-                ///
-                /// This circuit derives the following private inputs from its fields:
-                /// * value_num - packed version of `value` as bits. (might be more than one Fr)
-                ///
-                /// Note: All public inputs must be provided as `E::Fr`.
-                template<template<typename> class ConstraintSystem>
-                void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
-                    const auto cur = value_num;
-
-                    // Ascend the merkle tree authentication path
-
-                    // base tree
-                    const auto(cur, base_auth_path_bits) = auth_path.base.synthesize(cs.namespace(|| "base"), cur);
-
-                    // sub
-                    const auto(cur, sub_auth_path_bits) = auth_path.sub.synthesize(cs.namespace(|| "sub"), cur);
-
-                    // top
-                    const auto(computed_root, top_auth_path_bits) = auth_path.top.synthesize(cs.namespace(|| "top"), cur);
-
-                    std::vector<auto> auth_path_bits;
-                    auth_path_bits.extend(base_auth_path_bits);
-                    auth_path_bits.extend(sub_auth_path_bits);
-                    auth_path_bits.extend(top_auth_path_bits);
-
-                    multipack::pack_into_inputs(cs.namespace(|| "path"), &auth_path_bits);
-                    // Validate that the root of the merkle tree that we calculated is the same as the input.
-                    const auto rt = root.allocated(cs.namespace(|| "root_value"));
-                    constraint::equal(cs, || "enforce root is correct", &computed_root, &rt);
-
-                    if (!priv) {
-                        // Expose the root
-                        rt.inputize(cs.namespace(|| "root"));
-                    }
+                    pack_component.generate_r1cs_witness();
                 }
             };
 
