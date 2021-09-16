@@ -298,7 +298,7 @@ namespace nil {
                     return build_small_tree<Algorithm, U>(leafs, row_count);
                 }
 
-                size_t shift = std::log(branches);
+                size_t shift = (size_t)std::log(branches);
 
                 // Process one `level` at a time of `width` nodes. Each level has half the nodes
                 // as the previous one; the first level, completely stored in `data`, has `leafs`

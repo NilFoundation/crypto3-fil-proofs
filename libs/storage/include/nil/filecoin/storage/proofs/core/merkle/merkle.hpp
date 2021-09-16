@@ -107,42 +107,6 @@ namespace nil {
                 TopTree(Vec<MerkleTree<E, A, S, BaseTreeArity, SubTreeArity>>),
             }
             
-            template<typename E, template<typename> typename A, template<typename> typename S, typename BaseTreeArity, typename SubTreeArity>
-            class Data {
-                // Read-only access to the BaseTree store.
-                Store<Element> store() {
-                    match self {
-                        Data::BaseTree(s) => Some(s),
-                        _ => None,
-                    }
-                }
-            
-                // Mutable access to the BaseTree store.
-                Store<Element> store_mut(f) -> Option<&mut S> {
-                    match self {
-                        Data::BaseTree(s) => Some(s),
-                        _ => None,
-                    }
-                }
-            
-                // Access to the list of SubTrees.
-                std::vector<MerkleTree<E, A<E>, S<E>, BaseTreeArity, SubTreeArity>> sub_trees() {
-                    match self {
-                        Data::TopTree(s) => Some(s),
-                        _ => None,
-                    }
-                }
-            
-                // Access to the list of BaseTrees.
-                std::vector<MerkleTree<E, A<E>, S<E>, BaseTreeArity>> base_trees() {
-                    match self {
-                        Data::SubTree(s) => Some(s),
-                        _ => None,
-                    }
-                }
-            
-            };
-            
             /// Element stored in the merkle tree.
             class Element {
                 /// Returns the length of an element when serialized as a byte slice.
@@ -274,9 +238,8 @@ namespace nil {
             //    }
             //}
             
-            template <typename E, template<E> typename A, typename S<E>, typename BaseTreeArity, typename SubTreeArity, typename TopTreeArity>
+            template <typename E, template<typename> typename A, template<typename> typename S, typename BaseTreeArity, typename SubTreeArity, typename TopTreeArity>
             struct MerkleTree {
-            {
                 Data<E, A<E>, S<E>, BaseTreeArity, SubTreeArity> data;
                 size_t leafs;
                 size_t len;
@@ -293,17 +256,17 @@ namespace nil {
                 E root;
                 
                 /// Creates new merkle from a sequence of hashes.
-                MerkleTree<I: IntoIterator<Item = E>>(data: I) {
+                MerkleTree(std::vector<E> data) {
                     Self::try_from_iter(data.into_iter().map(Ok))
                 }
             
                 /// Creates new merkle from a sequence of hashes.
-                MerkleTree<I: IntoIterator<Item = E>>(I data, StoreConfig config) {
+                MerkleTree(std::vector<E> data, StoreConfig config) {
                     Self::try_from_iter_with_config(data.into_iter().map(Ok), config)
                 }
             
                 /// Creates new merkle tree from a list of hashable objects.
-                MerkleTree<O: Hashable<A>, I: IntoIterator<Item = O>>(data: I) {
+                MerkleTree<O: Hashable<A>, I: IntoIterator<Item = O>>(E data: I) {
                     let mut a = A::default();
                     Self::try_from_iter(data.into_iter().map(|x| {
                         a.reset();
@@ -338,40 +301,36 @@ namespace nil {
                     BOOST_ASSERT_MSG(next_pow2(leafs) == leafs, "leafs MUST be a power of 2");
                     BOOST_ASSERT_MSG(next_pow2(branches) == branches, "branches MUST be a power of 2");
             
-                    let tree_len = get_merkle_tree_len(leafs, branches)?;
+                    size_t tree_len = get_merkle_tree_len(leafs, branches)?;
                     BOOST_ASSERT_MSG(tree_len == data.len(), "Inconsistent tree data");
             
                     BOOST_ASSERT_MSG(is_merkle_tree_size_valid(leafs, branches), "MerkleTree size is invalid given the arity");
-            
-                    let row_count = get_merkle_tree_row_count(leafs, branches);
-                    let root = data.read_at(data.len() - 1)?;
-            
+
                     this->data = Data::BaseTree(data);
                     this->leafs = leafs;
                     this->len = tree_len;
-                    this->row_count = row_count;
-                    this->root = root;
+                    this->row_count = get_merkle_tree_row_count(leafs, branches);
+                    this->root = data.read_at(data.len() - 1);
                 }
             
                 // Represent a fully constructed merkle tree from a provided slice.
-                MerkleTree(uint8_t * data, size_t leafs) {
+                MerkleTree(uint8_t *data, size_t leafs) {
                     BOOST_ASSERT_MSG(SubTreeArity::to_usize() == 0,  "Data slice must not have sub-tree layers");
                     BOOST_ASSERT_MSG(TopTreeArity::to_usize() == 0, "Data slice must not have a top layer");
             
-                    let branches = BaseTreeArity::to_usize();
-                    let row_count = get_merkle_tree_row_count(leafs, branches);
-                    let tree_len = get_merkle_tree_len(leafs, branches)?;
+                    size_t branches = BaseTreeArity::to_usize();
+                    size_t row_count = get_merkle_tree_row_count(leafs, branches);
+                    size_t tree_len = get_merkle_tree_len(leafs, branches)?;
                     BOOST_ASSERT_MSG(tree_len == data.len() / E::byte_len(), "Inconsistent tree data");
             
                     BOOST_ASSERT_MSG(is_merkle_tree_size_valid(leafs, branches), "MerkleTree size is invalid given the arity");
             
                     let store = S::new_from_slice(tree_len, &data).context("failed to create data store")?;
-                    let root = store.read_at(data.len() - 1)?;
                     this->data = Data::BaseTree(store);
                     this->leafs = leafs;
                     this->len = tree_len;
                     this->row_count = row_count;
-                    this->root = root;
+                    this->root = store.read_at(data.len() - 1)?;
                 }
             
                 // Represent a fully constructed merkle tree from a provided slice.
@@ -387,12 +346,11 @@ namespace nil {
                     BOOST_ASSERT_MSG(is_merkle_tree_size_valid(leafs, branches),  "MerkleTree size is invalid given the arity");
             
                     let store = S::new_from_slice_with_config(tree_len, branches, &data, config).context("failed to create data store")?;
-                    let root = store.read_at(data.len() - 1)?;
                     this->data = Data::BaseTree(store);
                     this->leafs = leafs;
                     this->len = tree_len;
                     this->row_count = row_count;
-                    this->root = root;
+                    this->root = store.read_at(data.len() - 1);
                 }
             
                 // Creates new compound merkle tree from a vector of merkle

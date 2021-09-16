@@ -33,12 +33,12 @@ namespace nil {
         namespace merkletree {
             template <typename Element>
             struct VecStore {
-                VecStore(size_t size, size_t _branches, StoreConfig config) {
-                    VecStore(size);
+                VecStore(size_t size, size_t branches, StoreConfig config) {
+                    v.resize(size);
                 }
 
                 VecStore(size_t size) {
-                    Ok(VecStore(Vec::with_capacity(size)))
+                    v.resize(size);
                 }
 
                 void write_at(Element el, size_t index) {
@@ -53,10 +53,11 @@ namespace nil {
                 // already stores `E` (in contrast with the `mmap` versions). We are
                 // prioritizing performance for the `mmap` case which will be used in
                 // production (`VecStore` is mainly for testing and backwards compatibility).
-                void copy_from_slice(uint8_t *buf, size_t start) {
+                void copy_from_slice(std::pair<uint8_t*, uint8_t*> buf, size_t start) {
+
                     BOOST_ASSERT_MSG(buf_len % Element::byte_len() == 0, "buf size must be a multiple of {}", Element::byte_len());
                     size_t num_elem = buf.len() / Element::byte_len();
-
+                    pack<little_endian_array_type>(buf.first, buf.second);
                     if (len() < start + num_elem) {
                         v.resize(start + num_elem);
                     }
@@ -112,7 +113,7 @@ namespace nil {
                 }
 
                 bool compact(size_t _branches, StoreConfig _config, uint32_t _store_version: u32) {
-                    self.0.shrink_to_fit();
+                    BOOST_ASSERT_MSG(false, "Not required here");
                     return true;
                 }
 
@@ -124,7 +125,7 @@ namespace nil {
                     v.push(el);
                 }
 
-                std::vector v;
+                std::vector<Element> v;
             };
         }    // namespace merkletree
     }    // namespace filecoin
