@@ -2,7 +2,7 @@
 //  MIT License
 //
 //  Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
-//  Copyright (c) 2020-2021 Nikita Kaskov <nemo@nil.foundation>
+//  Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -83,7 +83,7 @@ namespace nil {
 
                 std::vector<components::blueprint_variable_vector<TField>> path_hash_vars;
                 std::vector<components::blueprint_variable_vector<TField>> index_bits;
-                components::blueprint_variable_vector<TField> inserted;
+                std::vector<components::blueprint_variable_vector<TField>> inserted;
                 std::vector<components::insert> insert_components;
                 std::vector<H::Function::hash_multi_leaf_circuit> hash_components;
                 std::vector<std::size_t> capacities;
@@ -99,11 +99,12 @@ namespace nil {
                     current(current), result(result) capacities(capacities),
                     components::component<FieldType>(bp) {
 
-                    inserted.allocate(bp, capacities.size());
                     for (std::size_t i = 0; i < capacities.size(); i++) {
 
                         index_bits[i].allocate(bp, trailing_zeros(BaseArity));
                         path_hash_vars[i].allocate(bp, capacities[i]);
+
+                        inserted.allocate(bp, capacities[i] + 1);
 
                         insert_components.emplace_back(bp, current, index_bits[i], path_hash_vars[i], inserted[i]);
 
@@ -156,7 +157,7 @@ namespace nil {
             ///
             /// Note: All public inputs must be provided as `E::Fr`.
             template<typename TField, typename TMerkleTree, bool PrivateRoot = false>
-            class PoRCircuit : public components::component<TField> {
+            class PoR : public components::component<TField> {
 
                 components::blueprint_variable<TField> value_var_base;
                 components::blueprint_variable<TField> value_var_sub;
@@ -185,7 +186,7 @@ namespace nil {
 
                 components::multipack::pack_into_inputs pack_component;
 
-                PoRCircuit(crypto3::zk::components::blueprint<TField> &bp,
+                PoR(components::blueprint<TField> &bp,
                            root<TField> root, 
                            std::vector<std::size_t> base_capacities,
                            std::vector<std::size_t> sub_capacities,
@@ -239,9 +240,9 @@ namespace nil {
                 }
             };
 
-            template<typename TMerkleTree, typename Circuit>
-            struct PoRCompound : public PoRCircuit<TMerkleTree, Circuit>,
-                                 public CompoundProof<PoR<TMerkleTree>, Circuit>,
+            template<typename TField, typename TMerkleTree, typename Circuit>
+            struct PoRCompound : public PoR<TField, TMerkleTree, false>,
+                                 public CompoundProof<nil::filecoin::PoR<TMerkleTree>, Circuit>,
                                  public CacheableParameters<ParameterSetMetadata, TMerkleTree, Circuit> {
                 typedef Circuit circuit_type;
                 typedef typename circuit_type::curve_type curve_type;
