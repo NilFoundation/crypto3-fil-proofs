@@ -28,80 +28,54 @@
 #define FILECOIN_VEC_HPP
 
 #include <vector>
+
+#include <nil/filecoin/storage/proofs/core/merkle/storage/utilities.hpp>
+
 namespace nil {
     namespace filecoin {
         namespace merkletree {
-            template <typename Element>
-            struct VecStore {
+            struct VecStore : public Store {
                 VecStore(size_t size, size_t branches, StoreConfig config) {
                     v.resize(size);
+                    store_size = size;
+                    len = 0;
                 }
 
                 VecStore(size_t size) {
                     v.resize(size);
+                    store_size = size;
+                    len = 0;
                 }
 
-                void write_at(Element el, size_t index) {
-                    if (len() <= index) {
-                        v.resize(index + 1);
+                void write(std::pair<uint8_t *, uint8_t *> el, size_t start) {
+                    if (this->len() < write + (el.second - el.first)) {
+                        v.resize(write + (el.second - el.first));
                     }
-                    v[index] = el;
-                }
-
-                // NOTE: Performance regression. To conform with the current API we are
-                // unnecessarily converting to and from `&[u8]` in the `VecStore` which
-                // already stores `E` (in contrast with the `mmap` versions). We are
-                // prioritizing performance for the `mmap` case which will be used in
-                // production (`VecStore` is mainly for testing and backwards compatibility).
-                void copy_from_slice(std::pair<uint8_t*, uint8_t*> buf, size_t start) {
-
-                    BOOST_ASSERT_MSG(buf_len % Element::byte_len() == 0, "buf size must be a multiple of {}", Element::byte_len());
-                    size_t num_elem = buf.len() / Element::byte_len();
-                    pack<little_endian_array_type>(buf.first, buf.second);
-                    if (len() < start + num_elem) {
-                        v.resize(start + num_elem);
+                    for (auto i = el.first; i < el.second; ++i) {
+                        v[write] = i;
+                        ++write;
                     }
-
-
-                    self.0.splice(
-                        start..start + num_elem,
-                        buf.chunks_exact(E::byte_len()).map(E::from_slice),
-                    );
+                    len += (el.second - el.first);
                 }
 
-                VecStore(size_t size, size_t _branches, data: &[u8], StoreConfig _config) {
-                    Self::new_from_slice(size, &data)
+                VecStore(size_t size, size_t branches, std::pair<uint8_t *, uint8_t *> data, StoreConfig config) {
+                    v.resize(size);
+                    store_size = size;
+                    self->write_at(data, 0);
                 }
 
-                VecStore(size_t size, uint8_t *data) {
-                    let mut v: Vec<_> = data.chunks_exact(E::byte_len()).map(E::from_slice).collect();
-                    size_t additional = size - v.len();
-                    v.reserve(additional);
-                    Ok(VecStore(v))
+                VecStore(size_t size, std::pair<uint8_t *, uint8_t *> data) {
+                    v.resize(size);
+                    store_size = size;
+                    self->write_at(data, 0);
                 }
 
-                VecStore(size_t _size, size_t _branches, StoreConfig _config) {
-                    BOOST_ASSERT_MSG(false, "Cannot load a VecStore from disk");
-                }
-
-                Element read_at(size_t index) {
-                    return v[index];
-                }
-
-                void read_into(size_t index, uint8_t *buf) {
-                    self.0[index].copy_to_slice(buf);
-                }
-
-                void read_range_into(size_t _start, size_t _end, _buf: &mut [u8]) {
-                    BOOST_ASSERT_MSG(false, "Not required here");
-                }
-
-                std::vector<Element> read_range(std::pair<size_t, size_t > r) {
-                    std::vector<Element> t;
-                    for (size_t i = r.first; i < r.second; ++i) {
-                        t.push_back(v[i]);
+                void read(std::pair<size_t, size_t> read, uint8_t *buf) {
+                    uint8_t *buf_ptr = buf;
+                    for (size_t i = read.first; i < read.second; ++i) {
+                        buf_ptr = v[i];
+                        ++buf_ptr;
                     }
-                    return t;
                 }
 
                 size_t len() {
@@ -112,8 +86,8 @@ namespace nil {
                     return false;
                 }
 
-                bool compact(size_t _branches, StoreConfig _config, uint32_t _store_version: u32) {
-                    BOOST_ASSERT_MSG(false, "Not required here");
+                bool compact(size_t branches, StoreConfig config, uint32_t store_version) {
+                    v.resize(len);
                     return true;
                 }
 
@@ -121,11 +95,13 @@ namespace nil {
                     return v.empty();
                 }
 
-                void push(Element el) {
-                    v.push(el);
+                void push(std::pair<uint8_t *, uint8_t *> data) {
+                    self->write_at(data, len);
                 }
-
-                std::vector<Element> v;
+            private:
+                size_t len;
+                size_t store_size;
+                std::vector<uint8_t> v;
             };
         }    // namespace merkletree
     }    // namespace filecoin

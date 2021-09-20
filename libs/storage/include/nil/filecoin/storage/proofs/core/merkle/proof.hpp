@@ -111,7 +111,7 @@ namespace nil {
                     sub_tree_layer_nodes(SubTreeArity), lemma(lemma), path(path){
                     if (TopLayerArity == 0 && SubTreeArity == 0) {
                         BOOST_ASSERT_MSG(lemma.size() > 2, "Invalid lemma length (short)");
-                        BOOST_ASSERT_MSG(lemma.size() == get_merkle_proof_lemma_len(path.size() + 1, BaseTreeArity), 
+                        BOOST_ASSERT_MSG(lemma.size() == utilities::get_merkle_proof_lemma_len(path.size() + 1, BaseTreeArity),
                             "Invalid lemma length");
                     }
                 }
