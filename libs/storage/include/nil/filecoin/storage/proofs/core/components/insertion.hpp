@@ -27,6 +27,12 @@
 #ifndef FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_INSERTION_HPP
 #define FILECOIN_STORAGE_PROOFS_CORE_COMPONENTS_INSERTION_HPP
 
+#include <nil/crypto3/zk/components/blueprint.hpp>
+#include <nil/crypto3/zk/components/blueprint_variable.hpp>
+#include <nil/crypto3/zk/components/component.hpp>
+
+#include <nil/filecoin/storage/proofs/core/components/pick.hpp>
+
 namespace nil {
     namespace filecoin {
         namespace components {
@@ -44,8 +50,11 @@ namespace nil {
 
             public:
                 insert(components::blueprint<TField> &bp,
-                       components::blueprint_variable_vector<TField> inserted, std::size_t size):
-                components::component<TField>(bp), size(size) {
+                       components::blueprint_variable<TField> &element_to_insert,
+                       components::blueprint_variable_vector<TField> bits,
+                       components::blueprint_variable_vector<TField> elements,
+                       components::blueprint_variable_vector<TField> inserted):
+                components::component<TField>(bp), size(elements.len() + 1) {
 
                     // For the sizes we know we need, we can take advantage of redundancy in the candidate selection at each position.
                     // This allows us to accomplish insertion with fewer constraints, if we hand-optimize.
@@ -58,11 +67,11 @@ namespace nil {
                     // Future work: In theory, we could compile arbitrary lookup tables to minimize constraints and avoid
                     // the most general case except when actually required — which it never is for simple insertion.
                     if size == 2 {
-                        insert_2 = insert<2>(bp, inserted);
+                        insert_2 = insert<2>(bp, element_to_insert, bits, elements, inserted);
                     } else if size == 4 {
-                        insert_4 = insert<4>(bp, inserted);
+                        insert_4 = insert<4>(bp, element_to_insert, bits, elements, inserted);
                     } else if size == 8 {
-                        insert_8 = insert<8>(bp, inserted);
+                        insert_8 = insert<8>(bp, element_to_insert, bits, elements, inserted);
                     };
                 }
 
@@ -76,15 +85,13 @@ namespace nil {
                     };
                 }
 
-                void generate_r1cs_witness(components::blueprint_variable<TField> &element_to_insert, 
-                       components::blueprint_variable_vector<TField> bits, 
-                       components::blueprint_variable_vector<TField> elements){
+                void generate_r1cs_witness(){
                     if size == 2 {
-                        insert_2.generate_r1cs_witness(element_to_insert, bits, elements);
+                        insert_2.generate_r1cs_witness();
                     } else if size == 4 {
-                        insert_4.generate_r1cs_witness(element_to_insert, bits, elements);
+                        insert_4.generate_r1cs_witness();
                     } else if size == 8 {
-                        insert_8.generate_r1cs_witness(element_to_insert, bits, elements);
+                        insert_8.generate_r1cs_witness();
                     };
                 }
             };
@@ -99,16 +106,25 @@ namespace nil {
                 pick<TField> pick_component1;
             public:
                 insert(components::blueprint<TField> &bp,
+                       components::blueprint_variable<TField> &element_to_insert, 
+                       components::blueprint_variable_vector<TField> bits, 
+                       components::blueprint_variable_vector<TField> elements,
                        components::blueprint_variable_vector<TField> inserted):
                 components::component<TField>(bp) {
                     assert(bits.len() == 1);
 
                     pick_component0 = pick(
                         bp,
+                        bits[0],
+                        elements[0],
+                        element_to_insert,
                         inserted[0]
                     );
                     pick_component1 = pick(
                         bp,
+                        bits[0],
+                        element_to_insert,
+                        elements[0],
                         inserted[1]
                     );
                 }
@@ -118,16 +134,10 @@ namespace nil {
                     pick_component1.generate_r1cs_constraints();
                 }
 
-                void generate_r1cs_witness(components::blueprint_variable<TField> &element_to_insert, 
-                       components::blueprint_variable_vector<TField> bits, 
-                       components::blueprint_variable_vector<TField> elements){
+                void generate_r1cs_witness(){
 
-                    pick_component0.generate_r1cs_witness(bits[0],
-                        elements[0],
-                        element_to_insert);
-                    pick_component1.generate_r1cs_witness(bits[0],
-                        element_to_insert,
-                        elements[0]);
+                    pick_component0.generate_r1cs_witness();
+                    pick_component1.generate_r1cs_witness();
                 }
             };
 
@@ -164,21 +174,32 @@ namespace nil {
 
             public:
                 insert(components::blueprint<TField> &bp,
+                       components::blueprint_variable<TField> &element_to_insert,
+                       components::blueprint_variable_vector<TField> bits,
+                       components::blueprint_variable_vector<TField> elements,
                        components::blueprint_variable_vector<TField> inserted):
                 components::component<TField>(bp) {
                     assert(bits.len() == 2);
 
-                    pick_component0_intermediate = pick(bp, p0_x0);
-                    pick_component0 = pick(bp, inserted[0]);
+                    // Witness naming convention:
+                    // `p0_x0` means "Output position 0 when b0 is unknown (x) and b1 is 0."
 
-                    pick_component1_intermediate = pick(bp, p1_x0);
-                    pick_component1 = pick(bp, inserted[1]);
+                    components::blueprint_variable<TField> &a = element_to_insert;
+                    components::blueprint_variable<TField> &b = elements[0];
+                    components::blueprint_variable<TField> &c = elements[1];
+                    components::blueprint_variable<TField> &d = elements[2];
 
-                    pick_component2_intermediate = pick(bp, p2_x1);
-                    pick_component2 = pick(bp, inserted[2]);
+                    pick_component0_intermediate = pick(bp, bits[0], b, a, p0_x0);
+                    pick_component0 = pick(bp, bits[1], b, p0_x0, inserted[0]);
 
-                    pick_component3_intermediate = pick(bp, p3_x1);
-                    pick_component3 = pick(bp, inserted[3]);
+                    pick_component1_intermediate = pick(bp, bits[0], a, b, p1_x0);
+                    pick_component1 = pick(bp, bits[1], c, p1_x0, inserted[1]);
+
+                    pick_component2_intermediate = pick(bp, bits[0], d, a, p2_x1);
+                    pick_component2 = pick(bp, bits[1], p2_x1, c, inserted[2]);
+
+                    pick_component3_intermediate = pick(bp, bits[0], a, d, p3_x1);
+                    pick_component3 = pick(bp, bits[1], p3_x1, d, inserted[3]);
 
                 }
 
@@ -195,29 +216,19 @@ namespace nil {
                     pick_component3_intermediate.generate_r1cs_constraints();
                 }
 
-                void generate_r1cs_witness(components::blueprint_variable<TField> &element_to_insert, 
-                       components::blueprint_variable_vector<TField> bits, 
-                       components::blueprint_variable_vector<TField> elements){
+                void generate_r1cs_witness(){
 
-                    components::blueprint_variable<TField> &a = element_to_insert;
-                    components::blueprint_variable<TField> &b = elements[0];
-                    components::blueprint_variable<TField> &c = elements[1];
-                    components::blueprint_variable<TField> &d = elements[2];
+                    pick_component0_intermediate.generate_r1cs_witness();
+                    pick_component0.generate_r1cs_witness();
 
-                    // Witness naming convention:
-                    // `p0_x0` means "Output position 0 when b0 is unknown (x) and b1 is 0."
+                    pick_component1_intermediate.generate_r1cs_witness();
+                    pick_component1.generate_r1cs_witness();
 
-                    pick_component0_intermediate.generate_r1cs_witness(bits[0], b, a);
-                    pick_component0.generate_r1cs_witness(bits[1], b, p0_x0);
+                    pick_component2_intermediate.generate_r1cs_witness();
+                    pick_component2.generate_r1cs_witness();
 
-                    pick_component1_intermediate.generate_r1cs_witness(bits[0], a, b);
-                    pick_component1.generate_r1cs_witness(bits[1], c, p1_x0);
-
-                    pick_component2_intermediate.generate_r1cs_witness(bits[0], d, a);
-                    pick_component2.generate_r1cs_witness(bits[1], p2_x1, c);
-
-                    pick_component3_intermediate.generate_r1cs_witness(bits[0], a, d);
-                    pick_component3.generate_r1cs_witness(bits[1], p3_x1, d);
+                    pick_component3_intermediate.generate_r1cs_witness();
+                    pick_component3.generate_r1cs_witness();
                 }
             };
 
@@ -247,7 +258,7 @@ namespace nil {
             class insert<TField, 8> : public components::component<TField> {
                 
                 components::boolean_nor<TField> nor_component;
-                components::conjunction<TField> and_component;
+                components::conjunction<TField> conjunction_component;
 
                 pick<TField> pick_component0;
                 pick<TField> pick_component1;
@@ -289,47 +300,63 @@ namespace nil {
 
             public:
                 insert(components::blueprint<TField> &bp,
+                       components::blueprint_variable<TField> &element_to_insert,
+                       components::blueprint_variable_vector<TField> bits,
+                       components::blueprint_variable_vector<TField> elements,
                        components::blueprint_variable_vector<TField> inserted):
                 components::component<TField>(bp) {
                     assert(bits.len() == 3);
 
-                    nor_component = boolean_nor(bp, b0_nor_b1);
-                    and_component = boolean_and(bp, b0_and_b1);
+                    components::blueprint_variable<TField> &b0 = bits[0];
+                    components::blueprint_variable<TField> &b1 = bits[1];
+                    components::blueprint_variable<TField> &b2 = bits[2];
 
-                    pick_component0_intermediate = pick(bp, p0_xx0);
-                    pick_component0 = pick(bp, inserted[0]);
+                    components::blueprint_variable<TField> &a = element_to_insert;
+                    components::blueprint_variable<TField> &b = elements[0];
+                    components::blueprint_variable<TField> &c = elements[1];
+                    components::blueprint_variable<TField> &d = elements[2];
+                    components::blueprint_variable<TField> &e = elements[3];
+                    components::blueprint_variable<TField> &f = elements[4];
+                    components::blueprint_variable<TField> &g = elements[5];
+                    components::blueprint_variable<TField> &h = elements[6];
 
-                    pick_component1_intermediate0 = pick(bp, p1_x00);
-                    pick_component1_intermediate1 = pick(bp, p1_xx0);
-                    pick_component1 = pick(bp, inserted[1]);
+                    nor_component = components::boolean_nor(bp, b0, b1, b0_nor_b1);
+                    conjunction_component = components::conjunction<TField>(bp, b0, b1, b0_and_b1);
 
-                    pick_component2_intermediate0 = pick(bp, p2_x10);
-                    pick_component2_intermediate1 = pick(bp, p2_xx0);
-                    pick_component2 = pick(bp, inserted[2]);
+                    pick_component0_intermediate = pick(bp, b0_nor_b1, a, b, p0_xx0);
+                    pick_component0 = pick(bp, b2, b, p0_xx0, inserted[0]);
 
-                    pick_component3_intermediate = pick(bp, p3_xx0);
-                    pick_component3 = pick(bp, inserted[3]);
+                    pick_component1_intermediate0 = pick(bp, b0, a, b, p1_x00);
+                    pick_component1_intermediate1 = pick(bp, b1, c, p1_x00, p1_xx0);
+                    pick_component1 = pick(bp, b2, c, p1_xx0, inserted[1]);
 
-                    pick_component4_intermediate = pick(bp, p4_xx1);
-                    pick_component4 = pick(bp, inserted[4]);
+                    pick_component2_intermediate0 = pick(bp, b0, d, a, p2_x10);
+                    pick_component2_intermediate1 = pick(bp, b1, p2_x10, c, p2_xx0);
+                    pick_component2 = pick(bp, b2, d, p2_xx0, inserted[2]);
 
-                    pick_component5_intermediate0 = pick(bp, p5_x01);
-                    pick_component5_intermediate1 = pick(bp, p5_xx1);
-                    pick_component5 = pick(bp, inserted[5]);
+                    pick_component3_intermediate = pick(bp, b0_and_b1, a, d, p3_xx0);
+                    pick_component3 = pick(bp, b2, e, p3_xx0, inserted[3]);
 
-                    pick_component6_intermediate0 = pick(bp, p6_x11);
-                    pick_component6_intermediate1 = pick(bp, p6_xx1);
-                    pick_component6 = pick(bp, inserted[6]);
+                    pick_component4_intermediate = pick(bp, b0_nor_b1, a, f, p4_xx1);
+                    pick_component4 = pick(bp, b2, p4_xx1, e, inserted[4]);
 
-                    pick_component7_intermediate = pick(bp, p7_xx1);
-                    pick_component7 = pick(bp, inserted[7]);
+                    pick_component5_intermediate0 = pick(bp, b0, a, f, p5_x01);
+                    pick_component5_intermediate1 = pick(bp, b1, g, p5_x01, p5_xx1);
+                    pick_component5 = pick(bp, b2, p5_xx1, f, inserted[5]);
+
+                    pick_component6_intermediate0 = pick(bp, b0, h, a, p6_x11);
+                    pick_component6_intermediate1 = pick(bp, b1, p6_x11, g, p6_xx1);
+                    pick_component6 = pick(bp, b2, p6_xx1, g, inserted[6]);
+
+                    pick_component7_intermediate = pick(bp, b0_and_b1, a, h, p7_xx1);
+                    pick_component7 = pick(bp, b2, p7_xx1, h, inserted[7]);
 
                 }
 
                 void generate_r1cs_constraints() {
 
                     nor_component.generate_r1cs_constraints();
-                    and_component.generate_r1cs_constraints();
+                    conjunction_component.generate_r1cs_constraints();
 
                     pick_component0.generate_r1cs_constraints();
                     pick_component1.generate_r1cs_constraints();
@@ -354,53 +381,38 @@ namespace nil {
                     pick_component7_intermediate.generate_r1cs_constraints();
                 }
 
-                void generate_r1cs_witness(components::blueprint_variable<TField> &element_to_insert, 
-                       components::blueprint_variable_vector<TField> bits, 
-                       components::blueprint_variable_vector<TField> elements){
+                void generate_r1cs_witness(){
 
-                    components::blueprint_variable<TField> &b0 = bits[0];
-                    components::blueprint_variable<TField> &b1 = bits[1];
-                    components::blueprint_variable<TField> &b2 = bits[2];
+                    nor_component.generate_r1cs_witness();
+                    and_component.generate_r1cs_witness();
 
-                    components::blueprint_variable<TField> &a = element_to_insert;
-                    components::blueprint_variable<TField> &b = elements[0];
-                    components::blueprint_variable<TField> &c = elements[1];
-                    components::blueprint_variable<TField> &d = elements[2];
-                    components::blueprint_variable<TField> &e = elements[3];
-                    components::blueprint_variable<TField> &f = elements[4];
-                    components::blueprint_variable<TField> &g = elements[5];
-                    components::blueprint_variable<TField> &h = elements[6];
+                    pick_component0_intermediate.generate_r1cs_witness();
+                    pick_component0.generate_r1cs_witness();
 
-                    nor_component.generate_r1cs_witness(b0, b1);
-                    and_component.generate_r1cs_witness(b0, b1);
+                    pick_component1_intermediate0.generate_r1cs_witness();
+                    pick_component1_intermediate1.generate_r1cs_witness();
+                    pick_component1.generate_r1cs_witness();
 
-                    pick_component0_intermediate.generate_r1cs_witness(b0_nor_b1, a, b);
-                    pick_component0.generate_r1cs_witness(b2, b, p0_xx0);
+                    pick_component2_intermediate0.generate_r1cs_witness();
+                    pick_component2_intermediate1.generate_r1cs_witness();
+                    pick_component2.generate_r1cs_witness();
 
-                    pick_component1_intermediate0.generate_r1cs_witness(b0, a, b);
-                    pick_component1_intermediate1.generate_r1cs_witness(b1, c, p1_x00);
-                    pick_component1.generate_r1cs_witness(b2, c, p1_xx0);
+                    pick_component3_intermediate.generate_r1cs_witness();
+                    pick_component3.generate_r1cs_witness();
 
-                    pick_component2_intermediate0.generate_r1cs_witness(b0, d, a);
-                    pick_component2_intermediate1.generate_r1cs_witness(b1, p2_x10, c);
-                    pick_component2.generate_r1cs_witness(b2, d, p2_xx0);
+                    pick_component4_intermediate.generate_r1cs_witness();
+                    pick_component4.generate_r1cs_witness();
 
-                    pick_component3_intermediate.generate_r1cs_witness(b0_and_b1, a, d);
-                    pick_component3.generate_r1cs_witness(b2, e, p3_xx0);
+                    pick_component5_intermediate0.generate_r1cs_witness();
+                    pick_component5_intermediate1.generate_r1cs_witness();
+                    pick_component5.generate_r1cs_witness();
 
-                    pick_component4_intermediate.generate_r1cs_witness(b0_nor_b1, a, f);
-                    pick_component4.generate_r1cs_witness(b2, p4_xx1, e);
+                    pick_component6_intermediate0.generate_r1cs_witness();
+                    pick_component6_intermediate1.generate_r1cs_witness();
+                    pick_component6.generate_r1cs_witness();
 
-                    pick_component5_intermediate0.generate_r1cs_witness(b0, a, f);
-                    pick_component5_intermediate1.generate_r1cs_witness(b1, g, p5_x01);
-                    pick_component5.generate_r1cs_witness(b2, p5_xx1, f);
-
-                    pick_component6_intermediate0.generate_r1cs_witness(b0, h, a);
-                    pick_component6_intermediate1.generate_r1cs_witness(b1, p6_x11, g);
-                    pick_component6.generate_r1cs_witness(b2, p6_xx1, g);
-
-                    pick_component7_intermediate.generate_r1cs_witness(b0_and_b1, a, h);
-                    pick_component7.generate_r1cs_witness(b2, p7_xx1, h);
+                    pick_component7_intermediate.generate_r1cs_witness();
+                    pick_component7.generate_r1cs_witness();
                 }
             };
             

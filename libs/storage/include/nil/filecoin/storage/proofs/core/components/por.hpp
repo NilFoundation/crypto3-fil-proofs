@@ -38,9 +38,7 @@
 #include <nil/filecoin/storage/proofs/core/path_element.hpp>
 #include <nil/filecoin/storage/proofs/core/parameter_cache.hpp>
 #include <nil/filecoin/storage/proofs/core/por.hpp>
-
 #include <nil/filecoin/storage/proofs/core/proof/compound_proof.hpp>
-
 #include <nil/filecoin/storage/proofs/core/merkle/proof.hpp>
 
 #include <nil/filecoin/storage/proofs/core/components/variables.hpp>
