@@ -37,14 +37,16 @@ namespace nil {
 
             template<typename TField>
             class pick : public components::component<TField> {
-                
+                components::blueprint_variable_vector<TField> a;
+                components::blueprint_variable_vector<TField> b;
+                components::blueprint_variable_vector<TField> picked;
             public:
                 pick(components::blueprint<TField> &bp,
                      components::blueprint_variable_vector<TField> condition,
                      components::blueprint_variable_vector<TField> a,
                      components::blueprint_variable_vector<TField> b,
                      components::blueprint_variable_vector<TField> picked):
-                components::component<TField>(bp){
+                components::component<TField>(bp), a(a), b(b), picked(picked){
 
                 }
 
@@ -52,11 +54,11 @@ namespace nil {
                     // Constrain (b - a) * condition = (b - c), ensuring c = a iff
                     // condition is true, otherwise c = b.
                     this->bp.add_r1cs_constraint(snark::r1cs_constraint<FieldType>(
-                            b - a, condition, b - c));
+                            b - a, condition, b - picked));
                 }
 
                 void generate_r1cs_witness(){
-                    this->bp.val(c) = (this->bp.val(condition))?this->bp.val(a):this->bp.val(b);
+                    this->bp.val(picked) = (this->bp.val(condition))?this->bp.val(a):this->bp.val(b);
                 }
             };
             
