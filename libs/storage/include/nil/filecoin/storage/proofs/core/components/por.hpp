@@ -224,8 +224,8 @@ namespace nil {
                     pack_component.generate_r1cs_constraints();
                 }
 
-                void generate_r1cs_witness(root<TField> value, 
-                        AuthPathData<TField> auth_path, root<TField> root) {
+                void generate_r1cs_witness(typename TField::value_type value, 
+                        AuthPathData<TField> auth_path, typename TField::value_type root) {
 
                     bp.val(value_var_base) = value;
                     bp.val(root_var) = root;

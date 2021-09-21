@@ -65,135 +65,163 @@ namespace nil {
 
                  * @tparam Hash
                  */
-                template<typename Hash, typename CurveType = crypto3::algebra::curves::bls12<381>>
-                struct DrgPoRepCircuit
-                    : public crypto3::zk::components::component<typename CurveType::scalar_field_type> {
-                    typedef Hash hash_type;
-                    typedef CurveType curve_type;
-                    typedef typename curve_type::scalar_field_type fr_type;
-                    typedef typename fr_type::value_type fr_value_type;
+                template<typename TField, typename THash, bool TPrivate>
+                class DrgPoRepCircuit: public components::component<TField> {
 
-                    std::vector<fr_value_type> replica_nodes;
-                    std::vector<std::vector<std::pair<fr_value_type, std::size_t>>> replica_nodes_paths;
-                    root<fr_type> replica_root;
-                    std::vector<std::vector<fr_value_type>> replica_parents;
-                    std::vector<std::vector<std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>>>
-                        replica_parents_paths;
-                    std::vector<fr_value_type> data_nodes;
-                    std::vector<std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>> data_nodes_paths;
-                    root<fr_type> data_root;
-                    fr_value_type replica_id;
-                    bool priv;
+                    components::blueprint_variable<TField> replica_id_var;
+                    components::blueprint_variable<TField> replica_root_var;
+                    components::blueprint_variable<TField> data_root_var;
 
-                    crypto3::zk::components::blueprint_variable<fr_type> replica_node_num;
+                    std::vector<PoR<TField, BinaryMerkleTree<THash>, TPrivate>> replica_inclusion_por_components;
+                    std::vector<std::vector<PoR<TField, BinaryMerkleTree<THash>, TPrivate>>> parents_inclusion_por_components;
+                    std::vector<PoR<TField, BinaryMerkleTree<THash>, TPrivate>> data_inclusion_por_components;
 
-                    DrgPoRepCircuit(crypto3::zk::components::blueprint<fr_type> &bp,
-                                    const crypto3::zk::components::blueprint_variable<fr_type> &rroot,
-                                    const crypto3::zk::components::blueprint_variable<fr_type> &droot) :
+                    components::blueprint_variable_vector<TField> replica_id_to_bits;
+                    components::reverse_bit_numbering_to_bits_le_packing<TField> replica_id_to_bits_component;
+
+                    std::vector<components::blueprint_variable_vector<TField>> replica_parents_vars;
+                    std::vector<std::vector<components::blueprint_variable_vector<TField>>> parents_bits;
+                    std::vector<std::vector<components::reverse_bit_numbering_to_bits_le_packing<TField>>> replica_parents_to_bits_component;
+
+                    components::blueprint_variable_vector<TField> kdf_keys;
+                    components::blueprint_variable_vector<TField> replica_node_vars;
+                    components::blueprint_variable_vector<TField> decoded_vars;
+                    components::blueprint_variable_vector<TField> expected_vars;
+
+                    std::size_t nodes_count;
+                    std::vector<std::size_t> replica_parents_counts;
+                public:
+
+                    DrgPoRepCircuit(components::blueprint<TField> &bp,
+                                    const components::blueprint_variable<TField> &rroot,
+                                    const components::blueprint_variable<TField> &droot, 
+                                    std::size_t nodes_count, 
+                                    std::vector<std::size_t> replica_parents_counts) :
                         replica_root(rroot),
-                        data_root(droot), crypto3::zk::components::component<fr_type>(bp) {
-                        replica_node_num.allocate(bp);
+                        data_root(droot), components::component<TField>(bp), 
+                        nodes_count(nodes_count), replica_parents_counts(replica_parents_counts) {
+
+                        replica_id_var.allocate(bp);
+                        replica_root_var.allocate(bp);
+                        data_root_var.allocate(bp);
+
+                        replica_id_to_bits.allocate(bp, ???);
+
+                        replica_id_to_bits_component = components::reverse_bit_numbering_to_bits_le_packing<TField>(replica_id_var, 
+                            replica_id_to_bits);
+
+                        for (std::size_t i = 0; i < nodes_count; i++){
+                            // Inclusion checks
+                            replica_inclusion_por_components.emplace_back(???);
+                            // validate each replica_parents merkle proof
+                            for (std::size_t j = 0; j < replica_parents_counts[i]; j++){
+                                parents_inclusion_por_components[i].emplace_back(???);
+                            }
+                            // validate data node commitment
+                            data_inclusion_por_components.emplace_back(???);
+
+                            replica_parents_vars[i].allocate(bp, replica_parents_counts[j]);
+                            for (int j = 0; j < replica_parents_counts[j]; j++) {
+                                parents_bits[i][j].allocate(bp, ???);
+                                replica_parents_to_bits_component[i].emplace_back(replica_parents_vars[i][j], 
+                                    parents_bits[i][j]);
+                            }
+                        }
+
+                        // TODO: KDF component alloc
+
+                        kdf_keys.allocate(bp, nodes_count);
+                        replica_node_vars.allocate(bp, nodes_count);
+                        decoded_vars.allocate(bp, nodes_count);
+
+                        for (std::size_t i = 0; i < nodes_count; i++){
+                            decode_components.emplace_back(kdf_keys[i], replica_node_vars[i], decoded_vars[i]);
+                        }
+
+                        expected_vars.allocate(bp, nodes_count);
                     }
 
-                    template<template<typename> class ConstraintSystem>
-                    void synthesize(ConstraintSystem<crypto3::algebra::curves::bls12<381>> &cs) {
-                        fr_value_type replica_id = replica_id;
-                        root<fr_type> replica_root = replica_root;
-                        root<fr_type> data_root = data_root;
-
-                        std::size_t nodes = data_nodes.size();
-
-                        assert(replica_nodes.size() == nodes);
-                        assert(replica_nodes_paths.size() == nodes);
-                        assert(replica_parents.size() == nodes);
-                        assert(replica_parents_paths.size() == nodes);
-                        assert(data_nodes_paths.size() == nodes);
-
-                        std::size_t replica_node_num = num::AllocatedNumber::alloc(
-                            cs.namespace(|| "replica_id_num"),
-                            || {replica_id.ok_or_else(|| SynthesisError::AssignmentMissing)});
-
-                        replica_node_num.inputize(cs.namespace(|| "replica_id"));
-
-                        // get the replica_id in bits
-                        std::size_t replica_id_bits =
-                            reverse_bit_numbering(replica_node_num.to_bits_le(cs.namespace(|| "replica_id_bits")));
-
-                        const auto replica_root_var =
-                            Root::Var(replica_root.allocated(cs.namespace(|| "replica_root")));
-                        const auto data_root_var = Root::Var(data_root.allocated(cs.namespace(|| "data_root")));
-
-                        for (int i = 0; i < data_nodes.size(); i++) {
-                            auto cs = cs.namespace(|| std::format("challenge_{}", i));
-                            // ensure that all inputs are well formed
-                            std::vector<std::pair<fr_value_type, std::size_t>> replica_node_path =
-                                this->replica_nodes_paths[i];
-                            std::vector<std::vector<std::pair<std::vector<fr_value_type>, std::size_t>>>
-                                replica_parents_paths = this->replica_parents_paths[i];
-                            std::vector<std::pair<std::vector<fr_value_type>, std::size_t>> data_node_path =
-                                this->data_nodes_paths[i];
-
-                            fr_value_type replica_node = replica_nodes[i];
-                            std::vector<fr_value_type> replica_parents = replica_parents[i];
-                            fr_value_type data_node = data_nodes[i];
-
-                            assert(replica_parents.size() == replica_parents_paths.size());
-                            assert(data_node_path.size() == replica_node_path.size());
-                            assert(replica_node.is_some() == data_node.is_some());
+                    void generate_r1cs_constraints() {
+                        for (std::size_t i = 0; i < nodes_count; i++){
 
                             // Inclusion checks
-                            auto cs = cs.namespace(|| "inclusion_checks");
-                            PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
-                                cs.namespace(|| "replica_inclusion"), Root::Val(*replica_node),
-                                replica_node_path.clone().into(), replica_root_var.clone(), self.priv);
-
+                            replica_inclusion_por_components.generate_r1cs_constraints();
                             // validate each replica_parents merkle proof
-                            for (int i = 0; i < replica_parents.size(); i++) {
-                                PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
-                                    cs.namespace(|| std::format("parents_inclusion_{}", j)),
-                                    Root::Val(replica_parents[j]), replica_parents_paths[j].clone().into(),
-                                    replica_root_var.clone(), self.priv);
+                            for (std::size_t j = 0; j < replica_parents_counts[i]; j++){
+                                parents_inclusion_por_components[i].generate_r1cs_constraints();
                             }
 
                             // validate data node commitment
-                            PoRCircuit<BinaryMerkleTree<Hash>>::synthesize(
-                                cs.namespace(|| "data_inclusion"), Root::Val(*data_node), data_node_path.clone().into(),
-                                data_root_var.clone(), self.priv);
+                            data_inclusion_por_components.generate_r1cs_constraints();
 
-                            // Encoding checks
-                            auto cs = cs.namespace(|| "encoding_checks");
-                            // get the parents into bits
-                            std::vector<std::vector<bool>> parents_bits;
-
-                            for (int i = 0; i < replica_parents.size(); i++) {
-                                const auto num = num::AllocatedNumber::alloc(
-                                    cs.namespace(|| std::format("parents_{}_num", i)),
-                                    || {replica_parents[i]
-                                            .map(Into::into)
-                                            .ok_or_else(|| SynthesisError::AssignmentMissing)});
-                                parents_bits.push_back(reverse_bit_numbering(
-                                    num.to_bits_le(cs.namespace(|| std::format("parents_{}_bits", i)))))
+                            for (std::size_t j = 0; j < replica_parents_counts[j]; j++) {
+                                replica_parents_to_bits_component[i].generate_r1cs_constraints();
                             }
 
-                            // generate the encryption key
-                            const auto key = kdf(cs.namespace(|| "kdf"), &replica_id_bits, parents_bits, None, None);
+                            // TODO: KDF component generate_r1cs_constraints
 
-                            const auto replica_node_num = num::AllocatedNumber::alloc(
-                                cs.namespace(|| "replica_node"),
-                                || {(*replica_node).ok_or_else(|| SynthesisError::AssignmentMissing)});
+                            decode_components[i].generate_r1cs_constraints();
 
-                            const auto decoded = encode::decode(cs.namespace(|| "decode"), &key, &replica_node_num);
+                            this->bp.add_r1cs_constraint(snark::r1cs_constraint<FieldType>(
+                                expected_vars[i], 1, decoded_vars[i]));
+                        }
+                    }
 
-                            // TODO this should not be here, instead, this should be the leaf Fr in the
-                            // data_auth_path
-                            // TODO also note that we need to change/makesurethat the leaves are the data, instead
-                            // of hashes of the data
-                            const auto expected = num::AllocatedNumber::alloc(
-                                cs.namespace(|| "data node"),
-                                || {data_node.ok_or_else(|| SynthesisError::AssignmentMissing)});
+                    void generate_r1cs_witness(std::vector<typename TField::value_type> replica_nodes,
+                                               std::vector<std::vector<std::pair<typename TField::value_type, std::size_t>>> replica_nodes_paths,
+                                               typename TField::value_type replica_root,
+                                               std::vector<std::vector<typename TField::value_type>> replica_parents,
+                                               std::vector<std::vector<std::vector<std::pair<std::vector<typename TField::value_type>, std::size_t>>>>
+                                                   replica_parents_paths,
+                                               std::vector<typename TField::value_type> data_nodes,
+                                               std::vector<std::vector<std::pair<std::vector<typename TField::value_type>, std::size_t>>> data_nodes_paths,
+                                               typename TField::value_type data_root,
+                                               typename TField::value_type replica_id,
+                                               bool priv){
 
-                            // ensure the encrypted data and data_node match
-                            constraint::equal(cs, || "equality", &expected, &decoded);
+                        assert(replica_nodes.size() == nodes_count);
+                        assert(replica_nodes_paths.size() == nodes_count);
+                        assert(replica_parents.size() == nodes_count);
+                        assert(replica_parents_paths.size() == nodes_count);
+                        assert(data_nodes_paths.size() == nodes_count);
+
+                        this->bp.val(replica_id_var) = replica_id;
+                        this->bp.val(replica_root_var) = replica_root;
+                        this->bp.val(data_root_var) = data_root;
+
+                        replica_id_to_bits_component.generate_r1cs_witness();
+
+                        std::size_t replica_id_bits = this->bp.val(replica_node_to_bits);
+
+                        for (std::size_t i = 0; i < nodes_count; i++){
+                            assert(replica_parents[i].size() == replica_parents_paths[i].size());
+                            assert(data_node_path[i].size() == replica_node_path[i].size());
+
+                            // Inclusion checks
+                            replica_inclusion_por_components.generate_r1cs_witness(replica_nodes[i], 
+                                replica_nodes_paths[i], replica_root);
+                            // validate each replica_parents merkle proof
+                            for (std::size_t j = 0; j < replica_parents_counts[i]; j++){
+                                parents_inclusion_por_components[i].generate_r1cs_witness(replica_parents[i], 
+                                    replica_parents_paths[i], replica_root);
+                            }
+
+                            // validate data node commitment
+                            data_inclusion_por_components.generate_r1cs_witness(data_nodes[i], 
+                                data_nodes_paths[i], data_root);
+
+                            for (std::size_t j = 0; j < replica_parents_counts[j]; j++) {
+                                this->bp.val(replica_parents_vars[i][j]) = replica_parents[i][j];
+                                replica_parents_to_bits_component[i].generate_r1cs_witness();
+                            }
+
+                            // TODO: KDF component generate_r1cs_witness
+
+                            this->bp.val(replica_node_vars[i]) = replica_nodes[i];
+
+                            decode_components[i].generate_r1cs_witness();
+
+                            this->bp.val(expected_vars[i]) = data_nodes[i];
                         }
                     }
                 };
@@ -221,7 +249,7 @@ namespace nil {
                     }
 
                     const auto alloc_bits = sha256_circuit(cs.namespace(|| "hash"), &ciphertexts[..]);
-                    fr_value_type fr;
+                    typename TField::value_type fr;
 
                     if (alloc_bits[0].get_value().is_some()) {
                         const auto be_bits = alloc_bits.iter()
