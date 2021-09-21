@@ -34,6 +34,7 @@
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
+#include <nil/filecoin/storage/proofs/core/merkle/merkle.hpp>
 #include <nil/filecoin/storage/proofs/core/proof/proof.hpp>
 #include <nil/filecoin/storage/proofs/core/crypto/feistel.hpp>
 #include <nil/filecoin/storage/proofs/core/path_element.hpp>
@@ -110,7 +111,7 @@ namespace nil {
                     sub_tree_layer_nodes(SubTreeArity), lemma(lemma), path(path){
                     if (TopLayerArity == 0 && SubTreeArity == 0) {
                         BOOST_ASSERT_MSG(lemma.size() > 2, "Invalid lemma length (short)");
-                        BOOST_ASSERT_MSG(lemma.size() == get_merkle_proof_lemma_len(path.size() + 1, BaseTreeArity), 
+                        BOOST_ASSERT_MSG(lemma.size() == utilities::get_merkle_proof_lemma_len(path.size() + 1, BaseTreeArity),
                             "Invalid lemma length");
                     }
                 }
@@ -136,7 +137,7 @@ namespace nil {
                 bool validate_sub_tree_proof(std::size_t arity) {
                     // Ensure that the sub_tree validates to the root of that
                     // sub_tree.
-                    bool valid = sub_tree_proof.unwrap().validate::<A>();
+                    bool valid = sub_tree_proof.unwrap().validate::<Algorithm<T>>();
                     if (!valid) {
                             return valid;
                         }
@@ -147,7 +148,7 @@ namespace nil {
                     // that Proof::validate at the base layer cannot handle a
                     // proof this small, so this is a version specific for what we
                     // know we have in this case).
-                    auto a = A::default();
+                    auto a = Algorithm<T>::default();
                     a.reset();
                     const auto node_count = arity;
                     const auto h = {
@@ -204,11 +205,11 @@ namespace nil {
                     }
 
                     std::size_t branches = BaseTreeArity;
-                    auto a = A::default();
-                    auto h = self.item();
+                    auto a = Algorithm<T>::default();
+                    auto h = this->item();
                     auto path_index = 1;
 
-                    for (i in (1..size - 1).step_by(branches - 1)) {
+                    for (size_t i = 1; i < size - 1; i += branches - 1) {
                         a.reset();
                         h = {
                             std::vector<T> nodes;
@@ -238,7 +239,7 @@ namespace nil {
                     /// Verifies MT inclusion proof and that leaf_data is the original leaf data for which proof was generated.
                     template<template<typename> class Algorithm>
                     bool validate_with_data(leaf_data: &dyn Hashable<A>) {
-                    auto a = A::default();
+                    auto a = Algorithm<T>::default();
                     leaf_data.hash(&a);
                     const auto item = a.hash();
                     a.reset();
@@ -254,7 +255,7 @@ namespace nil {
 
             /// Interface to abstract over the concept of Merkle Proof.
             template<typename Hash, std::size_t BaseArity, std::size_t SubTreeArity, std::size_t TopTreeArity,
-                     typename FieldType = typename algebra::curves::bls12<381>::scalar_field_type>
+                     typename FieldType = typename crypto3::algebra::curves::bls12<381>::scalar_field_type>
             struct BasicMerkleProof {
                 typedef Hash hash_type;
                 typedef FieldType field_type;
