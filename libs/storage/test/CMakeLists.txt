@@ -74,6 +74,7 @@ endmacro()
 set(TESTS_NAMES
     "core/crypto/feistel"
 
+    "core/components/insertion"
     "core/components/por"
 
     "core/merkle/proof"
