@@ -35,25 +35,27 @@ namespace nil {
     namespace filecoin {
         namespace components {
 
-            template<typename TField>
-            class pick : public components::component<TField> {
-                components::blueprint_variable_vector<TField> a;
-                components::blueprint_variable_vector<TField> b;
-                components::blueprint_variable_vector<TField> picked;
-            public:
-                pick(components::blueprint<TField> &bp,
-                     components::blueprint_variable_vector<TField> condition,
-                     components::blueprint_variable_vector<TField> a,
-                     components::blueprint_variable_vector<TField> b,
-                     components::blueprint_variable_vector<TField> picked):
-                components::component<TField>(bp), a(a), b(b), picked(picked){
+            using namespace nil::crypto3;
 
+            template<typename TField>
+            class pick : public zk::components::component<TField> {
+                zk::components::blueprint_variable<TField> condition;
+                zk::components::blueprint_variable<TField> a;
+                zk::components::blueprint_variable<TField> b;
+                zk::components::blueprint_variable<TField> picked;
+            public:
+                pick(zk::components::blueprint<TField> &bp,
+                     zk::components::blueprint_variable<TField> condition,
+                     zk::components::blueprint_variable<TField> a,
+                     zk::components::blueprint_variable<TField> b,
+                     zk::components::blueprint_variable<TField> &picked):
+                zk::components::component<TField>(bp), condition(condition), a(a), b(b), picked(picked){
                 }
 
                 void generate_r1cs_constraints() {
                     // Constrain (b - a) * condition = (b - c), ensuring c = a iff
                     // condition is true, otherwise c = b.
-                    this->bp.add_r1cs_constraint(snark::r1cs_constraint<FieldType>(
+                    this->bp.add_r1cs_constraint(zk::snark::r1cs_constraint<TField>(
                             b - a, condition, b - picked));
                 }
 

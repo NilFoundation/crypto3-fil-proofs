@@ -36,8 +36,7 @@
 #include <nil/crypto3/algebra/random_element.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::crypto3::zk;
-using namespace nil::filecoin::components;
+using namespace nil::filecoin;
 
 BOOST_AUTO_TEST_SUITE(insertion_component_test_suite)
 
@@ -48,25 +47,25 @@ BOOST_AUTO_TEST_CASE(test_insertion) {
         std::size_t size = 1<<log_size;
         for (std::size_t index=0; index<size; index++) {
 
-            components::blueprint<field_type> bp;
-            components::blueprint_variable_vector<field_type> elements;
+            zk::components::blueprint<field_type> bp;
+            zk::components::blueprint_variable_vector<field_type> elements;
             elements.allocate(bp, size-1);
             for (std::size_t i=0; i<size-1; i++){
                 bp.val(elements[i]) = algebra::random_element<field_type>();
             }
 
-            components::blueprint_variable<field_type> element_to_insert;
+            zk::components::blueprint_variable<field_type> element_to_insert;
             bp.val(element_to_insert) = algebra::random_element<field_type>();
 
-            components::blueprint_variable_vector<field_type> index_bits;
+            zk::components::blueprint_variable_vector<field_type> index_bits;
             index_bits.allocate(bp, log_size);
             for (std::size_t i=0; i<log_size; i++){
                 bp.val(index_bits[i]) = typename field_type::value_type((index >> i) & 1);
             }
 
-            components::blueprint_variable_vector<field_type> inserted;
+            zk::components::blueprint_variable_vector<field_type> inserted;
 
-            components::insert<FieldType> insert_component(bp, index_bits, element_to_insert, elements, inserted);
+            components::runtime_insert<field_type> insert_component(bp, index_bits, element_to_insert, elements, inserted);
 
             insert_component.generate_r1cs_constraints();
             insert_component.generate_r1cs_witness();

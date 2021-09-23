@@ -420,11 +420,10 @@ void test_private_por_input_circuit<Tree : MerkleTreeTrait>(std::size_t num_cons
 
         auto cs = TestConstraintSystem::<algebra::curves::bls12<381>>();
 
-        const auto por = PoRCircuit<MerkleTreeType> {
-            value : Root::Val(Some(proof.data.into())),
+        const auto por = components::PoR<MerkleTreeType, private = true> {
+            value : Root::Val(proof.data.into()),
             auth_path : proof.proof.as_options().into(),
-            root : Root::Val(Some(tree.root().into())),
-            private : true
+            root : Root::Val(tree.root().into())
         };
 
         por.synthesize(cs).expect("circuit synthesis failed");

@@ -31,17 +31,22 @@
 #include <nil/crypto3/zk/components/blueprint_variable.hpp>
 #include <nil/crypto3/zk/components/component.hpp>
 
+#include <nil/crypto3/zk/components/conjunction.hpp>
+
 #include <nil/filecoin/storage/proofs/core/components/pick.hpp>
 
 namespace nil {
     namespace filecoin {
         namespace components {
 
+            template<typename TField, std::size_t Size>
+            class insert;
+
             // TODO: looks like the input container size is constexpr value -> 
             // instead of an if it the algorithm choice could be done using 
             // specialization
             template<typename TField>
-            class insert : public components::component<TField> {
+            class runtime_insert : public zk::components::component<TField> {
                 std::size_t size;
 
                 insert<TField, 2> insert_2;
@@ -49,12 +54,12 @@ namespace nil {
                 insert<TField, 8> insert_8;
 
             public:
-                insert(components::blueprint<TField> &bp,
-                       components::blueprint_variable<TField> &element_to_insert,
-                       components::blueprint_variable_vector<TField> bits,
-                       components::blueprint_variable_vector<TField> elements,
-                       components::blueprint_variable_vector<TField> inserted):
-                components::component<TField>(bp), size(elements.len() + 1) {
+                runtime_insert(zk::components::blueprint<TField> &bp,
+                       zk::components::blueprint_variable<TField> &element_to_insert,
+                       zk::components::blueprint_variable_vector<TField> bits,
+                       zk::components::blueprint_variable_vector<TField> elements,
+                       zk::components::blueprint_variable_vector<TField> inserted):
+                zk::components::component<TField>(bp), size(elements.len() + 1) {
 
                     // For the sizes we know we need, we can take advantage of redundancy in the candidate selection at each position.
                     // This allows us to accomplish insertion with fewer constraints, if we hand-optimize.
@@ -66,61 +71,58 @@ namespace nil {
                     //
                     // Future work: In theory, we could compile arbitrary lookup tables to minimize constraints and avoid
                     // the most general case except when actually required — which it never is for simple insertion.
-                    if size == 2 {
-                        insert_2 = insert<2>(bp, element_to_insert, bits, elements, inserted);
-                    } else if size == 4 {
-                        insert_4 = insert<4>(bp, element_to_insert, bits, elements, inserted);
-                    } else if size == 8 {
-                        insert_8 = insert<8>(bp, element_to_insert, bits, elements, inserted);
+                    if (size == 2) {
+                        insert_2 = insert<TField, 2>(bp, element_to_insert, bits, elements, inserted);
+                    } else if (size == 4) {
+                        insert_4 = insert<TField, 4>(bp, element_to_insert, bits, elements, inserted);
+                    } else if (size == 8) {
+                        insert_8 = insert<TField, 8>(bp, element_to_insert, bits, elements, inserted);
                     };
                 }
 
                 void generate_r1cs_constraints() {
-                    if size == 2 {
+                    if (size == 2) {
                         insert_2.generate_r1cs_constraints();
-                    } else if size == 4 {
+                    } else if (size == 4) {
                         insert_4.generate_r1cs_constraints();
-                    } else if size == 8 {
+                    } else if (size == 8) {
                         insert_8.generate_r1cs_constraints();
                     };
                 }
 
                 void generate_r1cs_witness(){
-                    if size == 2 {
+                    if (size == 2) {
                         insert_2.generate_r1cs_witness();
-                    } else if size == 4 {
+                    } else if (size == 4) {
                         insert_4.generate_r1cs_witness();
-                    } else if size == 8 {
+                    } else if (size == 8) {
                         insert_8.generate_r1cs_witness();
                     };
                 }
             };
 
-            template<typename TField, std::size_t Size>
-            class insert;
-
             template<typename TField>
-            class insert<TField, 2> : public components::component<TField> {
+            class insert<TField, 2> : public zk::components::component<TField> {
                 
                 pick<TField> pick_component0;
                 pick<TField> pick_component1;
             public:
-                insert(components::blueprint<TField> &bp,
-                       components::blueprint_variable<TField> &element_to_insert, 
-                       components::blueprint_variable_vector<TField> bits, 
-                       components::blueprint_variable_vector<TField> elements,
-                       components::blueprint_variable_vector<TField> inserted):
-                components::component<TField>(bp) {
+                insert(zk::components::blueprint<TField> &bp,
+                       zk::components::blueprint_variable<TField> &element_to_insert, 
+                       zk::components::blueprint_variable_vector<TField> bits, 
+                       zk::components::blueprint_variable_vector<TField> elements,
+                       zk::components::blueprint_variable_vector<TField> inserted):
+                zk::components::component<TField>(bp) {
                     assert(bits.len() == 1);
 
-                    pick_component0 = pick(
+                    pick_component0 = pick<TField>(
                         bp,
                         bits[0],
                         elements[0],
                         element_to_insert,
                         inserted[0]
                     );
-                    pick_component1 = pick(
+                    pick_component1 = pick<TField>(
                         bp,
                         bits[0],
                         element_to_insert,
@@ -155,7 +157,7 @@ namespace nil {
             d = elements[2]
              */
             template<typename TField>
-            class insert<TField, 4> : public components::component<TField> {
+            class insert<TField, 4> : public zk::components::component<TField> {
                 
                 pick<TField> pick_component0;
                 pick<TField> pick_component1;
@@ -167,39 +169,39 @@ namespace nil {
                 pick<TField> pick_component2_intermediate;
                 pick<TField> pick_component3_intermediate;
 
-                components::blueprint_variable<TField> p0_x0;
-                components::blueprint_variable<TField> p1_x0;
-                components::blueprint_variable<TField> p2_x1;
-                components::blueprint_variable<TField> p3_x1;
+                zk::components::blueprint_variable<TField> p0_x0;
+                zk::components::blueprint_variable<TField> p1_x0;
+                zk::components::blueprint_variable<TField> p2_x1;
+                zk::components::blueprint_variable<TField> p3_x1;
 
             public:
-                insert(components::blueprint<TField> &bp,
-                       components::blueprint_variable<TField> &element_to_insert,
-                       components::blueprint_variable_vector<TField> bits,
-                       components::blueprint_variable_vector<TField> elements,
-                       components::blueprint_variable_vector<TField> inserted):
-                components::component<TField>(bp) {
+                insert(zk::components::blueprint<TField> &bp,
+                       zk::components::blueprint_variable<TField> &element_to_insert,
+                       zk::components::blueprint_variable_vector<TField> bits,
+                       zk::components::blueprint_variable_vector<TField> elements,
+                       zk::components::blueprint_variable_vector<TField> inserted):
+                zk::components::component<TField>(bp) {
                     assert(bits.len() == 2);
 
                     // Witness naming convention:
                     // `p0_x0` means "Output position 0 when b0 is unknown (x) and b1 is 0."
 
-                    components::blueprint_variable<TField> &a = element_to_insert;
-                    components::blueprint_variable<TField> &b = elements[0];
-                    components::blueprint_variable<TField> &c = elements[1];
-                    components::blueprint_variable<TField> &d = elements[2];
+                    zk::components::blueprint_variable<TField> &a = element_to_insert;
+                    zk::components::blueprint_variable<TField> &b = elements[0];
+                    zk::components::blueprint_variable<TField> &c = elements[1];
+                    zk::components::blueprint_variable<TField> &d = elements[2];
 
-                    pick_component0_intermediate = pick(bp, bits[0], b, a, p0_x0);
-                    pick_component0 = pick(bp, bits[1], b, p0_x0, inserted[0]);
+                    pick_component0_intermediate = pick<TField>(bp, bits[0], b, a, p0_x0);
+                    pick_component0 = pick<TField>(bp, bits[1], b, p0_x0, inserted[0]);
 
-                    pick_component1_intermediate = pick(bp, bits[0], a, b, p1_x0);
-                    pick_component1 = pick(bp, bits[1], c, p1_x0, inserted[1]);
+                    pick_component1_intermediate = pick<TField>(bp, bits[0], a, b, p1_x0);
+                    pick_component1 = pick<TField>(bp, bits[1], c, p1_x0, inserted[1]);
 
-                    pick_component2_intermediate = pick(bp, bits[0], d, a, p2_x1);
-                    pick_component2 = pick(bp, bits[1], p2_x1, c, inserted[2]);
+                    pick_component2_intermediate = pick<TField>(bp, bits[0], d, a, p2_x1);
+                    pick_component2 = pick<TField>(bp, bits[1], p2_x1, c, inserted[2]);
 
-                    pick_component3_intermediate = pick(bp, bits[0], a, d, p3_x1);
-                    pick_component3 = pick(bp, bits[1], p3_x1, d, inserted[3]);
+                    pick_component3_intermediate = pick<TField>(bp, bits[0], a, d, p3_x1);
+                    pick_component3 = pick<TField>(bp, bits[1], p3_x1, d, inserted[3]);
 
                 }
 
@@ -255,10 +257,10 @@ namespace nil {
             h = elements[6]
              */
             template<typename TField>
-            class insert<TField, 8> : public components::component<TField> {
+            class insert<TField, 8> : public zk::components::component<TField> {
                 
-                components::boolean_nor<TField> nor_component;
-                components::conjunction<TField> conjunction_component;
+                zk::components::boolean_nor<TField> nor_component;
+                zk::components::conjunction<TField> conjunction_component;
 
                 pick<TField> pick_component0;
                 pick<TField> pick_component1;
@@ -282,74 +284,74 @@ namespace nil {
                 pick<TField> pick_component6_intermediate1;
                 pick<TField> pick_component7_intermediate;
 
-                components::blueprint_variable<TField> b0_nor_b1;
-                components::blueprint_variable<TField> b0_and_b1;
+                zk::components::blueprint_variable<TField> b0_nor_b1;
+                zk::components::blueprint_variable<TField> b0_and_b1;
 
-                components::blueprint_variable<TField> p0_xx0;
-                components::blueprint_variable<TField> p1_x00;
-                components::blueprint_variable<TField> p1_xx0;
-                components::blueprint_variable<TField> p2_x10;
-                components::blueprint_variable<TField> p2_xx0;
-                components::blueprint_variable<TField> p3_xx0;
-                components::blueprint_variable<TField> p4_xx1;
-                components::blueprint_variable<TField> p5_x01;
-                components::blueprint_variable<TField> p5_xx1;
-                components::blueprint_variable<TField> p6_x11;
-                components::blueprint_variable<TField> p6_xx1;
-                components::blueprint_variable<TField> p7_xx1;
+                zk::components::blueprint_variable<TField> p0_xx0;
+                zk::components::blueprint_variable<TField> p1_x00;
+                zk::components::blueprint_variable<TField> p1_xx0;
+                zk::components::blueprint_variable<TField> p2_x10;
+                zk::components::blueprint_variable<TField> p2_xx0;
+                zk::components::blueprint_variable<TField> p3_xx0;
+                zk::components::blueprint_variable<TField> p4_xx1;
+                zk::components::blueprint_variable<TField> p5_x01;
+                zk::components::blueprint_variable<TField> p5_xx1;
+                zk::components::blueprint_variable<TField> p6_x11;
+                zk::components::blueprint_variable<TField> p6_xx1;
+                zk::components::blueprint_variable<TField> p7_xx1;
 
             public:
-                insert(components::blueprint<TField> &bp,
-                       components::blueprint_variable<TField> &element_to_insert,
-                       components::blueprint_variable_vector<TField> bits,
-                       components::blueprint_variable_vector<TField> elements,
-                       components::blueprint_variable_vector<TField> inserted):
-                components::component<TField>(bp) {
+                insert(zk::components::blueprint<TField> &bp,
+                       zk::components::blueprint_variable<TField> &element_to_insert,
+                       zk::components::blueprint_variable_vector<TField> bits,
+                       zk::components::blueprint_variable_vector<TField> elements,
+                       zk::components::blueprint_variable_vector<TField> inserted):
+                zk::components::component<TField>(bp) {
                     assert(bits.len() == 3);
 
-                    components::blueprint_variable<TField> &b0 = bits[0];
-                    components::blueprint_variable<TField> &b1 = bits[1];
-                    components::blueprint_variable<TField> &b2 = bits[2];
+                    zk::components::blueprint_variable<TField> &b0 = bits[0];
+                    zk::components::blueprint_variable<TField> &b1 = bits[1];
+                    zk::components::blueprint_variable<TField> &b2 = bits[2];
 
-                    components::blueprint_variable<TField> &a = element_to_insert;
-                    components::blueprint_variable<TField> &b = elements[0];
-                    components::blueprint_variable<TField> &c = elements[1];
-                    components::blueprint_variable<TField> &d = elements[2];
-                    components::blueprint_variable<TField> &e = elements[3];
-                    components::blueprint_variable<TField> &f = elements[4];
-                    components::blueprint_variable<TField> &g = elements[5];
-                    components::blueprint_variable<TField> &h = elements[6];
+                    zk::components::blueprint_variable<TField> &a = element_to_insert;
+                    zk::components::blueprint_variable<TField> &b = elements[0];
+                    zk::components::blueprint_variable<TField> &c = elements[1];
+                    zk::components::blueprint_variable<TField> &d = elements[2];
+                    zk::components::blueprint_variable<TField> &e = elements[3];
+                    zk::components::blueprint_variable<TField> &f = elements[4];
+                    zk::components::blueprint_variable<TField> &g = elements[5];
+                    zk::components::blueprint_variable<TField> &h = elements[6];
 
-                    nor_component = components::boolean_nor(bp, b0, b1, b0_nor_b1);
-                    conjunction_component = components::conjunction<TField>(bp, b0, b1, b0_and_b1);
+                    nor_component = zk::components::boolean_nor(bp, b0, b1, b0_nor_b1);
+                    conjunction_component = zk::components::conjunction<TField>(bp, b0, b1, b0_and_b1);
 
-                    pick_component0_intermediate = pick(bp, b0_nor_b1, a, b, p0_xx0);
-                    pick_component0 = pick(bp, b2, b, p0_xx0, inserted[0]);
+                    pick_component0_intermediate = pick<TField>(bp, b0_nor_b1, a, b, p0_xx0);
+                    pick_component0 = pick<TField>(bp, b2, b, p0_xx0, inserted[0]);
 
-                    pick_component1_intermediate0 = pick(bp, b0, a, b, p1_x00);
-                    pick_component1_intermediate1 = pick(bp, b1, c, p1_x00, p1_xx0);
-                    pick_component1 = pick(bp, b2, c, p1_xx0, inserted[1]);
+                    pick_component1_intermediate0 = pick<TField>(bp, b0, a, b, p1_x00);
+                    pick_component1_intermediate1 = pick<TField>(bp, b1, c, p1_x00, p1_xx0);
+                    pick_component1 = pick<TField>(bp, b2, c, p1_xx0, inserted[1]);
 
-                    pick_component2_intermediate0 = pick(bp, b0, d, a, p2_x10);
-                    pick_component2_intermediate1 = pick(bp, b1, p2_x10, c, p2_xx0);
-                    pick_component2 = pick(bp, b2, d, p2_xx0, inserted[2]);
+                    pick_component2_intermediate0 = pick<TField>(bp, b0, d, a, p2_x10);
+                    pick_component2_intermediate1 = pick<TField>(bp, b1, p2_x10, c, p2_xx0);
+                    pick_component2 = pick<TField>(bp, b2, d, p2_xx0, inserted[2]);
 
-                    pick_component3_intermediate = pick(bp, b0_and_b1, a, d, p3_xx0);
-                    pick_component3 = pick(bp, b2, e, p3_xx0, inserted[3]);
+                    pick_component3_intermediate = pick<TField>(bp, b0_and_b1, a, d, p3_xx0);
+                    pick_component3 = pick<TField>(bp, b2, e, p3_xx0, inserted[3]);
 
-                    pick_component4_intermediate = pick(bp, b0_nor_b1, a, f, p4_xx1);
-                    pick_component4 = pick(bp, b2, p4_xx1, e, inserted[4]);
+                    pick_component4_intermediate = pick<TField>(bp, b0_nor_b1, a, f, p4_xx1);
+                    pick_component4 = pick<TField>(bp, b2, p4_xx1, e, inserted[4]);
 
-                    pick_component5_intermediate0 = pick(bp, b0, a, f, p5_x01);
-                    pick_component5_intermediate1 = pick(bp, b1, g, p5_x01, p5_xx1);
-                    pick_component5 = pick(bp, b2, p5_xx1, f, inserted[5]);
+                    pick_component5_intermediate0 = pick<TField>(bp, b0, a, f, p5_x01);
+                    pick_component5_intermediate1 = pick<TField>(bp, b1, g, p5_x01, p5_xx1);
+                    pick_component5 = pick<TField>(bp, b2, p5_xx1, f, inserted[5]);
 
-                    pick_component6_intermediate0 = pick(bp, b0, h, a, p6_x11);
-                    pick_component6_intermediate1 = pick(bp, b1, p6_x11, g, p6_xx1);
-                    pick_component6 = pick(bp, b2, p6_xx1, g, inserted[6]);
+                    pick_component6_intermediate0 = pick<TField>(bp, b0, h, a, p6_x11);
+                    pick_component6_intermediate1 = pick<TField>(bp, b1, p6_x11, g, p6_xx1);
+                    pick_component6 = pick<TField>(bp, b2, p6_xx1, g, inserted[6]);
 
-                    pick_component7_intermediate = pick(bp, b0_and_b1, a, h, p7_xx1);
-                    pick_component7 = pick(bp, b2, p7_xx1, h, inserted[7]);
+                    pick_component7_intermediate = pick<TField>(bp, b0_and_b1, a, h, p7_xx1);
+                    pick_component7 = pick<TField>(bp, b2, p7_xx1, h, inserted[7]);
 
                 }
 
