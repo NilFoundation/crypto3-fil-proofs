@@ -91,9 +91,9 @@ set(TESTS_NAMES
     "porep/stacked/vanilla/cache"
     "porep/stacked/vanilla/proof"
 
-    "porep/stacked/circuit/create_label"
-    "porep/stacked/circuit/proof"
-    "porep/stacked/circuit/hash"
+    "porep/stacked/components/create_label"
+    "porep/stacked/components/proof"
+    "porep/stacked/components/hash"
 
     "post/election/circuit"
     "post/election/compound"

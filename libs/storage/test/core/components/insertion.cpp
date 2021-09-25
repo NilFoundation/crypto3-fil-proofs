@@ -50,24 +50,26 @@ BOOST_AUTO_TEST_CASE(test_insertion) {
             zk::components::blueprint<field_type> bp;
             zk::components::blueprint_variable_vector<field_type> elements;
             elements.allocate(bp, size-1);
-            for (std::size_t i=0; i<size-1; i++){
+            for (std::size_t i = 0; i < size-1; i++){
                 bp.val(elements[i]) = algebra::random_element<field_type>();
             }
 
             zk::components::blueprint_variable<field_type> element_to_insert;
             bp.val(element_to_insert) = algebra::random_element<field_type>();
 
-            zk::components::blueprint_variable_vector<field_type> index_bits;
+            zk::components::boolean_vector<field_type> index_bits;
             index_bits.allocate(bp, log_size);
-            for (std::size_t i=0; i<log_size; i++){
-                bp.val(index_bits[i]) = typename field_type::value_type((index >> i) & 1);
+            for (std::size_t i = 0; i < log_size; i++){
+                index_bits[i].val(bp, (index >> i) & 1);
             }
 
             zk::components::blueprint_variable_vector<field_type> inserted;
+            inserted.allocate(bp, size);
 
-            components::runtime_insert<field_type> insert_component(bp, index_bits, element_to_insert, elements, inserted);
+            components::runtime_insert<field_type> insert_component(bp, element_to_insert, index_bits, elements, inserted);
 
             insert_component.generate_r1cs_constraints();
+
             insert_component.generate_r1cs_witness();
 
             assert(bp.is_satisfied());
