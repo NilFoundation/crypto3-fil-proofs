@@ -34,8 +34,7 @@
 namespace nil {
     namespace filecoin {
         namespace storage {
-            template <typename Element>
-            class DiskStore: public Storage{
+            class DiskStore: public Storage {
                 size_t len;
                 size_t elem_len;
                 ifstream file;
@@ -72,15 +71,6 @@ namespace nil {
                 DiskStore(size_t size) {
                     size_t store_size = Element::byte_len() * size;
                     BOOST_ASSERT_MSG(false, "Not valid");
-//                    FILE *file = tempfile()?;
-                    file.set_len(store_size as u64)?;
-                    fbuf.pubseekoff(store_size, std::ios_base::beg);
-                    fbuf.sputc(0);
-                    this->len = 0;
-                    this->elem_len = Element::byte_len();
-                    this->file = file;
-                    this->loaded_from_disk = false;
-                    this->store_size = store_size;
                 }
 
                 DiskStore new_from_slice_with_config(size_t size, size_t branches, uint8_t *data, StoreConfig config) {
@@ -119,6 +109,11 @@ namespace nil {
                     BOOST_ASSERT_MSG(buf.len() % this->elem_len == 0, "buf size must be a multiple of {}", this->elem_len);
                     this->store_copy_from_slice(start * this->elem_len, buf)?;
                     this->len = std::max(this->len, start + buf.len() / this->elem_len);
+                }
+
+                void read(std::pair<size_t, size_t> read, uint8_t *buf) {
+                    BOOST_ASSERT_MSG(read.first >= len || read.second >= len, "Invalid read range");
+                    memcpy(buf, static_cast<char *>(addr) + read.first, read.second - read.first);
                 }
 
                 Element read_at(size_t index) {

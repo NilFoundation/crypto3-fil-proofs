@@ -33,9 +33,9 @@
 
 namespace nil {
     namespace filecoin {
-        namespace merkletree {
+        namespace storage {
             struct VecStore : public Store {
-                VecStore(size_t size, size_t branches, StoreConfig config) {
+                VecStore(size_t size, size_t branches, utilities::StoreConfig config) {
                     v.resize(size);
                     store_size = size;
                     len = 0;
@@ -48,7 +48,7 @@ namespace nil {
                 }
 
                 void write(std::pair<uint8_t *, uint8_t *> el, size_t start) {
-                    if (this->len() < write + (el.second - el.first)) {
+                    if (this->len < write + (el.second - el.first)) {
                         v.resize(write + (el.second - el.first));
                     }
                     for (auto i = el.first; i < el.second; ++i) {
@@ -58,16 +58,16 @@ namespace nil {
                     len += (el.second - el.first);
                 }
 
-                VecStore(size_t size, size_t branches, std::pair<uint8_t *, uint8_t *> data, StoreConfig config) {
+                VecStore(size_t size, size_t branches, std::pair<uint8_t *, uint8_t *> data, utilities::StoreConfig config) {
                     v.resize(size);
                     store_size = size;
-                    self->write_at(data, 0);
+                    self->write(data, 0);
                 }
 
                 VecStore(size_t size, std::pair<uint8_t *, uint8_t *> data) {
                     v.resize(size);
                     store_size = size;
-                    self->write_at(data, 0);
+                    self->write(data, 0);
                 }
 
                 void read(std::pair<size_t, size_t> read, uint8_t *buf) {
@@ -78,15 +78,11 @@ namespace nil {
                     }
                 }
 
-                size_t len() {
-                    return v.size();
-                }
-
                 bool loaded_from_disk() {
                     return false;
                 }
 
-                bool compact(size_t branches, StoreConfig config, uint32_t store_version) {
+                bool compact(size_t branches, utilities::StoreConfig config, uint32_t store_version) {
                     v.resize(len);
                     return true;
                 }
@@ -96,7 +92,7 @@ namespace nil {
                 }
 
                 void push(std::pair<uint8_t *, uint8_t *> data) {
-                    self->write_at(data, len);
+                    self->write(data, len);
                 }
             private:
                 size_t len;

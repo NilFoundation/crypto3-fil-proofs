@@ -42,8 +42,7 @@
 namespace nil {
     namespace filecoin {
         namespace storage {
-            template<typename Element>
-            class MmapStore {
+            class MmapStore: public Store {
                 MmapStore(size_t size, size_t branches, StoreConfig config, uint8_t *data = nullptr, size_t data_length = 0) {
                     boost::filesystem::path data_path = StoreConfig::data_path(&config.path_, &config.id_);
                     // If the specified file exists, load it from disk.
@@ -74,16 +73,6 @@ namespace nil {
                 MmapStore(size_t size) {
                     size_t store_size = Element::byte_len() * size;
                     BOOST_BOOST_ASSERT_MSG_MSG(false, "Not valid");
-//                    FILE* file = tempfile::NamedTempFile::new()?;
-//                    file.as_file().set_len(store_size as u64)?;
-//                    let (file, path) = file.into_parts();
-//                    let map = unsafe { MmapMut::map_mut(&file)? };
-//
-//                    this->path = path;
-//                    this->map = map;
-//                    this->file = file;
-//                    this->len = 0;
-//                    this->store_size = store_size;
                 }
 
                 void write_at(Element el, size_t index) {
@@ -106,55 +95,9 @@ namespace nil {
                     BOOST_BOOST_ASSERT_MSG_MSG(false, "Not valid");
                 }
 
-                Element read_at(size_t index) {
-                    BOOST_ASSERT_MSG(this->map.is_some(), "Internal map needs to be initialized");
-
-                    size_t start = index * Element::byte_len();
-                    size_t end = start + Element::byte_len();
-                    size_t len = this->len * Element::byte_len();
-                    Element t;
-                    memcpy(t, static_cast<char *>(addr) + start, Element::byte_len());
-                    BOOST_ASSERT_MSG(start < len, "start out of range {} >= {}", start, len);
-                    BOOST_ASSERT_MSG(end <= len, "end out of range {} > {}", end, len);
-
-                    return t;
-                }
-
-                void read_into(size_t index, uint8_t *buf) {
-                    size_t start = index * Element::byte_len();
-                    size_t end = start + Element::byte_len();
-                    size_t len = this->len * Element::byte_len();
-
-                    BOOST_ASSERT_MSG(start < len, "start out of range {} >= {}", start, len);
-                    BOOST_ASSERT_MSG(end <= len, "end out of range {} > {}", end, len);
-
-                    memcpy(buf, static_cast<char *>(addr) + start, Element::byte_len());
-                }
-
-                void read_range_into(size_t start, size_t end, uint8_t *buf) {
-                    BOOST_ASSERT_MSG("Not required here");
-                }
-
-                std::vector<Element> read_range(std::pair<size_t, size_t> r) {
-                    BOOST_ASSERT_MSG(this->map.is_some(), "Internal map needs to be initialized");
-
-                    size_t start = r.first * Element::byte_len();
-                    size_t end = r.second * Element::byte_len();
-                    size_t len = this->len * Element::byte_len();
-
-                    BOOST_ASSERT_MSG(start < len, "start out of range {} >= {}", start, len);
-                    BOOST_ASSERT_MSG(end <= len, "end out of range {} > {}", end, len);
-
-                    std::vector<Element> v;
-                    v.resize((end - start) / len);
-                    for (size_t i = start; i < end; i += len) {
-                        memcpy(v[i / len], static_cast<char *>(addr) + start, Element::byte_len());
-                    }
-                    return v;
-                }
-
-                size_t len() {
-                    return len;
+                void read(std::pair<size_t, size_t> read, uint8_t *buf) {
+                    BOOST_ASSERT_MSG(read.first >= len || read.second >= len, "Invalid read range");
+                    memcpy(buf, static_cast<char *>(addr) + read.first, read.second - read.first);
                 }
 
                 bool loaded_from_disk() {

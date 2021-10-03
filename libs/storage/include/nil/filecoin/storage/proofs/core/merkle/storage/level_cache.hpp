@@ -48,9 +48,8 @@
 
 namespace nil {
     namespace filecoin {
-        namespace merkletree {
-            template <typename Element>
-            class LevelCacheStore {
+        namespace storage {
+            class LevelCacheStore: public Store {
                 size_t len;
                 size_t elem_len;
                 FILE* file;
