@@ -23,13 +23,13 @@ Compiler/environment requirements are as follows:
 
 ## Building
 
-`mkdir build && cd build && cmake .. && make aux-proof-gen`
+`mkdir build && cd build && cmake .. && make`
 
 ## Usage
 
 ## Community
 
 Issue reports are preferred to be done with Github Issues in here:
-https://github.com/nilfoundation/evm-mina-verification.git.
+https://github.com/nilfoundation/crypto3-fil-proofs.git.
 
 Usage and development questions a preferred to be asked in a Telegram chat: https:/t.me/nil_crypto3
